@@ -5,7 +5,7 @@ import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon';
 import BookOpenOutlineIcon from 'mdi-react/BookOpenOutlineIcon';
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon';
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon';
-import FilePdfIcon from 'mdi-react/FilePdfIcon';
+import FilePdfBoxIcon from 'mdi-react/FilePdfBoxIcon';
 import ArchiveIcon from 'mdi-react/ArchiveIcon';
 import FileWordIcon from 'mdi-react/FileWordIcon';
 import FileExcelIcon from 'mdi-react/FileExcelIcon';
@@ -89,7 +89,7 @@ export const INITIAL_TASK_GROUP_NOTIFICATION_PREFERENCES = {
   groupNotifySuccess: false,
 };
 export const MIMETYPE_ICONS = [
-  [FilePdfIcon, ['application/pdf', 'application/postscript']],
+  [FilePdfBoxIcon, ['application/pdf', 'application/postscript']],
   [
     ArchiveIcon,
     [
