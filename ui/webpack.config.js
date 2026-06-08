@@ -1,3 +1,4 @@
+const webpack = require("webpack");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
@@ -24,31 +25,51 @@ if (process.env.GENERATE_ENV_JS) {
 }
 
 module.exports = (_, { mode }) => ({
-  devtool: mode === "production" ? false : "cheap-module-eval-source-map",
+  devtool: mode === "production" ? false : "eval-cheap-module-source-map",
   target: "web",
   context: __dirname,
   watchOptions: {
-    ignored: (p) => !p.startsWith(__dirname),
+    ignored: /node_modules/,
   },
   externals: { bindings: "bindings" },
   output: {
     path: `${__dirname}/build`,
     publicPath: "/",
-    filename: "assets/[name].[hash:8].js",
+    filename: "assets/[name].[contenthash:8].js",
+    // Use sha256 instead of webpack 5's default xxhash64 (WASM-based),
+    // which can crash in some environments (e.g. Docker containers on
+    // certain Linux kernels where the WASM-based hash module fails).
+    hashFunction: "sha256",
+  },
+  // Disable hash-based snapshot invalidation in watch mode. On Docker
+  // overlay filesystems (CI), webpack 5's FileSystemInfo._resolveContextTimestamp
+  // can receive undefined hashes and crash. Using timestamp-only snapshots
+  // avoids this while still detecting file changes correctly.
+  snapshot: {
+    module: { timestamp: true, hash: false },
+    resolve: { timestamp: true, hash: false },
+    buildDependencies: { timestamp: true, hash: false },
+    resolveBuildDependencies: { timestamp: true, hash: false },
   },
   stats: {
     children: false,
     entrypoints: false,
     modules: false,
   },
-  node: {
-    Buffer: true,
-    fs: "empty",
-    tls: "empty",
-  },
   resolve: {
     alias: {
       "@taskcluster/ui": `${__dirname}/src`,
+    },
+    fallback: {
+      assert: require.resolve("assert/"),
+      buffer: require.resolve("buffer/"),
+      crypto: require.resolve("crypto-browserify"),
+      path: require.resolve("path-browserify"),
+      stream: require.resolve("stream-browserify"),
+      url: require.resolve("url/"),
+      fs: false,
+      tls: false,
+      vm: false,
     },
     extensions: [
       ".web.jsx",
@@ -67,28 +88,34 @@ module.exports = (_, { mode }) => ({
   },
   devServer: {
     port,
+    allowedHosts: "all",
     historyApiFallback: {
       disableDotRule: true,
       rewrites: [{ from: /^\/docs/, to: "/docs.html" }],
     },
-    proxy: {
-      "/login": {
+    proxy: [
+      {
+        context: ["/login"],
         target: proxyTarget,
         changeOrigin: true,
       },
-      "/graphql": {
+      {
+        context: ["/graphql"],
         target: proxyTarget,
         changeOrigin: true,
       },
-      "/schemas": {
+      {
+        context: ["/schemas"],
         target: proxyTarget,
         changeOrigin: true,
       },
-      "/references": {
+      {
+        context: ["/references"],
         target: proxyTarget,
         changeOrigin: true,
       },
-      "/subscription": {
+      {
+        context: ["/subscription"],
         ws: true,
         changeOrigin: true,
         target: proxyTarget.replace(/^http(s)?:/, "ws$1:"),
@@ -101,11 +128,12 @@ module.exports = (_, { mode }) => ({
           });
         },
       },
-      "/api/web-server": {
+      {
+        context: ["/api/web-server"],
         target: proxyTarget,
         changeOrigin: true,
       },
-    },
+    ],
   },
   module: {
     rules: [
@@ -115,7 +143,12 @@ module.exports = (_, { mode }) => ({
           {
             loader: "html-loader",
             options: {
-              attrs: ["img:src", "link:href"],
+              sources: {
+                list: [
+                  { tag: "img", attribute: "src", type: "src" },
+                  { tag: "link", attribute: "href", type: "src" },
+                ],
+              },
             },
           },
         ],
@@ -353,9 +386,9 @@ module.exports = (_, { mode }) => ({
       lang: "en",
     }),
     new MiniCssExtractPlugin({
-      filename: "assets/[name].[hash:8].css",
+      filename: "assets/[name].[contenthash:8].css",
       ignoreOrder: false,
-      chunkFilename: "assets/[name].[hash:8].css",
+      chunkFilename: "assets/[name].[contenthash:8].css",
     }),
     new CleanWebpackPlugin({
       dangerouslyAllowCleanPatternsOutsideProject: false,
@@ -369,7 +402,12 @@ module.exports = (_, { mode }) => ({
       initialClean: false,
       outputPath: "",
     }),
-    new CopyPlugin([{ context: "src/static", from: "**/*", to: "static" }]),
+    new CopyPlugin({
+      patterns: [{ context: "src/static", from: "**/*", to: "static", noErrorOnMissing: true }],
+    }),
+    new webpack.ProvidePlugin({
+      Buffer: ["buffer", "Buffer"],
+    }),
   ],
   entry: {
     index: [`${__dirname}/src/index.jsx`],
