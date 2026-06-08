@@ -55,6 +55,7 @@ module.exports = (_, { mode }) => ({
       "https": false,
       "stream": false,
       "crypto": false,
+      "url": require.resolve("url/"),
     },
     extensions: [
       ".web.jsx",
@@ -364,7 +365,7 @@ module.exports = (_, { mode }) => ({
       ignoreOrder: false,
       chunkFilename: "assets/[name].[contenthash:8].css",
     }),
-    new CopyPlugin({ patterns: [{ context: "src/static", from: "**/*", to: "static" }] }),
+    new CopyPlugin({ patterns: [{ context: "src/static", from: "**/*", to: "static", noErrorOnMissing: true }] }),
   ],
   entry: {
     index: [`${__dirname}/src/index.jsx`],
