@@ -1,6 +1,5 @@
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
-const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
 const generateEnvJs = require("./generate-env-js");
 const DEFAULT_PORT = 5080;
@@ -24,7 +23,7 @@ if (process.env.GENERATE_ENV_JS) {
 }
 
 module.exports = (_, { mode }) => ({
-  devtool: mode === "production" ? false : "cheap-module-eval-source-map",
+  devtool: mode === "production" ? false : "eval-cheap-module-source-map",
   target: "web",
   context: __dirname,
   watchOptions: {
@@ -34,21 +33,28 @@ module.exports = (_, { mode }) => ({
   output: {
     path: `${__dirname}/build`,
     publicPath: "/",
-    filename: "assets/[name].[hash:8].js",
+    filename: "assets/[name].[contenthash:8].js",
+    clean: true,
   },
   stats: {
     children: false,
     entrypoints: false,
     modules: false,
   },
-  node: {
-    Buffer: true,
-    fs: "empty",
-    tls: "empty",
-  },
   resolve: {
     alias: {
       "@taskcluster/ui": `${__dirname}/src`,
+    },
+    fallback: {
+      "fs": false,
+      "tls": false,
+      "net": false,
+      "path": false,
+      "zlib": false,
+      "http": false,
+      "https": false,
+      "stream": false,
+      "crypto": false,
     },
     extensions: [
       ".web.jsx",
@@ -67,6 +73,7 @@ module.exports = (_, { mode }) => ({
   },
   devServer: {
     port,
+    allowedHosts: process.env.DISABLE_HOST_CHECK ? "all" : "auto",
     historyApiFallback: {
       disableDotRule: true,
       rewrites: [{ from: /^\/docs/, to: "/docs.html" }],
@@ -353,23 +360,11 @@ module.exports = (_, { mode }) => ({
       lang: "en",
     }),
     new MiniCssExtractPlugin({
-      filename: "assets/[name].[hash:8].css",
+      filename: "assets/[name].[contenthash:8].css",
       ignoreOrder: false,
-      chunkFilename: "assets/[name].[hash:8].css",
+      chunkFilename: "assets/[name].[contenthash:8].css",
     }),
-    new CleanWebpackPlugin({
-      dangerouslyAllowCleanPatternsOutsideProject: false,
-      dry: false,
-      verbose: false,
-      cleanStaleWebpackAssets: true,
-      protectWebpackAssets: true,
-      cleanAfterEveryBuildPatterns: [],
-      cleanOnceBeforeBuildPatterns: ["**/*"],
-      currentAssets: [],
-      initialClean: false,
-      outputPath: "",
-    }),
-    new CopyPlugin([{ context: "src/static", from: "**/*", to: "static" }]),
+    new CopyPlugin({ patterns: [{ context: "src/static", from: "**/*", to: "static" }] }),
   ],
   entry: {
     index: [`${__dirname}/src/index.jsx`],
