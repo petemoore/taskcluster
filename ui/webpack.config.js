@@ -27,7 +27,7 @@ module.exports = (_, { mode }) => ({
   target: "web",
   context: __dirname,
   watchOptions: {
-    ignored: (p) => !p.startsWith(__dirname),
+    ignored: /node_modules/,
   },
   externals: { bindings: "bindings" },
   output: {
