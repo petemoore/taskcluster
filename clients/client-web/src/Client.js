@@ -1,5 +1,5 @@
 import { withRootUrl } from 'taskcluster-lib-urls';
-import { stringify } from 'query-string';
+import { stringify } from 'query-string/base.js';
 import hawk from 'hawk';
 import fetch from './fetch';
 
