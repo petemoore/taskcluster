@@ -12,6 +12,11 @@ module.exports = {
   bail: true,
   collectCoverageFrom: ["src/**/*.{mjs,jsx,js}"],
   testEnvironment: "jsdom",
+  // Jest 30 waits for all async handles (WebSockets, timers, etc.) to close
+  // before exiting. Apollo subscription mocks and similar libraries can leave
+  // open handles that prevent Jest from exiting naturally. forceExit ensures
+  // the process exits after all tests complete.
+  forceExit: true,
   verbose: false,
   transform: {
     "\\.(mjs|jsx|js)$": "<rootDir>/__jest__/transformer.js",
