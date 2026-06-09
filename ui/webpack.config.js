@@ -1,7 +1,7 @@
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
-const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
+const webpack = require("webpack");
 const generateEnvJs = require("./generate-env-js");
 const DEFAULT_PORT = 5080;
 const port = process.env.PORT || DEFAULT_PORT;
@@ -24,7 +24,7 @@ if (process.env.GENERATE_ENV_JS) {
 }
 
 module.exports = (_, { mode }) => ({
-  devtool: mode === "production" ? false : "cheap-module-eval-source-map",
+  devtool: mode === "production" ? false : "eval-cheap-module-source-map",
   target: "web",
   context: __dirname,
   watchOptions: {
@@ -34,17 +34,13 @@ module.exports = (_, { mode }) => ({
   output: {
     path: `${__dirname}/build`,
     publicPath: "/",
-    filename: "assets/[name].[hash:8].js",
+    filename: "assets/[name].[contenthash:8].js",
+    clean: true,
   },
   stats: {
     children: false,
     entrypoints: false,
     modules: false,
-  },
-  node: {
-    Buffer: true,
-    fs: "empty",
-    tls: "empty",
   },
   resolve: {
     alias: {
@@ -59,6 +55,12 @@ module.exports = (_, { mode }) => ({
       ".js",
       ".json",
     ],
+    // webpack 5 no longer polyfills Node.js core modules automatically;
+    // set fs and tls to false since we don't need them in the browser bundle.
+    fallback: {
+      fs: false,
+      tls: false,
+    },
   },
   optimization: {
     minimize: true,
@@ -114,9 +116,6 @@ module.exports = (_, { mode }) => ({
         use: [
           {
             loader: "html-loader",
-            options: {
-              attrs: ["img:src", "link:href"],
-            },
           },
         ],
       },
@@ -213,9 +212,6 @@ module.exports = (_, { mode }) => ({
             use: [
               {
                 loader: MiniCssExtractPlugin.loader,
-                options: {
-                  esModule: true,
-                },
               },
               {
                 loader: "css-loader",
@@ -231,9 +227,6 @@ module.exports = (_, { mode }) => ({
             use: [
               {
                 loader: MiniCssExtractPlugin.loader,
-                options: {
-                  esModule: true,
-                },
               },
               {
                 loader: "css-loader",
@@ -353,23 +346,16 @@ module.exports = (_, { mode }) => ({
       lang: "en",
     }),
     new MiniCssExtractPlugin({
-      filename: "assets/[name].[hash:8].css",
+      filename: "assets/[name].[contenthash:8].css",
       ignoreOrder: false,
-      chunkFilename: "assets/[name].[hash:8].css",
+      chunkFilename: "assets/[name].[contenthash:8].css",
     }),
-    new CleanWebpackPlugin({
-      dangerouslyAllowCleanPatternsOutsideProject: false,
-      dry: false,
-      verbose: false,
-      cleanStaleWebpackAssets: true,
-      protectWebpackAssets: true,
-      cleanAfterEveryBuildPatterns: [],
-      cleanOnceBeforeBuildPatterns: ["**/*"],
-      currentAssets: [],
-      initialClean: false,
-      outputPath: "",
+    // webpack 5: CopyPlugin v6+ uses { patterns: [...] } syntax
+    new CopyPlugin({ patterns: [{ context: "src/static", from: "**/*", to: "static" }] }),
+    // webpack 5: provide Buffer polyfill since it's no longer automatic
+    new webpack.ProvidePlugin({
+      Buffer: ["buffer", "Buffer"],
     }),
-    new CopyPlugin([{ context: "src/static", from: "**/*", to: "static" }]),
   ],
   entry: {
     index: [`${__dirname}/src/index.jsx`],
