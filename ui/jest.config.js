@@ -12,7 +12,6 @@ module.exports = {
   bail: true,
   collectCoverageFrom: ["src/**/*.{mjs,jsx,js}"],
   testEnvironment: "jsdom",
-  testRegex: null,
   verbose: false,
   transform: {
     "\\.(mjs|jsx|js)$": "<rootDir>/__jest__/transformer.js",
