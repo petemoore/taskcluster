@@ -10,7 +10,7 @@
   "scripts": {
     "build": "NODE_OPTIONS=--openssl-legacy-provider webpack --mode production",
     "start": "NODE_OPTIONS=--openssl-legacy-provider cross-env GENERATE_ENV_JS=1 webpack-dev-server --mode development",
-    "start:docker": "NODE_OPTIONS=--openssl-legacy-provider cross-env GENERATE_ENV_JS=1 webpack-dev-server --host 0.0.0.0 --disable-host-check --hot --mode development",
+    "start:docker": "NODE_OPTIONS=--openssl-legacy-provider cross-env GENERATE_ENV_JS=1 webpack-dev-server --host 0.0.0.0 --allowed-hosts all --hot --mode development",
     "test": "cross-env TZ=Europe/Berlin jest",
     "test:update-snapshots": "cross-env TZ=Europe/Berlin jest --updateSnapshot",
     "test:watch": "cross-env TZ=Europe/Berlin jest --watch",

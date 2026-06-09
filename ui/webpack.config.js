@@ -92,13 +92,15 @@ module.exports = (_, { mode }) => ({
         ws: true,
         changeOrigin: true,
         target: proxyTarget.replace(/^http(s)?:/, "ws$1:"),
-        onError: function(err, req, res) {
-          console.warn("[WS Proxy Error]", err.code, err.message);
-        },
-        onProxyReqWs: function(proxyReq, req, socket) {
-          socket.on("error", function(err) {
-            console.warn("[WS Socket Error]", err.code, err.message);
-          });
+        on: {
+          error: function(err, req, res) {
+            console.warn("[WS Proxy Error]", err.code, err.message);
+          },
+          proxyReqWs: function(proxyReq, req, socket) {
+            socket.on("error", function(err) {
+              console.warn("[WS Socket Error]", err.code, err.message);
+            });
+          },
         },
       },
       "/api/web-server": {

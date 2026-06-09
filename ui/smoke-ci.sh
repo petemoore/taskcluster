@@ -21,9 +21,10 @@ DEV_LOG=/tmp/dev-server.log
 yarn start > "$DEV_LOG" 2>&1 &
 DEV_PID=$!
 
-# Wait for the initial webpack build to finish, not just for the port
-# to open — webpack-dev-server starts serving before all chunks are
-# emitted, which races the smoke harness on a cold CI worker.
-timeout 300 bash -c "until grep -q 'Compiled successfully' '$DEV_LOG'; do sleep 2; done"
+# Wait for the dev server to finish the initial compilation and start
+# serving.  webpack-dev-middleware (used by webpack-dev-server v5)
+# holds HTTP connections until compilation is complete, so a successful
+# HTTP response implies the bundle is fully emitted and ready.
+timeout 300 bash -c "until curl -sf --max-time 10 http://localhost:${PORT}/ -o /dev/null; do sleep 2; done"
 
 BASE_URL="http://localhost:${PORT}" yarn smoke
