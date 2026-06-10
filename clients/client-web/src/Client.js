@@ -1,7 +1,10 @@
 import { withRootUrl } from 'taskcluster-lib-urls';
-import { stringify } from 'query-string';
+import queryString from 'query-string';
 import hawk from 'hawk';
 import fetch from './fetch';
+
+// query-string v9 changed to a default-export namespace; extract stringify for use below.
+const { stringify } = queryString;
 
 export default class Client {
   constructor(options = {}) {

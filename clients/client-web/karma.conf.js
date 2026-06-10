@@ -1,5 +1,7 @@
 process.env.NODE_ENV = process.env.NODE_ENV || 'test';
 
+const NodePolyfillPlugin = require('node-polyfill-webpack-plugin');
+
 module.exports = config => {
   return config.set({
     frameworks: ['mocha'],
@@ -24,6 +26,12 @@ module.exports = config => {
     },
     webpack: {
       mode: 'development',
+      plugins: [
+        // Webpack 5 no longer polyfills Node.js core modules automatically.
+        // NodePolyfillPlugin restores that behaviour, which is required by hawk
+        // (used for HMAC request signing in the browser).
+        new NodePolyfillPlugin(),
+      ],
     },
     reporters: ['mocha'],
     browsers: [process.env.CI ? 'FirefoxHeadless' : 'Firefox'],
