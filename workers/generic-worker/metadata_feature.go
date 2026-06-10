@@ -3,19 +3,12 @@ package main
 import (
 	"fmt"
 	"path/filepath"
-	"sync"
 
-	"github.com/taskcluster/taskcluster/v100/internal/scopes"
-	"github.com/taskcluster/taskcluster/v100/workers/generic-worker/fileutil"
+	"github.com/taskcluster/taskcluster/v99/internal/scopes"
+	"github.com/taskcluster/taskcluster/v99/workers/generic-worker/fileutil"
 )
 
-var (
-	// metadataMutex protects access to the generic-worker-metadata.json file
-	// for concurrent task execution (capacity > 1)
-	metadataMutex sync.Mutex
-
-	metadataFilename = filepath.Join(cwd, "generic-worker-metadata.json")
-)
+var metadataFilename = filepath.Join(cwd, "generic-worker-metadata.json")
 
 type (
 	MetadataFeature struct {
@@ -70,12 +63,10 @@ func (mtf *MetadataTaskFeature) Stop(err *ExecutionErrors) {
 		LastTaskURL: fmt.Sprintf("%v/tasks/%v/runs/%v", config.RootURL, mtf.task.TaskID, mtf.task.RunID),
 	}
 
-	metadataMutex.Lock()
 	e := fileutil.WriteToFileAsJSON(mtf.info, metadataFilename)
-	metadataMutex.Unlock()
 	// if we can't write this, something seriously wrong, so cause worker to
 	// report an internal-error to sentry and crash!
 	if e != nil {
-		panic(e)
+		panic(err)
 	}
 }

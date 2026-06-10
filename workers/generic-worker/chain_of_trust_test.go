@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/mcuadros/go-defaults"
-	tcclient "github.com/taskcluster/taskcluster/v100/clients/client-go"
+	tcclient "github.com/taskcluster/taskcluster/v99/clients/client-go"
 )
 
 func TestExitCodeMissingChainOfTrustKey(t *testing.T) {
@@ -26,9 +26,6 @@ func TestExitCodeMissingChainOfTrustKey(t *testing.T) {
 }
 
 func TestChainOfTrustUpload(t *testing.T) {
-	if os.Getenv("GW_IN_DOCKER") == "1" {
-		t.Skip("Skipping in Docker: CoT key permission isolation requires a non-root environment")
-	}
 
 	setup(t)
 
@@ -270,9 +267,6 @@ func TestChainOfTrustUploadAsCurrentUser(t *testing.T) {
 }
 
 func TestProtectedArtifactsReplaced(t *testing.T) {
-	if os.Getenv("GW_IN_DOCKER") == "1" {
-		t.Skip("Skipping in Docker: CoT key permission isolation requires a non-root environment")
-	}
 
 	setup(t)
 
@@ -450,9 +444,6 @@ func TestProtectedArtifactsReplacedAsCurrentUser(t *testing.T) {
 }
 
 func TestChainOfTrustAdditionalData(t *testing.T) {
-	if os.Getenv("GW_IN_DOCKER") == "1" {
-		t.Skip("Skipping in Docker: CoT key permission isolation requires a non-root environment")
-	}
 
 	setup(t)
 
