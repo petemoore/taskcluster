@@ -1,5 +1,6 @@
 process.env.NODE_ENV = process.env.NODE_ENV || 'test';
 
+const webpack = require('webpack');
 const NodePolyfillPlugin = require('node-polyfill-webpack-plugin');
 
 module.exports = config => {
@@ -36,11 +37,15 @@ module.exports = config => {
         // (used for HMAC request signing in the browser).
         //
         // Exclude the 'Buffer' global-inject alias: the plugin provides Buffer via
-        // ProvidePlugin using an absolute directory path, and chai 6 (pure ESM)
-        // requires fully-specified paths. Excluding the global inject avoids the
-        // resolution error; resolve.fallback.buffer (lowercase) still works for
-        // require('buffer') inside dependencies like crypto-browserify.
+        // ProvidePlugin using an absolute *directory* path, and chai 6 (pure ESM)
+        // requires fully-specified paths with file extensions, so that injection
+        // crashes. We re-add Buffer injection below using require.resolve('buffer/')
+        // which resolves to the exact index.js file path at config-load time,
+        // satisfying webpack 5's ESM fully-specified-path requirement.
         new NodePolyfillPlugin({ excludeAliases: ['Buffer'] }),
+        new webpack.ProvidePlugin({
+          Buffer: [require.resolve('buffer/'), 'Buffer'],
+        }),
       ],
     },
     reporters: ['mocha'],
