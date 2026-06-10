@@ -1,5 +1,5 @@
-query workerPools($connection: PageConnection, $searchTerm: String) {
-  WorkerManagerWorkerPoolSummaries(connection: $connection, searchTerm: $searchTerm) {
+query workerPools($connection: PageConnection, $filter: JSON) {
+  WorkerManagerWorkerPoolSummaries(connection: $connection, filter: $filter) {
     pageInfo {
       hasNextPage
       hasPreviousPage

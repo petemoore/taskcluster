@@ -13,7 +13,7 @@ suite(testing.suiteName(), function() {
 
   const listen = w => {
     events = [];
-    w.on('expired', () => events.push(['expired', Date.now()]));
+    w.on('expired', () => events.push(['expired', +new Date()]));
   };
 
   test('should emit expired event', runWithFakeTime(async function() {

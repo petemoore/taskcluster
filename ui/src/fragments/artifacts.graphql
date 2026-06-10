@@ -11,7 +11,6 @@ fragment Artifacts on ArtifactsConnection {
     node {
       name
       contentType
-      contentLength
     }
   }
 }

@@ -3,7 +3,7 @@ import helper from '../helper.js';
 import testing from '@taskcluster/lib-testing';
 import taskcluster from '@taskcluster/client';
 
-const THIS_VERSION = parseInt(/.*\/0*(\d+)_test\.js/.exec(import.meta.url)[1], 10);
+const THIS_VERSION = parseInt(/.*\/0*(\d+)_test\.js/.exec(import.meta.url)[1]);
 
 suite(testing.suiteName(), function() {
   helper.withDbForVersion();
@@ -20,7 +20,7 @@ suite(testing.suiteName(), function() {
     // Create tasks with IDs that would be unordered without ORDER BY
     const taskIds = ['zzz-task', 'aaa-task', 'mmm-task', 'bbb-task', 'yyy-task'];
     for (const taskId of taskIds) {
-      await db.deprecatedFns.create_task_projid(
+      await db.fns.create_task_projid(
         taskId, 'prov/wt', 'sched', 'proj', 'group-1',
         JSON.stringify([]), 'all-completed', JSON.stringify([]),
         'high', 5, created, deadline, expires,

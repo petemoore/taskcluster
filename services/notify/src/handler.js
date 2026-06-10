@@ -78,10 +78,6 @@ class Handler {
       return true;
     }
 
-    if (decider === 'defined') {
-      return state === 'unscheduled';
-    }
-
     return decider === state;
   }
 

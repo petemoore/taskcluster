@@ -168,7 +168,7 @@ function resolveRef(ref, currentSchemaId, allSchemas, visitedRefs = new Set()) {
     );
 
     // If resolved schema has a $ref, resolve it recursively
-    if (resolved?.$ref) {
+    if (resolved && resolved.$ref) {
       return resolveRef(
         resolved.$ref,
         currentSchemaId,
@@ -181,7 +181,9 @@ function resolveRef(ref, currentSchemaId, allSchemas, visitedRefs = new Set()) {
   }
 
   // External reference - find schema by filename in $id
-  targetSchema = allSchemas.find(s => s.content?.$id?.endsWith(fileRef));
+  targetSchema = allSchemas.find(
+    s => s.content && s.content.$id && s.content.$id.endsWith(fileRef)
+  );
 
   if (!targetSchema) {
     return null;
@@ -195,7 +197,7 @@ function resolveRef(ref, currentSchemaId, allSchemas, visitedRefs = new Set()) {
 
   // If resolved schema has a $ref, resolve it recursively with the new
   // schema context
-  if (resolved?.$ref) {
+  if (resolved && resolved.$ref) {
     return resolveRef(
       resolved.$ref,
       targetSchema.content.$id,
@@ -394,6 +396,7 @@ function generateArrayExample(
 
   // Generate array with one example item if items schema is defined
   if (schema.items) {
+    // eslint-disable-next-line no-use-before-define
     const itemExample = generateExampleValue(
       schema.items,
       propertyName,
@@ -446,6 +449,7 @@ function generateObjectExample(
     // Add required properties first
     required.forEach(propName => {
       if (schema.properties[propName]) {
+        // eslint-disable-next-line no-use-before-define
         example[propName] = generateExampleValue(
           schema.properties[propName],
           propName,
@@ -466,6 +470,7 @@ function generateObjectExample(
       // Only add optional if we don't have too many required
       const propName = optionalProps[0];
 
+      // eslint-disable-next-line no-use-before-define
       example[propName] = generateExampleValue(
         schema.properties[propName],
         propName,
@@ -579,6 +584,7 @@ function generateExampleValue(
     const merged = {};
 
     schema.allOf.forEach(subSchema => {
+      // eslint-disable-next-line no-use-before-define
       const example = generateExampleValue(
         subSchema,
         propertyName,
@@ -667,7 +673,7 @@ export default function generatePayloadExample(schema, allSchemas = []) {
       schema.$id,
       new Set()
     );
-  } catch (_error) {
+  } catch (error) {
     // Error generating payload example
     return null;
   }
