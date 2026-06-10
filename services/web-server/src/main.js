@@ -4,7 +4,6 @@ const debug = debugFactory('app:main');
 import assert from 'assert';
 import { ApolloServer } from '@apollo/server';
 import { expressMiddleware } from '@as-integrations/express4';
-import compression from 'compression';
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
 import depthLimit from './validation/guardedDepthLimit.js';
 import { NoFragmentCyclesRule } from 'graphql/validation/rules/NoFragmentCyclesRule.js';
@@ -190,7 +189,6 @@ const load = loader(
         // https://www.apollographql.com/docs/apollo-server/migration
         app.use(
           '/graphql',
-          compression(),
           expressMiddleware(server, {
             context,
           }),
