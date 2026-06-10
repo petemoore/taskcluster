@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { string, bool } from 'prop-types';
 import { Chip } from '@material-ui/core';
 import { withStyles } from '@material-ui/core/styles';
-import WorkerIcon from 'mdi-react/AccountHardHatIcon';
+import HammerIcon from 'mdi-react/HammerIcon';
 import ProgressClockIcon from 'mdi-react/ProgressClockIcon';
 import HourglassIcon from 'mdi-react/HourglassIcon';
 import HexagonSlice4 from 'mdi-react/HexagonSlice4Icon';
@@ -113,13 +113,13 @@ export default class WorkersNavbar extends Component {
     const workerPoolUrl = `/worker-manager/${encodeURIComponent(workerPoolId)}`;
     let items = [
       {
-        icon: WorkerIcon,
+        icon: HammerIcon,
         label: 'Queue Workers',
         to: workerTypeUrl,
         hint: 'Show workers as seen by queue',
       },
       {
-        icon: WorkerIcon,
+        icon: HammerIcon,
         label: 'W-M Workers',
         to: `${workerPoolUrl}/workers`,
         hint: 'Show workers as seen by worker manager',
