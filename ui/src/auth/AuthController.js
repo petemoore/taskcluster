@@ -112,7 +112,7 @@ export default class AuthController {
     } catch (e) {
       this.setUser(null);
 
-      // biome-ignore lint/suspicious/noConsole: show auth renewal failure in the logs
+      /* eslint-disable no-console */
       console.error('Could not renew login:', e);
     }
   }

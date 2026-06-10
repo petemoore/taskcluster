@@ -1,7 +1,7 @@
 export default {
   Query: {
-    cachePurges(parent, { connection }, { loaders }) {
-      return loaders.cachePurges.load({ connection });
+    cachePurges(parent, { connection, filter }, { loaders }) {
+      return loaders.cachePurges.load({ connection, filter });
     },
   },
   Mutation: {
