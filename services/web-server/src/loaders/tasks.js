@@ -1,25 +1,9 @@
 import DataLoader from 'dataloader';
+import sift from '../utils/sift.js';
 import got from 'got';
 import ConnectionLoader from '../ConnectionLoader.js';
 import Task from '../entities/Task.js';
 import maybeSignedUrl from '../utils/maybeSignedUrl.js';
-
-// Task actions were previously filtered with a client-supplied sift query. The
-// UI only ever sent two fixed shapes, encoded here as a `contextScope`:
-//   - 'task'  (single-task view):  kind in {task,hook} AND context is a non-empty array
-//   - 'group' (task-group view):   kind in {task,hook} AND context array has 0 or 1 entries
-const TASK_ACTION_KINDS = new Set(['task', 'hook']);
-const isContextSize = (context, n) => Array.isArray(context) && context.length === n;
-const filterTaskActions = (actions, contextScope) =>
-  actions.filter((action) => {
-    if (!TASK_ACTION_KINDS.has(action.kind)) {
-      return false;
-    }
-
-    return contextScope === 'group'
-      ? isContextSize(action.context, 0) || isContextSize(action.context, 1)
-      : !isContextSize(action.context, 0);
-  });
 
 export default ({ queue, index }, isAuthed, rootUrl, monitor, strategies, req, cfg, requestId) => {
   const task = new DataLoader(taskIds =>
@@ -45,10 +29,10 @@ export default ({ queue, index }, isAuthed, rootUrl, monitor, strategies, req, c
     ),
   );
   const taskGroup = new ConnectionLoader(
-    async ({ taskGroupId, options }) => {
+    async ({ taskGroupId, options, filter }) => {
       const taskGroup = await queue.getTaskGroup(taskGroupId);
       const raw = await queue.listTaskGroup(taskGroupId, options);
-      const tasks = raw.tasks;
+      const tasks = sift(filter, raw.tasks);
 
       return {
         taskGroup,
@@ -61,7 +45,7 @@ export default ({ queue, index }, isAuthed, rootUrl, monitor, strategies, req, c
   );
   const taskActions = new DataLoader(queries =>
     Promise.all(
-      queries.map(async ({ taskGroupId, contextScope }) => {
+      queries.map(async ({ taskGroupId, filter }) => {
         try {
           const url = await maybeSignedUrl(queue, isAuthed)(
             queue.getLatestArtifact,
@@ -74,7 +58,7 @@ export default ({ queue, index }, isAuthed, rootUrl, monitor, strategies, req, c
           return raw.actions
             ? {
               ...raw,
-              actions: filterTaskActions(raw.actions, contextScope),
+              actions: sift(filter, raw.actions),
             }
             : null;
         } catch (err) {
@@ -89,9 +73,9 @@ export default ({ queue, index }, isAuthed, rootUrl, monitor, strategies, req, c
     ),
   );
   const dependents = new ConnectionLoader(
-    async ({ taskId, options }) => {
+    async ({ taskId, options, filter }) => {
       const raw = await queue.listDependentTasks(taskId, options);
-      const tasks = raw.tasks;
+      const tasks = sift(filter, raw.tasks);
 
       return {
         ...raw,
