@@ -1,17 +1,16 @@
 import DataLoader from 'dataloader';
+import sift from '../utils/sift.js';
 import ConnectionLoader from '../ConnectionLoader.js';
 
 export default ({ hooks }, isAuthed, rootUrl, monitor, strategies, req, cfg, requestId) => {
   const hookGroups = new DataLoader(queries =>
     Promise.all(
-      queries.map(async ({ hookGroupId }) => {
+      queries.map(async ({ filter }) => {
         try {
           const { groups } = await hooks.listHookGroups();
-          const allGroups = groups.map(group => ({ hookGroupId: group }));
+          const raw = groups.map(hookGroupId => ({ hookGroupId }));
 
-          return hookGroupId
-            ? allGroups.filter(group => group.hookGroupId === hookGroupId)
-            : allGroups;
+          return sift(filter, raw);
         } catch (err) {
           return err;
         }
@@ -20,11 +19,11 @@ export default ({ hooks }, isAuthed, rootUrl, monitor, strategies, req, cfg, req
   );
   const hooksForGroup = new DataLoader(queries =>
     Promise.all(
-      queries.map(async ({ hookGroupId }) => {
+      queries.map(async ({ hookGroupId, filter }) => {
         try {
           const { hooks: hooksForGroup } = await hooks.listHooks(hookGroupId);
 
-          return hooksForGroup;
+          return sift(filter, hooksForGroup);
         } catch (err) {
           return err;
         }
@@ -56,7 +55,7 @@ export default ({ hooks }, isAuthed, rootUrl, monitor, strategies, req, cfg, req
   );
 
   const hookLastFires = new ConnectionLoader(
-    async ({ hookGroupId, hookId, options }) => {
+    async ({ hookGroupId, hookId, filter, options }) => {
       try {
         const raw = await hooks.listLastFires(hookGroupId, hookId, options);
 
