@@ -40,13 +40,12 @@ export default class Code extends Component {
       ignoreIllegals: true,
     }).value;
 
+    /* eslint-disable react/no-danger */
     return (
       <pre className={classNames(`language-${language}`, className)} {...props}>
-        {code && (
-          // biome-ignore lint/security/noDangerouslySetInnerHtml: highlight.js produces sanitized HTML
-          <code dangerouslySetInnerHTML={{ __html: code }} />
-        )}
+        {code && <code dangerouslySetInnerHTML={{ __html: code }} />}
       </pre>
     );
+    /* eslint-enable react/no-danger */
   }
 }

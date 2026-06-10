@@ -228,6 +228,7 @@ export default class HookForm extends Component {
     hookLastFires: null,
     routingKeyPattern: '#',
     pulseExchange: '',
+    // eslint-disable-next-line react/no-unused-state
     previousHook: null,
     taskInput: '',
     triggerSchemaInput: '',
@@ -293,11 +294,12 @@ export default class HookForm extends Component {
       hook: { hookId, hookGroupId },
     } = this.state;
 
-    onCreateHook?.({
-      hookId,
-      hookGroupId,
-      payload: this.getHookDefinition(),
-    });
+    onCreateHook &&
+      onCreateHook({
+        hookId,
+        hookGroupId,
+        payload: this.getHookDefinition(),
+      });
   };
 
   handleDeleteCronJob = ({ currentTarget: { name } }) => {
@@ -362,7 +364,7 @@ export default class HookForm extends Component {
         hook: assocPath(['task'], load(value), hook),
         taskValidYaml: true,
       });
-    } catch (_err) {
+    } catch (err) {
       this.setState({
         taskInput: value,
         taskValidYaml: false,
@@ -395,7 +397,7 @@ export default class HookForm extends Component {
         hook: assocPath(['triggerSchema'], load(value), this.state.hook),
         triggerSchemaValidYaml: true,
       });
-    } catch (_err) {
+    } catch (err) {
       this.setState({
         triggerSchemaValidYaml: false,
         triggerSchemaInput: value,
@@ -409,16 +411,21 @@ export default class HookForm extends Component {
       hook: { hookId, hookGroupId },
     } = this.state;
 
-    onUpdateHook?.({
-      hookId,
-      hookGroupId,
-      payload: this.getHookDefinition(),
-    });
+    onUpdateHook &&
+      onUpdateHook({
+        hookId,
+        hookGroupId,
+        payload: this.getHookDefinition(),
+      });
   };
 
   validHook = () => {
-    const { hook, taskValidYaml, triggerSchemaValidYaml, validation } =
-      this.state;
+    const {
+      hook,
+      taskValidYaml,
+      triggerSchemaValidYaml,
+      validation,
+    } = this.state;
 
     return (
       hook.hookGroupId &&
@@ -810,7 +817,7 @@ export default class HookForm extends Component {
             tooltipProps={{ title: 'Save Hook' }}
             requiresAuth
             classes={{ root: classes.successIcon }}
-            variant="circular"
+            variant="round"
             disabled={!this.validHook() || actionLoading || !isHookDirty}
             onClick={this.handleCreateHook}>
             <ContentSaveIcon />
@@ -826,7 +833,7 @@ export default class HookForm extends Component {
               }}
               tooltipProps={{ title: 'Save Hook' }}
               classes={{ root: classes.successIcon }}
-              variant="circular"
+              variant="round"
               disabled={!this.validHook() || actionLoading || !isHookDirty}
               onClick={this.handleUpdateHook}>
               <ContentSaveIcon />
@@ -935,16 +942,17 @@ export default class HookForm extends Component {
           onClose={this.handleDrawerClose}>
           <div className={classes.metadataContainer}>
             <Typography variant="h6" className={classes.headline}>
-              {drawerData?.taskId}
+              {drawerData && drawerData.taskId}
             </Typography>
             <List>
               <ListItem>
                 <ListItemText
                   primary={
-                    drawerData?.error && (
+                    drawerData &&
+                    drawerData.error && (
                       <ErrorPanel
                         className={classes.errorPanel}
-                        error={drawerData?.error}
+                        error={drawerData && drawerData.error}
                         onClose={null}
                       />
                     )

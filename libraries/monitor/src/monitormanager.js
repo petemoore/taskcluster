@@ -100,7 +100,6 @@ export class MonitorManager {
     buckets = undefined,
     percentiles = undefined,
     serviceName = undefined,
-    global = false,
   }) {
     assert(id, `Must provide an internal metric name for this metric ${name}`);
     assert(name, `Must provide a name for this metric ${type} ${title}`);
@@ -149,7 +148,6 @@ export class MonitorManager {
       percentiles,
       serviceName,
       registers,
-      global,
     };
   }
 
@@ -358,7 +356,7 @@ export class MonitorManager {
       metrics: Object.entries(metrics).map(([name, metric]) => {
         return {
           name,
-          ..._.omit(metric, ['serviceName', 'global']),
+          ..._.omit(metric, ['serviceName']),
         };
       }).sort((a, b) => a.name.localeCompare(b.name)),
     };

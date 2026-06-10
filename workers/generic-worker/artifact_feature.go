@@ -10,10 +10,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/taskcluster/taskcluster/v100/internal/scopes"
-	"github.com/taskcluster/taskcluster/v100/workers/generic-worker/artifacts"
-	"github.com/taskcluster/taskcluster/v100/workers/generic-worker/fileutil"
-	"github.com/taskcluster/taskcluster/v100/workers/generic-worker/process"
+	"github.com/taskcluster/taskcluster/v99/internal/scopes"
+	"github.com/taskcluster/taskcluster/v99/workers/generic-worker/artifacts"
+	"github.com/taskcluster/taskcluster/v99/workers/generic-worker/fileutil"
+	"github.com/taskcluster/taskcluster/v99/workers/generic-worker/process"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -177,17 +177,16 @@ func (atf *ArtifactTaskFeature) FindArtifacts() {
 		if time.Time(base.Expires).IsZero() {
 			base.Expires = task.Definition.Expires
 		}
-		taskDir := task.TaskDir()
 		switch artifact.Type {
 		case "file":
-			payloadArtifacts = append(payloadArtifacts, resolve(base, "file", basePath, artifact.ContentType, artifact.ContentEncoding, task.pd, taskDir))
+			payloadArtifacts = append(payloadArtifacts, resolve(base, "file", basePath, artifact.ContentType, artifact.ContentEncoding, task.pd))
 		case "directory":
-			if errArtifact := resolve(base, "directory", basePath, artifact.ContentType, artifact.ContentEncoding, task.pd, taskDir); errArtifact != nil {
+			if errArtifact := resolve(base, "directory", basePath, artifact.ContentType, artifact.ContentEncoding, task.pd); errArtifact != nil {
 				payloadArtifacts = append(payloadArtifacts, errArtifact)
 				break
 			}
 			walkFn := func(path string, d os.DirEntry, incomingErr error) error {
-				subPath, err := filepath.Rel(taskDir, path)
+				subPath, err := filepath.Rel(taskContext.TaskDir, path)
 				if err != nil {
 					// this indicates a bug in the code
 					panic(err)
@@ -213,7 +212,7 @@ func (atf *ArtifactTaskFeature) FindArtifacts() {
 				// cause the task to fail, and the cause to be preserved in the
 				// error artifact.
 				case incomingErr != nil:
-					fullPath := fileutil.AbsFrom(taskDir, subPath)
+					fullPath := fileutil.AbsFrom(taskContext.TaskDir, subPath)
 					payloadArtifacts = append(
 						payloadArtifacts,
 						&artifacts.ErrorArtifact{
@@ -224,17 +223,17 @@ func (atf *ArtifactTaskFeature) FindArtifacts() {
 						},
 					)
 				case d.IsDir():
-					if errArtifact := resolve(b, "directory", subPath, artifact.ContentType, artifact.ContentEncoding, task.pd, taskDir); errArtifact != nil {
+					if errArtifact := resolve(b, "directory", subPath, artifact.ContentType, artifact.ContentEncoding, task.pd); errArtifact != nil {
 						payloadArtifacts = append(payloadArtifacts, errArtifact)
 					}
 				default:
-					payloadArtifacts = append(payloadArtifacts, resolve(b, "file", subPath, artifact.ContentType, artifact.ContentEncoding, task.pd, taskDir))
+					payloadArtifacts = append(payloadArtifacts, resolve(b, "file", subPath, artifact.ContentType, artifact.ContentEncoding, task.pd))
 				}
 				return nil
 			}
 			// Any error returned here should already have been handled by
 			// walkFn, so should be safe to ignore.
-			_ = filepath.WalkDir(fileutil.AbsFrom(taskDir, basePath), walkFn)
+			_ = filepath.WalkDir(fileutil.AbsFrom(taskContext.TaskDir, basePath), walkFn)
 		}
 		artifactsChan <- payloadArtifacts
 	}
@@ -271,8 +270,8 @@ func (atf *ArtifactTaskFeature) FindArtifacts() {
 // ErrorArtifact, otherwise if it exists as a file, as
 // "invalid-resource-on-worker" ErrorArtifact
 // TODO: need to also handle "too-large-file-on-worker"
-func resolve(base *artifacts.BaseArtifact, artifactType, path, contentType, contentEncoding string, pd *process.PlatformData, taskDir string) artifacts.TaskArtifact {
-	fullPath := fileutil.AbsFrom(taskDir, path)
+func resolve(base *artifacts.BaseArtifact, artifactType, path, contentType, contentEncoding string, pd *process.PlatformData) artifacts.TaskArtifact {
+	fullPath := fileutil.AbsFrom(taskContext.TaskDir, path)
 	fileReader, err := os.Open(fullPath)
 	if err != nil {
 		// cannot read file/dir, create an error artifact
@@ -314,7 +313,7 @@ func resolve(base *artifacts.BaseArtifact, artifactType, path, contentType, cont
 		return nil
 	}
 
-	tempPath, err := copyToTempFileAsTaskUser(fullPath, pd, taskDir)
+	tempPath, err := copyToTempFileAsTaskUser(fullPath, pd)
 	if err != nil {
 		return &artifacts.ErrorArtifact{
 			BaseArtifact: base,
@@ -346,15 +345,12 @@ func resolve(base *artifacts.BaseArtifact, artifactType, path, contentType, cont
 		SkipCompressionExtensions := map[string]bool{
 			".7z":    true,
 			".br":    true,
-			".aab":   true,
-			".apk":   true,
 			".bz2":   true,
 			".deb":   true,
 			".dmg":   true,
 			".flv":   true,
 			".gif":   true,
 			".gz":    true,
-			".jar":   true,
 			".jpeg":  true,
 			".jpg":   true,
 			".lz":    true,
@@ -370,7 +366,6 @@ func resolve(base *artifacts.BaseArtifact, artifactType, path, contentType, cont
 			".whl":   true, // Python wheel are already zip file
 			".woff":  true,
 			".woff2": true,
-			".xpi":   true,
 			".xz":    true,
 			".zip":   true,
 			".zst":   true,

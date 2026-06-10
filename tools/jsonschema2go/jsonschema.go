@@ -100,7 +100,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/taskcluster/taskcluster/v100/tools/jsonschema2go/text"
+	"github.com/taskcluster/taskcluster/v99/tools/jsonschema2go/text"
 	"sigs.k8s.io/yaml"
 )
 
@@ -342,28 +342,22 @@ func (jsonSubSchema *JsonSubSchema) typeDefinition(disableNested bool, enableDef
 		metadata += "// Maximum:    " + strconv.Itoa(*maximum) + "\n"
 	}
 	if allOf := jsonSubSchema.AllOf; allOf != nil {
-		var b strings.Builder
-		b.WriteString("// All of:\n")
+		metadata += "// All of:\n"
 		for _, o := range allOf.Items {
-			b.WriteString("//   * " + o.getTypeName() + "\n")
+			metadata += "//   * " + o.getTypeName() + "\n"
 		}
-		metadata += b.String()
 	}
 	if anyOf := jsonSubSchema.AnyOf; anyOf != nil {
-		var b strings.Builder
-		b.WriteString("// Any of:\n")
+		metadata += "// Any of:\n"
 		for _, o := range anyOf.Items {
-			b.WriteString("//   * " + o.getTypeName() + "\n")
+			metadata += "//   * " + o.getTypeName() + "\n"
 		}
-		metadata += b.String()
 	}
 	if oneOf := jsonSubSchema.OneOf; oneOf != nil {
-		var b strings.Builder
-		b.WriteString("// One of:\n")
+		metadata += "// One of:\n"
 		for _, o := range oneOf.Items {
-			b.WriteString("//   * " + o.getTypeName() + "\n")
+			metadata += "//   * " + o.getTypeName() + "\n"
 		}
-		metadata += b.String()
 	}
 	// Here we check if metadata was specified, and only create new
 	// paragraph (`//\n`) if something was.
@@ -456,7 +450,7 @@ func (jsonSubSchema *JsonSubSchema) typeDefinition(disableNested bool, enableDef
 			if *f == "date-time" {
 				typ = "tcclient.Time"
 				typeCategory = "struct"
-				extraPackages["tcclient \"github.com/taskcluster/taskcluster/v100/clients/client-go\""] = true
+				extraPackages["tcclient \"github.com/taskcluster/taskcluster/v99/clients/client-go\""] = true
 			}
 		}
 	}
@@ -1027,13 +1021,12 @@ func (job *Job) Execute() (*Result, error) {
 package ` + job.Package + `
 
 `
-	var extraPackagesBuilder strings.Builder
+	extraPackagesContent := ""
 	for j, k := range extraPackages {
 		if k {
-			extraPackagesBuilder.WriteString(text.Indent(""+j+"\n", "\t"))
+			extraPackagesContent += text.Indent(""+j+"\n", "\t")
 		}
 	}
-	extraPackagesContent := extraPackagesBuilder.String()
 
 	if extraPackagesContent != "" {
 		content += `import (

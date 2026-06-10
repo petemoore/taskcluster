@@ -7,13 +7,14 @@ export default {
   WorkerType: {
     workers(
       { provisionerId, workerType },
-      { connection },
+      { connection, filter },
       { loaders },
     ) {
       return loaders.workers.load({
         provisionerId,
         workerType,
         connection,
+        filter,
       });
     },
     worker(
@@ -39,8 +40,8 @@ export default {
     pendingTasks(parent, { provisionerId, workerType }, { loaders }) {
       return loaders.pendingTasks.load({ provisionerId, workerType });
     },
-    workerTypes(parent, { provisionerId, connection }, { loaders }) {
-      return loaders.workerTypes.load({ provisionerId, connection });
+    workerTypes(parent, { provisionerId, connection, filter }, { loaders }) {
+      return loaders.workerTypes.load({ provisionerId, connection, filter });
     },
   },
 };
