@@ -1,7 +1,20 @@
 import { withRootUrl } from 'taskcluster-lib-urls';
-import { stringify } from 'query-string';
 import hawk from 'hawk';
 import fetch from './fetch';
+
+// Inline query-string serialiser using the native URLSearchParams API.
+// query-string v9 is pure ESM with ES2020 syntax (optional chaining, nullish
+// coalescing) that webpack 4 cannot parse, so we avoid bundling it at all and
+// rely on the browser-native URLSearchParams instead.
+const stringify = (obj) =>
+  new URLSearchParams(
+    Object.entries(obj).reduce((acc, [k, v]) => {
+      if (v !== undefined && v !== null) {
+        acc[k] = v;
+      }
+      return acc;
+    }, {}),
+  ).toString();
 
 export default class Client {
   constructor(options = {}) {
