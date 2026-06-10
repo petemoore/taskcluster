@@ -1,3 +1,6 @@
+// babel-jest 30.x peer dependency requirements (both satisfied by this repo):
+//   @babel/core ^7.11.0 || ^8.0.0-0  (we have ^7.25.2)
+//   Node.js >=18.14.0                 (.nvmrc and package.json engines pin Node 24.16.0)
 process.env.NODE_ENV = process.env.NODE_ENV || "test";
 
 module.exports = {
@@ -12,12 +15,11 @@ module.exports = {
   bail: true,
   collectCoverageFrom: ["src/**/*.{mjs,jsx,js}"],
   testEnvironment: "jsdom",
-  testRegex: null,
   verbose: false,
   transform: {
     "\\.(mjs|jsx|js)$": "<rootDir>/__jest__/transformer.js",
     "^.+\\.(js|jsx)$": "babel-jest",
-    "\\.graphql$": "jest-transform-graphql",
+    "\\.graphql$": "<rootDir>/__jest__/graphql-transformer.js",
   },
   testMatch: [
     "<rootDir>/src/**/*.test.(js|jsx)",
@@ -25,6 +27,6 @@ module.exports = {
   ],
   setupFilesAfterEnv: ["./jest.setup.js"],
   transformIgnorePatterns: [
-    "node_modules/(?!is-absolute-url|@taskcluster/client-web)",
+    "node_modules/(?!is-absolute-url|@taskcluster/client-web|dexie)",
   ],
 };

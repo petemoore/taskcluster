@@ -14,5 +14,5 @@ window.env = Object.assign({}, window.env, {
 });
 
 
-// Set up fake timer
-jest.useFakeTimers('modern').setSystemTime(new Date('2022-02-17 13:00:00').getTime());
+// Set up fake timer (removed 'modern' string arg - removed in Jest 30, modern is default since Jest 27)
+jest.useFakeTimers().setSystemTime(new Date('2022-02-17 13:00:00').getTime());
