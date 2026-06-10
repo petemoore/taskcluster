@@ -1,6 +1,6 @@
 import { hrtime } from 'process';
 import assert from 'assert';
-import taskcluster from '@taskcluster/client';
+import taskcluster from 'taskcluster-client';
 
 /**
  * We consider a "workerPoolId" to be a string of the shape "<provisionerId>/<workerType>".
@@ -43,7 +43,6 @@ export const createCredentials = (worker, expires, cfg) => {
       `queue:claim-work:${worker.workerPoolId}`,
       `worker-manager:remove-worker:${worker.workerPoolId}/${worker.workerGroup}/${worker.workerId}`,
       `worker-manager:reregister-worker:${worker.workerPoolId}/${worker.workerGroup}/${worker.workerId}`,
-      `worker-manager:should-worker-terminate:${worker.workerPoolId}/${worker.workerGroup}/${worker.workerId}`,
     ],
     start: taskcluster.fromNow('-15 minutes'),
     expiry: expires,
@@ -81,19 +80,4 @@ export const sanitizeRegisterWorkerPayload = (obj = {}) => {
 export const measureTime = (precision = 1e6) => {
   const start = hrtime.bigint();
   return () => Number(hrtime.bigint() - start) / precision;
-};
-
-/**
- * Run a promise with a timeout. If the promise does not settle
- * within `ms` milliseconds, the returned promise rejects with `message`.
- * The timer is always cleaned up to avoid leaks.
- */
-export const withTimeout = (promise, ms, message) => {
-  let timer;
-  return Promise.race([
-    promise,
-    new Promise((_, reject) => {
-      timer = setTimeout(() => reject(new Error(message)), ms);
-    }),
-  ]).finally(() => clearTimeout(timer));
 };

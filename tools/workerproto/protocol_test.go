@@ -9,16 +9,9 @@ import (
 
 func RequireInitialized(t *testing.T, prot *Protocol, initialized bool) {
 	t.Helper()
-	select {
-	case <-prot.initializedChan:
-		if !initialized {
-			t.Errorf("Expected protocol to be not initialized, but it is initialized")
-		}
-	default:
-		if initialized {
-			t.Errorf("Expected protocol to be initialized, but it is not initialized")
-		}
-	}
+	prot.initializedCond.L.Lock()
+	defer prot.initializedCond.L.Unlock()
+	require.Equal(t, initialized, prot.initialized)
 }
 
 func TestCapabilityNegotiation(t *testing.T) {

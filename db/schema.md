@@ -325,8 +325,7 @@ CREATE TABLE queue_artifacts (
     content_type text NOT NULL,
     details jsonb NOT NULL,
     present boolean NOT NULL,
-    expires timestamp with time zone NOT NULL,
-    content_length bigint
+    expires timestamp with time zone NOT NULL
 );
 ALTER TABLE queue_artifacts
     ADD CONSTRAINT queue_artifacts_pkey PRIMARY KEY (task_id, run_id, name);
@@ -397,7 +396,7 @@ CREATE TABLE queue_task_deadlines (
     pop_receipt uuid
 );
 ALTER TABLE queue_task_deadlines
-    ADD CONSTRAINT queue_task_deadlines_pkey PRIMARY KEY (task_id);
+    ADD CONSTRAINT queue_task_deadlines_pkey PRIMARY KEY (task_id, created, deadline);
 ```
 
 ## queue_workers
@@ -534,10 +533,8 @@ ALTER TABLE tasks
 
 ```sql
 CREATE TABLE tcversion (
-    version integer NOT NULL
+    version integer
 );
-ALTER TABLE tcversion
-    ADD CONSTRAINT tcversion_pkey PRIMARY KEY (version);
 ```
 
 ## worker_pool_errors
@@ -623,14 +620,13 @@ CREATE INDEX github_builds_organization_repository_sha_idx ON github_builds USIN
 CREATE INDEX github_builds_pr ON github_builds USING btree (organization, repository, pull_request_number);
 CREATE INDEX github_checks_check_suite_id_check_run_id_idx ON github_checks USING btree (check_suite_id, check_run_id);
 CREATE INDEX hooks_last_fires_time ON hooks_last_fires USING btree (hook_group_id, hook_id, task_create_time);
-CREATE INDEX idx_worker_pool_errors_pool_id_extra_code ON worker_pool_errors USING btree (worker_pool_id, ((extra ->> 'code'::text)));
-CREATE INDEX idx_workers_pool_id_state_capacity ON workers USING btree (worker_pool_id, state, capacity);
 CREATE INDEX queue_claimed_task_queue_idx ON queue_claimed_tasks USING btree (task_queue_id, worker_group, worker_id);
 CREATE INDEX queue_claimed_task_run_idx ON queue_claimed_tasks USING btree (task_id, run_id);
 CREATE INDEX queue_claimed_task_vis_idx ON queue_claimed_tasks USING btree (visible);
 CREATE INDEX queue_pending_task_queue_idx ON queue_pending_tasks USING btree (task_queue_id, priority, inserted);
 CREATE INDEX queue_pending_task_vis_idx ON queue_pending_tasks USING btree (visible, expires);
 CREATE INDEX queue_resolved_task_idx ON queue_resolved_tasks USING btree (task_id);
+CREATE INDEX queue_task_deadline_idx ON queue_task_deadlines USING btree (task_id);
 CREATE INDEX queue_task_deadline_vis_idx ON queue_task_deadlines USING btree (visible);
 CREATE INDEX queue_workers_task_queue_idx ON queue_workers USING btree (task_queue_id, expires);
 CREATE INDEX sha512_index_namespaces_idx ON index_namespaces USING btree (public.sha512(parent), name);

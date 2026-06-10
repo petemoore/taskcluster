@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/taskcluster/taskcluster/v100/tools/websocktunnel/util"
-	"github.com/taskcluster/taskcluster/v100/tools/websocktunnel/wsmux"
+	"github.com/taskcluster/taskcluster/v86/tools/websocktunnel/util"
+	"github.com/taskcluster/taskcluster/v86/tools/websocktunnel/wsmux"
 )
 
 type clientState int
@@ -85,9 +85,7 @@ func New(configurer Configurer) (*Client, error) {
 		return nil, err
 	}
 	cl.url.Store(url)
-	cl.session = wsmux.Client(conn, wsmux.Config{
-		StreamBufferSize: 4 * 1024 * 1024,
-	})
+	cl.session = wsmux.Client(conn, wsmux.Config{})
 	if cl.connectHook != nil {
 		cl.connectHook(cl)
 	}
@@ -258,7 +256,7 @@ func (c *Client) reconnect() {
 
 	sessionConfig := wsmux.Config{
 		// Log:              c.logger,
-		StreamBufferSize: 4 * 1024 * 1024,
+		StreamBufferSize: 4 * 1024,
 	}
 	c.session = wsmux.Client(conn, sessionConfig)
 	c.url.Store(url)

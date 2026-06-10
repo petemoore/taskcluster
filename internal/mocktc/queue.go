@@ -16,8 +16,8 @@ import (
 
 	"github.com/taskcluster/httpbackoff/v3"
 	"github.com/taskcluster/slugid-go/slugid"
-	tcclient "github.com/taskcluster/taskcluster/v100/clients/client-go"
-	"github.com/taskcluster/taskcluster/v100/clients/client-go/tcqueue"
+	tcclient "github.com/taskcluster/taskcluster/v86/clients/client-go"
+	"github.com/taskcluster/taskcluster/v86/clients/client-go/tcqueue"
 )
 
 type Queue struct {
@@ -407,7 +407,7 @@ func (queue *Queue) GetLatestArtifact_SignedURL(taskId, name string, duration ti
 		return queue.GetLatestArtifact_SignedURL(taskId, a.Artifact, duration)
 	}
 	queue.t.Fatalf("Unknown artifact type %T", artifact)
-	return nil, fmt.Errorf("unknown artifact type %T", artifact)
+	return nil, fmt.Errorf("Unknown artifact type %T", artifact)
 }
 
 func (queue *Queue) ListArtifacts(taskId, runId, continuationToken, limit string) (*tcqueue.ListArtifactsResponse, error) {
@@ -440,19 +440,10 @@ func (queue *Queue) ListArtifacts(taskId, runId, continuationToken, limit string
 			}
 		case *tcqueue.S3ArtifactRequest:
 			a = tcqueue.Artifact{
-				ContentLength: A.ContentLength,
-				ContentType:   A.ContentType,
-				Expires:       A.Expires,
-				Name:          name,
-				StorageType:   A.StorageType,
-			}
-		case *tcqueue.ObjectArtifactRequest:
-			a = tcqueue.Artifact{
-				ContentLength: A.ContentLength,
-				ContentType:   A.ContentType,
-				Expires:       A.Expires,
-				Name:          name,
-				StorageType:   A.StorageType,
+				ContentType: A.ContentType,
+				Expires:     A.Expires,
+				Name:        name,
+				StorageType: A.StorageType,
 			}
 		default:
 			queue.t.Fatalf("Invalid artifact request type for artifact %#v for task %v runId %v", a, taskId, runId)

@@ -108,7 +108,10 @@ export default class IndexTaskNamespaceTable extends Component {
             <TableCell>
               <Link
                 to={`/tasks/index/${encodeURIComponent(
-                  namespace.split('.').slice(0, -1).join('.')
+                  namespace
+                    .split('.')
+                    .slice(0, -1)
+                    .join('.')
                 )}/${this.taskFromNamespace(namespace)}`}>
                 <TableCellItem button>
                   {this.taskFromNamespace(namespace)}
@@ -119,7 +122,10 @@ export default class IndexTaskNamespaceTable extends Component {
             <TableCell size="medium">
               <Link
                 to={`/tasks/index/${encodeURIComponent(
-                  namespace.split('.').slice(0, -1).join('.')
+                  namespace
+                    .split('.')
+                    .slice(0, -1)
+                    .join('.')
                 )}/${this.taskFromNamespace(namespace)}/task-group`}>
                 <TableCellItem button>
                   Task Group

@@ -5,6 +5,7 @@ export * from './docker.js';
 export * from './command.js';
 export * from './config.js';
 export * from './crates.js';
+export * from './npm.js';
 export * from './pypi.js';
 export * from './dockerflow.js';
 export * from './db.js';

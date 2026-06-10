@@ -1,10 +1,8 @@
 package cfg
 
 import (
-	"fmt"
-	"log"
+	"os"
 
-	"github.com/taskcluster/taskcluster/v100/tools/worker-runner/perms"
 	"gopkg.in/yaml.v3"
 )
 
@@ -19,24 +17,9 @@ type RunnerConfig struct {
 	CacheOverRestarts    string                     `yaml:"cacheOverRestarts"`
 }
 
-// LoadRunnerConfig loads a worker-runner configuration file.
-//
-// The runner config may contain sensitive credentials (for example, the
-// staticSecret used by the static provider to prove worker identity), so the
-// file is tightened to owner-only permissions before being read. If the file
-// had loose permissions on disk, a warning is logged so that operators can
-// fix their provisioning; the worker continues to start because the immediate
-// exposure has been closed.
+// Load a configuration file
 func LoadRunnerConfig(filename string) (*RunnerConfig, error) {
-	wasLoose, err := perms.MakeFilePrivate(filename)
-	if err != nil {
-		return nil, fmt.Errorf("cannot secure runner config file %s: %w", filename, err)
-	}
-	if wasLoose {
-		log.Printf("WARNING: runner config file %s had insecure permissions and has been tightened to be readable only by its owner; please update your provisioning so the file is created privately", filename)
-	}
-
-	data, err := perms.ReadPrivateFile(filename)
+	data, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}

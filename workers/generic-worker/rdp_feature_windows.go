@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 	"time"
 
-	tcclient "github.com/taskcluster/taskcluster/v100/clients/client-go"
-	"github.com/taskcluster/taskcluster/v100/internal/scopes"
-	"github.com/taskcluster/taskcluster/v100/workers/generic-worker/artifacts"
-	"github.com/taskcluster/taskcluster/v100/workers/generic-worker/fileutil"
+	tcclient "github.com/taskcluster/taskcluster/v86/clients/client-go"
+	"github.com/taskcluster/taskcluster/v86/internal/scopes"
+	"github.com/taskcluster/taskcluster/v86/workers/generic-worker/artifacts"
+	"github.com/taskcluster/taskcluster/v86/workers/generic-worker/fileutil"
 )
 
 var (
@@ -77,14 +77,13 @@ func (l *RDPTask) Stop(err *ExecutionErrors) {
 }
 
 func (l *RDPTask) createRDPArtifact() {
-	ctx := l.task.GetContext()
 	l.info = &RDPInfo{
 		Host:     config.PublicIP,
 		Port:     3389,
-		Username: ctx.User.Name,
-		Password: ctx.User.Password,
+		Username: taskContext.User.Name,
+		Password: taskContext.User.Password,
 	}
-	rdpInfoFile := fileutil.AbsFrom(ctx.TaskDir, rdpInfoPath)
+	rdpInfoFile := filepath.Join(taskContext.TaskDir, rdpInfoPath)
 	err := fileutil.WriteToFileAsJSON(l.info, rdpInfoFile)
 	// if we can't write this, something seriously wrong, so cause worker to
 	// report an internal-error to sentry and crash!
@@ -94,8 +93,6 @@ func (l *RDPTask) createRDPArtifact() {
 }
 
 func (l *RDPTask) uploadRDPArtifact() *CommandExecutionError {
-	taskDir := l.task.TaskDir()
-	rdpInfoFile := fileutil.AbsFrom(taskDir, rdpInfoPath)
 	return l.task.uploadArtifact(
 		createDataArtifact(
 			&artifacts.BaseArtifact{
@@ -103,8 +100,8 @@ func (l *RDPTask) uploadRDPArtifact() *CommandExecutionError {
 				// RDP info expires one day after task
 				Expires: tcclient.Time(time.Now().Add(time.Hour * 24)),
 			},
-			rdpInfoFile,
-			rdpInfoFile,
+			filepath.Join(taskContext.TaskDir, rdpInfoPath),
+			filepath.Join(taskContext.TaskDir, rdpInfoPath),
 			"application/json",
 			"gzip",
 		),

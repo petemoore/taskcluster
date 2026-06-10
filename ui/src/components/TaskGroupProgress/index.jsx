@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { bool, func, shape, number, string } from 'prop-types';
 import { sum } from 'ramda';
+import { lowerCase } from 'lower-case';
 import { titleCase } from 'title-case';
 import classNames from 'classnames';
 import { withStyles } from '@material-ui/core/styles';
@@ -161,8 +162,14 @@ export default class TaskGroupProgress extends Component {
   };
 
   getTaskGroupState = () => {
-    const { completed, exception, failed, pending, running, unscheduled } =
-      this.props.statusCount;
+    const {
+      completed,
+      exception,
+      failed,
+      pending,
+      running,
+      unscheduled,
+    } = this.props.statusCount;
     const allTasks = sum([completed, exception, pending, running, unscheduled]);
     const unfinishedTasks = sum([pending, running, unscheduled]);
 
@@ -191,7 +198,7 @@ export default class TaskGroupProgress extends Component {
         <Helmet state={taskGroupState} />
         {Object.keys(TASK_STATE).map(status => {
           const Icon = this.getStatusIcon(status);
-          const count = statusCount[status.toLowerCase()];
+          const count = statusCount[lowerCase(status)];
 
           return (
             <ButtonBase
@@ -201,7 +208,7 @@ export default class TaskGroupProgress extends Component {
               variant="contained"
               onClick={onStatusClick}
               className={classNames(
-                classes[`${status.toLowerCase()}Button`],
+                classes[`${lowerCase(status)}Button`],
                 classes.statusButton,
                 {
                   [classes.noTasksButton]: count === 0,
