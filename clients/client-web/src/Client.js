@@ -1,7 +1,21 @@
 import { withRootUrl } from 'taskcluster-lib-urls';
-import { stringify } from 'query-string';
 import hawk from 'hawk';
 import fetch from './fetch';
+
+// Native replacement for query-string's stringify using URLSearchParams.
+// query-string v9 is pure ESM which is incompatible with webpack builds.
+// URLSearchParams provides equivalent functionality and is available natively
+// in all modern browsers and Node.js 18+.
+const stringify = (obj) => {
+  if (!obj || typeof obj !== 'object') {
+    return '';
+  }
+  // Filter out undefined and null values, matching query-string default behaviour
+  const entries = Object.entries(obj).filter(
+    ([, v]) => v !== undefined && v !== null,
+  );
+  return new URLSearchParams(entries).toString();
+};
 
 export default class Client {
   constructor(options = {}) {
