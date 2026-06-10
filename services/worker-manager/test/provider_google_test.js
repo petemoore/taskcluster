@@ -1,9 +1,9 @@
-import taskcluster from '@taskcluster/client';
+import taskcluster from 'taskcluster-client';
 import { strict as assert } from 'assert';
 import helper from './helper.js';
 import { FakeGoogle } from './fakes/index.js';
 import { GoogleProvider } from '../src/providers/google.js';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 import { WorkerPool, WorkerPoolError, Worker, WorkerPoolStats } from '../src/data.js';
 
 helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
@@ -45,7 +45,6 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
     await helper.db.fns.delete_worker_pool(workerPoolId);
 
     await provider.setup();
-    provider.scanPrepare();
   });
 
   const defaultLaunchConfig = {
@@ -498,7 +497,6 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
         capacity: 1,
         expires: taskcluster.fromNow('2 weeks'),
         state: Worker.states.RUNNING,
-        launchConfigId: 'lc1',
         ...overrides,
         providerData: { project, zone: 'us-east1-a', ...(overrides.providerData || {}) },
       });

@@ -3,7 +3,6 @@ import { createAppAuth } from '@octokit/auth-app';
 import { throttling } from '@octokit/plugin-throttling';
 import { retry } from '@octokit/plugin-retry';
 import Bottleneck from "bottleneck";
-import nodeFetch from 'node-fetch';
 
 const PluggedOctokit = Octokit.plugin(retry, throttling);
 
@@ -50,9 +49,6 @@ export default async ({ cfg, monitor }) => {
   const privatePEM = getPrivatePEM(cfg);
 
   const OctokitOptions = {
-    request: {
-      fetch: nodeFetch,
-    },
     log: {
       debug: message => monitor.debug(message),
       info: message => monitor.info(message),

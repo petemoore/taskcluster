@@ -6,7 +6,7 @@ import {
   DescribeInstanceStatusCommand,
   TerminateInstancesCommand,
 } from '@aws-sdk/client-ec2';
-import taskcluster from '@taskcluster/client';
+import taskcluster from 'taskcluster-client';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
@@ -60,6 +60,7 @@ export class AwsProvider extends Provider {
       intervalDefault: this.providerConfig.intervalDefault,
       intervalCapDefault: this.providerConfig.intervalCapDefault,
       timeout: 10 * 60 * 1000, // each cloud call should not take longer than 10 minutes
+      throwOnTimeout: true,
       monitor: this.monitor,
       providerId: this.providerId,
       errorHandler: ({ err, tries }) => {
@@ -79,7 +80,6 @@ export class AwsProvider extends Provider {
   async provision({ workerPool, workerPoolStats }) {
     const { workerPoolId } = workerPool;
     const workerInfo = workerPoolStats?.forProvision() ?? {};
-    const workerInfoByWorkerGroup = workerPoolStats?.forProvisionByWorkerGroup() ?? new Map();
 
     if (!workerPool.providerData[this.providerId]) {
       await this.db.fns.update_worker_pool_provider_data(
@@ -88,12 +88,10 @@ export class AwsProvider extends Provider {
 
     const toSpawn = await this.estimator.simple({
       workerPoolId,
-      providerId: this.providerId,
       minCapacity: workerPool.config.minCapacity,
       maxCapacity: workerPool.config.maxCapacity,
       scalingRatio: workerPool.config.scalingRatio,
       workerInfo,
-      workerInfoByWorkerGroup,
     });
 
     if (toSpawn === 0 || workerPool.config?.launchConfigs?.length === 0) {
@@ -318,7 +316,6 @@ export class AwsProvider extends Provider {
 
   async checkWorker({ worker }) {
     this.seen[worker.workerPoolId] = this.seen[worker.workerPoolId] || 0;
-    this.seenByWorkerGroup[worker.workerPoolId] = this.seenByWorkerGroup[worker.workerPoolId] || {};
     const monitor = this.workerMonitor({ worker });
 
     let state;
@@ -336,15 +333,10 @@ export class AwsProvider extends Provider {
           case 'shutting-down': //so that we don't turn on new instances until they're entirely gone
           case 'stopping':
             this.seen[worker.workerPoolId] += worker.capacity || 1;
-            this.seenByWorkerGroup[worker.workerPoolId][worker.workerGroup] =
-              (this.seenByWorkerGroup[worker.workerPoolId][worker.workerGroup] || 0) + (worker.capacity || 1);
             break;
 
           case 'terminated':
           case 'stopped':
-            await this._enqueue(`${region}.modify`, () => this.ec2s[region].send(new TerminateInstancesCommand({
-              InstanceIds: [worker.workerId.toString()],
-            })));
             await this.onWorkerStopped({ worker });
             state = Worker.states.STOPPED;
             break;
@@ -385,19 +377,18 @@ export class AwsProvider extends Provider {
   }
 
   async removeWorker({ worker, reason }) {
-    // trigger before state update so we can check the current state
-    await this.onWorkerRemoved({ worker, reason });
     await worker.update(this.db, w => {
       if ([Worker.states.REQUESTED, Worker.states.RUNNING].includes(w.state)) {
         w.lastModified = new Date();
         w.state = Worker.states.STOPPING;
       }
     });
+    await this.onWorkerRemoved({ worker, reason });
     let result;
     try {
       const region = worker.providerData.region;
       result = await this._enqueue(`${region}.modify`, () => this.ec2s[region].send(new TerminateInstancesCommand({
-        InstanceIds: [worker.workerId.toString()],
+        InstanceIds: [worker.workerId],
       })));
     } catch (e) {
       const workerPool = await WorkerPool.get(this.db, worker.workerPoolId);
@@ -425,7 +416,6 @@ export class AwsProvider extends Provider {
 
   async scanPrepare() {
     this.seen = {};
-    this.seenByWorkerGroup = {};
   }
 
   async scanCleanup() {
@@ -437,13 +427,11 @@ export class AwsProvider extends Provider {
 
     this.cloudApi?.logAndResetMetrics();
 
-    Object.entries(this.seenByWorkerGroup).forEach(([workerPoolId, seenByGroup]) =>
-      Object.entries(seenByGroup).forEach(([workerGroup, seen]) =>
-        this.monitor.metric.scanSeen(seen, {
-          providerId: this.providerId,
-          workerPoolId,
-          workerGroup,
-        })));
+    Object.entries(this.seen).forEach(([workerPoolId, seen]) =>
+      this.monitor.metric.scanSeen(seen, {
+        providerId: this.providerId,
+        workerPoolId,
+      }));
   }
 
   /**

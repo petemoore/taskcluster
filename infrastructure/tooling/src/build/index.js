@@ -2,7 +2,7 @@ import path from 'path';
 import os from 'os';
 import { rimraf } from 'rimraf';
 import mkdirp from 'mkdirp';
-import taskcluster from '@taskcluster/client';
+import taskcluster from 'taskcluster-client';
 import { TaskGraph, Lock, ConsoleRenderer, LogRenderer } from 'console-taskgraph';
 import { generateTasks } from './tasks/index.js';
 import { gitIsDirty, gitDescribe, REPO_ROOT } from '../utils/index.js';
@@ -171,6 +171,7 @@ class Publish extends Base {
     const expectedVars = [];
     expectedVars.push('GH_TOKEN');
     if (!this.cmdOptions.staging) {
+      expectedVars.push('NPM_TOKEN');
       expectedVars.push('CRATESIO_TOKEN');
       expectedVars.push('PYPI_USERNAME');
       expectedVars.push('PYPI_PASSWORD');
@@ -186,6 +187,7 @@ class Publish extends Base {
 
     return {
       ghToken: process.env.GH_TOKEN,
+      npmToken: process.env.NPM_TOKEN,
       cratesioToken: process.env.CRATESIO_TOKEN,
       pypiUsername: process.env.PYPI_USERNAME,
       pypiPassword: process.env.PYPI_PASSWORD,

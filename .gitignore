@@ -3,9 +3,7 @@ install-state.gz
 .eslintcache
 user-build-config.yml
 *.log
-.claude
 .idea
-.vscode
 user-config.*
 dev-config.*
 /artifacts/
@@ -33,7 +31,6 @@ _testmain.go
 
 *.exe
 *.test
-!Dockerfile.test
 *.prof
 
 # Coverage report
@@ -53,7 +50,6 @@ worker_type_definitions
 generic-worker.config
 directory-caches.json
 file-caches.json
-d2g-image-cache.json
 tasks-resolved-count.txt
 current-task-user.json
 next-task-user.json
@@ -62,7 +58,6 @@ next-task-user.json
 /workers/generic-worker/generic-worker
 /workers/generic-worker/testdata/Test*
 /workers/generic-worker/downloads
-/workers/generic-worker/.tmp-test
 /tools/worker-runner/start-worker
 /tools/worker-runner/start-worker-*-*
 /tools/worker-runner/fake.exe
@@ -89,4 +84,3 @@ docker-compose.override.yml
 
 dist/
 .DS_Store
-.worktrees/

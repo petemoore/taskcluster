@@ -154,10 +154,6 @@ export class PulseConsumer {
       durable: true,
       autoDelete: this.ephemeral,
       ...this.queueOptions,
-      arguments: {
-        ...(!this.ephemeral && { 'x-queue-type': 'quorum' }),
-        ...this.queueOptions.arguments,
-      },
     });
 
     for (let { exchange, routingKeyPattern } of this.bindings) {

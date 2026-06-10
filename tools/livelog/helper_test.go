@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/taskcluster/taskcluster/v100/tools/livelog/writer"
+	"github.com/taskcluster/taskcluster/v86/tools/livelog/writer"
 )
 
 func listenOnRandomPort() (net.Listener, uint16, error) {
@@ -26,7 +26,7 @@ func listenOnRandomPort() (net.Listener, uint16, error) {
 		return nil, 0, err
 	}
 
-	port, err := strconv.ParseUint(portStr, 10, 16)
+	port, err := strconv.Atoi(portStr)
 	if err != nil {
 		return nil, 0, err
 	}

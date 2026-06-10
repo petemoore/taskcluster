@@ -2,6 +2,7 @@ import React, { Fragment, Component } from 'react';
 import { string, arrayOf, shape, bool } from 'prop-types';
 import classNames from 'classnames';
 import { pipe, map, sort as rSort } from 'ramda';
+import { lowerCase } from 'lower-case';
 import { withStyles } from '@material-ui/core/styles';
 import { FixedSizeList as List } from 'react-window';
 import { WindowScroller } from 'react-virtualized';
@@ -237,6 +238,7 @@ export default class TaskGroupTable extends Component {
 
   static propTypes = {
     /** Task GraphQL PageConnection instance. */
+    // eslint-disable-next-line react/no-unused-prop-types
     taskGroupConnection: shape({
       edges: arrayOf(task),
       pageInfo,
@@ -318,12 +320,11 @@ export default class TaskGroupTable extends Component {
       sortBy,
       sortDirection,
       filter,
-      searchTerm ? searchTerm.toLowerCase() : ''
+      searchTerm ? lowerCase(searchTerm) : ''
     );
     const itemCount = items.length;
 
     return (
-      // biome-ignore lint/a11y/useSemanticElements: the rows are virtualized with react-window, which cannot live inside a real <table>
       <div role="table">
         <Table className={classes.table} component="div">
           <TableHead
@@ -427,15 +428,14 @@ export default class TaskGroupTable extends Component {
               itemSize={48}
               className={classes.windowScrollerOverride}
               overscanCount={50}
-              itemData={{ iconSize, items, showTimings, classes }}
-              itemKey={(index, data) => data.items[index]?.node.taskId}>
+              itemData={{ iconSize, items, showTimings, classes }}>
               {ItemRendererMemo}
             </List>
           </Fragment>
         ) : (
           <Typography variant="body2" className={classes.noTasksText}>
             No
-            {filter ? ` ${filter.toLowerCase()}` : ''} tasks available
+            {filter ? ` ${lowerCase(filter)}` : ''} tasks available
           </Typography>
         )}
       </div>

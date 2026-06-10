@@ -80,26 +80,28 @@ export default class UserMenuList extends Component {
     const profileName = username(user);
 
     return (
-      <List component="nav">
-        <ListItem
-          className={classes.userMenu}
-          button
-          aria-haspopup="true"
-          aria-controls="user-menu"
-          aria-label="user menu"
-          onClick={onMenuClick}>
-          {avatarSrc ? (
-            <Avatar alt={profileName} src={avatarSrc} />
-          ) : (
-            <Avatar alt={profileName}>{profileName[0]}</Avatar>
-          )}
-          <ListItemText
-            primary={profileName}
-            primaryTypographyProps={{ className: classes.username }}
-            title={profileName}
-          />
-        </ListItem>
-      </List>
+      <Fragment>
+        <List component="nav">
+          <ListItem
+            className={classes.userMenu}
+            button
+            aria-haspopup="true"
+            aria-controls="user-menu"
+            aria-label="user menu"
+            onClick={onMenuClick}>
+            {avatarSrc ? (
+              <Avatar alt={profileName} src={avatarSrc} />
+            ) : (
+              <Avatar alt={profileName}>{profileName[0]}</Avatar>
+            )}
+            <ListItemText
+              primary={profileName}
+              primaryTypographyProps={{ className: classes.username }}
+              title={profileName}
+            />
+          </ListItem>
+        </List>
+      </Fragment>
     );
   }
 }

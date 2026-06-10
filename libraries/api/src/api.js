@@ -1,8 +1,8 @@
-import compression from 'compression';
 import express from 'express';
+import url from 'url';
 import assert from 'assert';
 import libUrls from 'taskcluster-lib-urls';
-import taskcluster from '@taskcluster/client';
+import taskcluster from 'taskcluster-client';
 import { buildReportErrorMethod } from './middleware/errors.js';
 import { callHandler } from './middleware/handle.js';
 import { validateSchemas } from './middleware/schema.js';
@@ -85,8 +85,6 @@ export default class API {
     // Create router
     const router = express.Router({ caseSensitive: true });
 
-    router.use(compression());
-
     // Allow CORS requests to the API
     if (allowedCORSOrigin) {
       router.use(corsHeaders(allowedCORSOrigin));
@@ -121,8 +119,8 @@ export default class API {
   /** @param {import('express').Express} app */
   express(app) {
     // generate the appropriate path for this service, based on the rootUrl
-    const path = URL.parse(
-      libUrls.api(this.options.rootUrl, this.builder.serviceName, this.builder.apiVersion, ''))?.pathname;
+    const path = url.parse(
+      libUrls.api(this.options.rootUrl, this.builder.serviceName, this.builder.apiVersion, '')).path;
     if (path === null) {
       throw new Error('Failed to parse path');
     }

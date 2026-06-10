@@ -62,7 +62,7 @@ class Iterate extends events.EventEmitter {
     this.handler = opts.handler;
 
     if (!opts.monitor || typeof opts.monitor !== 'object') {
-      throw new Error('monitor is required and must be an object from @taskcluster/lib-monitor');
+      throw new Error('monitor is required and must be an object from taskcluster-lib-monitor');
     }
     this.monitor = opts.monitor;
 
@@ -146,11 +146,6 @@ class Iterate extends events.EventEmitter {
         duration,
         status: iterError ? 'exception' : 'success',
       }, { level: iterError ? 'err' : 'notice' });
-
-      this.monitor.metric.iterateDuration(duration / 1000, {
-        name: this.name,
-        status: iterError ? 'exception' : 'success',
-      });
 
       if (iterError) {
         this.monitor.reportError(iterError, 'warning', {

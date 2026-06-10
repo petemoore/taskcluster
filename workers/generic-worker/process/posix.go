@@ -5,7 +5,6 @@ package process
 import (
 	"fmt"
 	"log"
-	"strings"
 	"syscall"
 )
 
@@ -53,22 +52,13 @@ func (r *Result) Crashed() bool {
 	return false
 }
 
-// SetEnv sets an environment variable for the process, replacing any
-// existing entry with the same name.
 func (c *Command) SetEnv(envVar, value string) {
-	prefix := envVar + "="
-	for i, e := range c.Env {
-		if strings.HasPrefix(e, prefix) {
-			c.Env[i] = prefix + value
-			return
-		}
-	}
-	c.Env = append(c.Env, prefix+value)
+	c.Env = append(c.Env, envVar+"="+value)
 }
 
 func (c *Command) Kill() (killOutput string, err error) {
 	// abort even if process hasn't started
-	c.abortOnce.Do(func() { close(c.abort) })
+	close(c.abort)
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	// if pid has been set in result, use that
