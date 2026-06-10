@@ -1,7 +1,7 @@
 export default {
   Query: {
-    clients(parent, { clientOptions, connection, searchTerm }, { loaders }) {
-      return loaders.clients.load({ clientOptions, connection, searchTerm });
+    clients(parent, { clientOptions, connection, filter }, { loaders }) {
+      return loaders.clients.load({ clientOptions, connection, filter });
     },
     client(parent, { clientId }, { loaders }) {
       return loaders.client.load(clientId);
