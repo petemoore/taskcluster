@@ -185,7 +185,7 @@ let load = loader({
   // Create dependencyTracker
   dependencyTracker: {
     requires: [
-      'publisher', 'monitor', 'db',
+      'publisher', 'queueService', 'monitor', 'db',
     ],
     setup: ({ monitor, ...ctx }) => new DependencyTracker({
       monitor: monitor.childMonitor('dependency-tracker'),
@@ -294,15 +294,15 @@ let load = loader({
   // Create the worker-removed-resolver process
   'worker-removed-resolver': {
     requires: [
-      'cfg', 'db', 'publisher', 'monitor',
+      'cfg', 'db', 'queueService', 'publisher', 'monitor',
       'dependencyTracker', 'pulseClient', 'workerManagerEvents',
     ],
     setup: async ({
-      db, publisher, dependencyTracker,
+      db, queueService, publisher, dependencyTracker,
       monitor, pulseClient, workerManagerEvents,
     }) => {
       let resolver = new WorkerRemovedResolver({
-        db, publisher, dependencyTracker,
+        db, queueService, publisher, dependencyTracker,
         pulseClient, workerManagerEvents,
         monitor: monitor.childMonitor('worker-removed-resolver'),
       });
