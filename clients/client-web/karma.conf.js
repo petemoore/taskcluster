@@ -14,7 +14,11 @@ module.exports = config => {
       },
     ],
     preprocessors: {
-      '**/*.js': ['webpack'],
+      // karma-webpack v5 adds commons.js and runtime.js (webpack output files)
+      // to config.files; using '**/*.js' would match those too, causing the
+      // preprocessor to fail (it can't look them up by hash in bundlesContent).
+      // Restrict to test files only, as karma-webpack v5 expects.
+      'test/*_test.js': ['webpack'],
     },
     webpackMiddleware: {
       stats: {
