@@ -20,7 +20,9 @@ import Link from '../../../utils/Link';
   options: ({ match: { params } }) => ({
     fetchPolicy: 'network-only',
     variables: {
-      hookGroupId: params.hookGroupId || null,
+      filter: {
+        hookGroupId: params.hookGroupId,
+      },
     },
   }),
 })
