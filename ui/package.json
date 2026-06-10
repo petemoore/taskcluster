@@ -42,6 +42,7 @@
     "apollo-link-http": "^1.5.14",
     "apollo-link-ws": "^1.0.17",
     "apollo-utilities": "^1.0.26",
+    "assert": "^2.1.0",
     "buffer": "^6.0.3",
     "camel-case": "^4.1.1",
     "catch-links": "^2.0.1",

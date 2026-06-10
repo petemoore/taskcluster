@@ -61,6 +61,7 @@ module.exports = (_, { mode }) => ({
       net: false,
       dns: false,
       vm: false,
+      assert: require.resolve("assert/"),
       buffer: require.resolve("buffer/"),
       crypto: require.resolve("crypto-browserify"),
       path: require.resolve("path-browserify"),
