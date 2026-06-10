@@ -149,7 +149,11 @@ export default class Documentation extends Component {
         className={classes.documentation}
         docs
         disableTitleFormatting
-        title={pageInfo?.data.title ? pageInfo.data.title : 'Documentation'}
+        title={
+          pageInfo && pageInfo.data.title
+            ? pageInfo.data.title
+            : 'Documentation'
+        }
         search={<DocSearch options={docsSearchOptions} />}>
         <ScrollToTop scrollKey={Page ? Page.toString() : null}>
           {error && error.code === 'MODULE_NOT_FOUND' && <NotFound isDocs />}
