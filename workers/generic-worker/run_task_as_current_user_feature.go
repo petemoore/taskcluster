@@ -3,9 +3,7 @@
 package main
 
 import (
-	"fmt"
-
-	"github.com/taskcluster/taskcluster/v100/internal/scopes"
+	"github.com/taskcluster/taskcluster/v99/internal/scopes"
 )
 
 type RunTaskAsCurrentUserFeature struct {
@@ -20,17 +18,7 @@ func (feature *RunTaskAsCurrentUserFeature) Initialise() error {
 }
 
 func (feature *RunTaskAsCurrentUserFeature) IsEnabled() bool {
-	// Disabled when capacity > 1: running as the worker user would bypass
-	// per-task user isolation, giving the task full access to other tasks'
-	// directories, proxy ports, and credentials.
-	return config.EnableRunTaskAsCurrentUser && config.Capacity == 1
-}
-
-func (feature *RunTaskAsCurrentUserFeature) DisabledReason() string {
-	if config.Capacity > 1 {
-		return fmt.Sprintf("feature %q is not compatible with capacity > 1 (current capacity: %d) because it would bypass per-task user isolation", feature.Name(), config.Capacity)
-	}
-	return ""
+	return config.EnableRunTaskAsCurrentUser
 }
 
 func (feature *RunTaskAsCurrentUserFeature) IsRequested(task *TaskRun) bool {

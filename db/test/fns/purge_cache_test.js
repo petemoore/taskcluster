@@ -32,7 +32,7 @@ suite(testing.suiteName(), function() {
       }
     };
 
-    if (Array.isArray(caches)) {
+    if (caches instanceof Array) {
       caches = caches.sort();
       samples = samples.sort();
       caches.forEach((cache, idx) => {

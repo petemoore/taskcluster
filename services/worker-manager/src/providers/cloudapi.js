@@ -1,5 +1,6 @@
-import PQueue from 'p-queue';
+import pqueue from 'p-queue';
 import { measureTime } from '../util.js';
+const PQueue = pqueue.default;
 
 const defaultMetrics = () => ({
   total: 0,
@@ -27,8 +28,8 @@ const defaultMetrics = () => ({
  * p-queue documentation. For each of these you can also specify a default for if you
  * have not set a value for a type.
  *
- * To avoid calls being stuck for a long period of time, we can also pass `timeout`.
- * Note: as of p-queue 8+, timeouts always throw a `TimeoutError`.
+ * To avoid calls being stuck for a long period of time, we can also pass `timeout` and
+ * `throwOnTimeout`.
  *
  * You must provide a @taskcluster/lib-monitor logger to this class.
  *
@@ -55,6 +56,7 @@ export class CloudAPI {
     errorHandler,
     providerId,
     timeout = undefined,
+    throwOnTimeout = false,
     collectMetrics = false,
   }) {
     this.queues = {};
@@ -69,6 +71,7 @@ export class CloudAPI {
         interval: interval || intervalDefault,
         intervalCap: intervalCap || intervalCapDefault,
         timeout,
+        throwOnTimeout,
       });
     }
   }
