@@ -30,7 +30,13 @@ module.exports = config => {
         // Webpack 5 no longer polyfills Node.js core modules automatically.
         // NodePolyfillPlugin restores that behaviour, which is required by hawk
         // (used for HMAC request signing in the browser).
-        new NodePolyfillPlugin(),
+        //
+        // Exclude the 'Buffer' global-inject alias: the plugin provides Buffer via
+        // ProvidePlugin using an absolute directory path, and chai 6 (pure ESM)
+        // requires fully-specified paths. Excluding the global inject avoids the
+        // resolution error; resolve.fallback.buffer (lowercase) still works for
+        // require('buffer') inside dependencies like crypto-browserify.
+        new NodePolyfillPlugin({ excludeAliases: ['Buffer'] }),
       ],
     },
     reporters: ['mocha'],
