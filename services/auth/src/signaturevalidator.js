@@ -108,7 +108,7 @@ const limitClientWithExt = function(credentialName, issuingClientId, accessToken
     if (typeof cert.expiry !== 'number') {
       throw new Error('ext.certificate.expiry must be a number');
     }
-    if (!Array.isArray(cert.scopes)) {
+    if (!(cert.scopes instanceof Array)) {
       throw new Error('ext.certificate.scopes must be an array');
     }
     if (!cert.scopes.every(utils.validScope)) {
@@ -116,7 +116,7 @@ const limitClientWithExt = function(credentialName, issuingClientId, accessToken
     }
 
     // Check start and expiry
-    let now = Date.now();
+    let now = new Date().getTime();
     if (cert.start > now + 5 * 60 * 1000) {
       throw new Error('ext.certificate.start > now');
     }
@@ -195,7 +195,7 @@ const limitClientWithExt = function(credentialName, issuingClientId, accessToken
   // Handle scope restriction with authorizedScopes
   if (ext.authorizedScopes) {
     // Validate input format
-    if (!Array.isArray(ext.authorizedScopes)) {
+    if (!(ext.authorizedScopes instanceof Array)) {
       throw new Error('ext.authorizedScopes must be an array');
     }
     if (!ext.authorizedScopes.every(utils.validScope)) {

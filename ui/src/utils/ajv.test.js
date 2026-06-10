@@ -1,6 +1,6 @@
 describe('ajv', () => {
   it('should validate', () => {
-    const ajv = require('./ajv').default;
+    const ajv = require('./ajv').default; // eslint-disable-line global-require
 
     const schema = {
       type: 'object',
@@ -30,7 +30,7 @@ describe('ajv', () => {
     });
 
     it('should add schema once', async () => {
-      const ajv = require('./ajv').default;
+      const ajv = require('./ajv').default; // eslint-disable-line global-require
 
       await ajv.loadServiceSchema('svc', 'schema1');
       expect(ajv.getSchema('/schemas/svc/schema1')).toBeDefined();

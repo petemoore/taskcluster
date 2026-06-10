@@ -10,13 +10,12 @@ import (
 	"time"
 
 	"github.com/mcuadros/go-defaults"
-	tcclient "github.com/taskcluster/taskcluster/v100/clients/client-go"
-	"github.com/taskcluster/taskcluster/v100/tools/d2g"
-	"github.com/taskcluster/taskcluster/v100/tools/d2g/dockerworker"
+	tcclient "github.com/taskcluster/taskcluster/v99/clients/client-go"
+	"github.com/taskcluster/taskcluster/v99/tools/d2g"
+	"github.com/taskcluster/taskcluster/v99/tools/d2g/dockerworker"
 )
 
 func TestD2GWithValidDockerWorkerPayload(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 	setup(t)
 	testTime := tcclient.Time(time.Now().AddDate(0, 0, 1))
 	image := map[string]any{
@@ -72,7 +71,6 @@ func TestD2GWithValidDockerWorkerPayload(t *testing.T) {
 }
 
 func TestD2GVolumeArtifacts(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 	setup(t)
 	testTime := tcclient.Time(time.Now().AddDate(0, 0, 1))
 	image := map[string]any{
@@ -144,7 +142,6 @@ func TestD2GVolumeArtifacts(t *testing.T) {
 }
 
 func TestD2GArtifactDoesNotExist(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 	setup(t)
 	testTime := tcclient.Time(time.Now().AddDate(0, 0, 1))
 	image := map[string]any{
@@ -251,7 +248,6 @@ func TestD2GWithInvalidDockerWorkerPayload(t *testing.T) {
 }
 
 func TestD2GIssue6789(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 	setup(t)
 	payload := dockerworker.DockerWorkerPayload{
 		Command: []string{
@@ -288,7 +284,6 @@ func TestD2GIssue6789(t *testing.T) {
 }
 
 func TestD2GWithValidScopes(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 	setup(t)
 	image := map[string]any{
 		"name": "ubuntu:latest",
@@ -382,7 +377,6 @@ func TestD2GWithInvalidScopes(t *testing.T) {
 }
 
 func TestD2GLoopbackVideoDevice(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 	setup(t)
 	image := map[string]any{
 		"name": "ubuntu:latest",
@@ -428,7 +422,6 @@ func TestD2GLoopbackVideoDevice(t *testing.T) {
 }
 
 func TestD2GLoopbackVideoDeviceWithWorkerPoolScopes(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 	setup(t)
 	image := map[string]any{
 		"name": "ubuntu:latest",
@@ -474,7 +467,6 @@ func TestD2GLoopbackVideoDeviceWithWorkerPoolScopes(t *testing.T) {
 }
 
 func TestD2GLoopbackVideoDeviceNonRootUserInVideoGroup(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 	setup(t)
 	image := map[string]any{
 		"name": "ubuntu:latest",
@@ -526,7 +518,6 @@ func TestD2GLoopbackVideoDeviceNonRootUserInVideoGroup(t *testing.T) {
 }
 
 func TestD2GLoopbackVideoDeviceNonRootUserNotInVideoGroup(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 	setup(t)
 	image := map[string]any{
 		"name": "ubuntu:latest",
@@ -578,7 +569,6 @@ func TestD2GLoopbackVideoDeviceNonRootUserNotInVideoGroup(t *testing.T) {
 }
 
 func TestD2GLoopbackAudioDevice(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 	setup(t)
 	image := map[string]any{
 		"name": "ubuntu:latest",
@@ -627,7 +617,6 @@ func TestD2GLoopbackAudioDevice(t *testing.T) {
 }
 
 func TestD2GLoopbackAudioDeviceWithWorkerPoolScopes(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 	setup(t)
 	image := map[string]any{
 		"name": "ubuntu:latest",
@@ -676,7 +665,6 @@ func TestD2GLoopbackAudioDeviceWithWorkerPoolScopes(t *testing.T) {
 }
 
 func TestD2GLoopbackAudioDeviceNonRootUserInAudioGroup(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 	setup(t)
 	image := map[string]any{
 		"name": "ubuntu:latest",
@@ -730,7 +718,6 @@ func TestD2GLoopbackAudioDeviceNonRootUserInAudioGroup(t *testing.T) {
 }
 
 func TestD2GLoopbackAudioDeviceNonRootUserNotInAudioGroup(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 	setup(t)
 	image := map[string]any{
 		"name": "ubuntu:latest",
@@ -818,7 +805,6 @@ func TestD2GDevicesWithoutAllScopes(t *testing.T) {
 }
 
 func TestD2GHostSharedMemory(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 	setup(t)
 	image := map[string]any{
 		"name": "ubuntu:latest",
@@ -864,7 +850,6 @@ func TestD2GHostSharedMemory(t *testing.T) {
 }
 
 func TestD2GTaskclusterProxy(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 	setup(t)
 
 	dependentTaskID := CreateArtifactFromFile(t, "SampleArtifacts/_/X.txt", "SampleArtifacts/_/X.txt")
@@ -956,7 +941,6 @@ type (
 )
 
 func TestD2GChainOfTrustNamedDockerImage(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 
 	setup(t)
 	image := d2g.NamedDockerImage{
@@ -985,7 +969,6 @@ func TestD2GChainOfTrustNamedDockerImage(t *testing.T) {
 }
 
 func TestD2GChainOfTrustDockerImageName(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 
 	setup(t)
 	image := d2g.DockerImageName("taskcluster/taskcluster-proxy:v81.0.2")
@@ -1011,7 +994,6 @@ func TestD2GChainOfTrustDockerImageName(t *testing.T) {
 }
 
 func TestD2GChainOfTrustDockerImageArtifact(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 
 	setup(t)
 	taskID := CreateArtifactFromFile(t, "docker-images/taskcluster-proxy-v81.0.2.tar.gz", "public/taskcluster-proxy.tar.gz")
@@ -1071,7 +1053,6 @@ func TestD2GChainOfTrustIndexedDockerImage(t *testing.T) {
 // Run 2 (warm): the file cache is hit (no re-download), the d2g image cache
 // is hit (no docker load), and no file is copied to the task directory.
 func TestD2GDockerImageArtifactCaching(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 	setup(t)
 	taskID := CreateArtifactFromFile(t, "docker-images/taskcluster-proxy-v81.0.2.tar.gz", "public/taskcluster-proxy.tar.gz")
 
