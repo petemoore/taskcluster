@@ -14,11 +14,10 @@ module.exports = {
   },
   bail: true,
   collectCoverageFrom: ["src/**/*.{mjs,jsx,js}"],
-  testEnvironment: "jsdom",
+  testEnvironment: "jest-environment-jsdom",
   verbose: false,
   transform: {
     "\\.(mjs|jsx|js)$": "<rootDir>/__jest__/transformer.js",
-    "^.+\\.(js|jsx)$": "babel-jest",
     "\\.graphql$": "<rootDir>/__jest__/graphql-transformer.js",
   },
   testMatch: [
