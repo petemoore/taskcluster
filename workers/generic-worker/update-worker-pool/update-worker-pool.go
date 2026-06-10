@@ -8,8 +8,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	tcclient "github.com/taskcluster/taskcluster/v100/clients/client-go"
-	"github.com/taskcluster/taskcluster/v100/clients/client-go/tcworkermanager"
+	"github.com/taskcluster/slugid-go/slugid"
+	tcclient "github.com/taskcluster/taskcluster/v86/clients/client-go"
+	"github.com/taskcluster/taskcluster/v86/clients/client-go/tcworkermanager"
 )
 
 func gitRevision(dir string) string {
@@ -79,6 +80,11 @@ func main() {
 	userDataMap := workerPoolConfig["workerConfig"].(map[string]any)
 	genericWorker := userDataMap["genericWorker"].(map[string]any)
 	config := genericWorker["config"].(map[string]any)
+	oldDeploymentID := config["deploymentId"].(string)
+	newDeploymentID := slugid.Nice()
+	config["deploymentId"] = newDeploymentID
+	log.Print("Old deployment ID: " + oldDeploymentID)
+	log.Print("New deployment ID: " + newDeploymentID)
 	oldMetadata := config["workerTypeMetadata"].(map[string]any)
 	oldMachineSetup := oldMetadata["machine-setup"].(map[string]any)
 	oldScript := oldMachineSetup["script"].(string)

@@ -3,7 +3,7 @@
 package tcqueueevents
 
 import (
-	tcclient "github.com/taskcluster/taskcluster/v100/clients/client-go"
+	tcclient "github.com/taskcluster/taskcluster/v86/clients/client-go"
 )
 
 type (
@@ -381,53 +381,6 @@ type (
 		Version int64 `json:"version"`
 	}
 
-	// Summary emitted after a task group priority request completes.
-	TaskGroupPriorityChangedMessage struct {
-
-		// Possible values:
-		//   * "highest"
-		//   * "very-high"
-		//   * "high"
-		//   * "medium"
-		//   * "low"
-		//   * "very-low"
-		//   * "lowest"
-		//   * "normal"
-		NewPriority string `json:"newPriority"`
-
-		// All tasks in a task group must have the same `schedulerId`. This is used for several purposes:
-		//
-		// * it can represent the entity that created the task;
-		// * it can limit addition of new tasks to a task group: the caller of
-		//     `createTask` must have a scope related to the `schedulerId` of the task
-		//     group;
-		// * it controls who can manipulate tasks, again by requiring
-		//     `schedulerId`-related scopes; and
-		// * it appears in the routing key for Pulse messages about the task.
-		//
-		// Default:    "-"
-		// Syntax:     ^([a-zA-Z0-9-_]*)$
-		// Min length: 1
-		// Max length: 38
-		SchedulerID string `json:"schedulerId"`
-
-		// Identifier for the task-group.
-		//
-		// Syntax:     ^[A-Za-z0-9_-]{8}[Q-T][A-Za-z0-9_-][CGKOSWaeimquy26-][A-Za-z0-9_-]{10}[AQgw]$
-		TaskGroupID string `json:"taskGroupId"`
-
-		// Total number of tasks where priority was changed
-		//
-		// Mininum:    0
-		TasksAffected int64 `json:"tasksAffected"`
-
-		// Message version
-		//
-		// Possible values:
-		//   * 1
-		Version int64 `json:"version"`
-	}
-
 	// Required task metadata
 	TaskMetadata struct {
 
@@ -484,42 +437,6 @@ type (
 		Version int64 `json:"version"`
 	}
 
-	// Message emitted whenever `changeTaskPriority` updates
-	// the priority of an unresolved task.
-	TaskPriorityChangedMessage struct {
-
-		// Possible values:
-		//   * "highest"
-		//   * "very-high"
-		//   * "high"
-		//   * "medium"
-		//   * "low"
-		//   * "very-low"
-		//   * "lowest"
-		//   * "normal"
-		NewPriority string `json:"newPriority"`
-
-		// Possible values:
-		//   * "highest"
-		//   * "very-high"
-		//   * "high"
-		//   * "medium"
-		//   * "low"
-		//   * "very-low"
-		//   * "lowest"
-		//   * "normal"
-		OldPriority string `json:"oldPriority"`
-
-		// A representation of **task status** as known by the queue
-		Status TaskStatusStructure `json:"status"`
-
-		// Message version
-		//
-		// Possible values:
-		//   * 1
-		Version int64 `json:"version"`
-	}
-
 	// Message reporting that a given run of a task have started
 	TaskRunningMessage struct {
 
@@ -535,12 +452,6 @@ type (
 		// Time at which the run expires and is resolved as `failed`, if the run
 		// isn't reclaimed.
 		TakenUntil tcclient.Time `json:"takenUntil"`
-
-		// Subset of a task definition containing values that are useful for determining
-		// whether a message is interesting to the receiver. Where the full task
-		// definition is required, the receiver should call queue.task to download that
-		// definition.
-		Task Var `json:"task,omitzero"`
 
 		// Message version
 		//
@@ -576,24 +487,6 @@ type (
 		// status is deleted. Notice that all artifacts for the task
 		// must have an expiration that is no later than this.
 		Expires tcclient.Time `json:"expires"`
-
-		// Priority of task. This defaults to `lowest` and the scope
-		// `queue:create-task:<priority>/<provisionerId>/<workerType>` is required
-		// to define a task with `<priority>`. The `normal` priority is treated as
-		// `lowest`.
-		//
-		// Possible values:
-		//   * "highest"
-		//   * "very-high"
-		//   * "high"
-		//   * "medium"
-		//   * "low"
-		//   * "very-low"
-		//   * "lowest"
-		//   * "normal"
-		//
-		// Default:    "lowest"
-		Priority string `json:"priority,omitempty"`
 
 		// The name for the "project" with which this task is associated.  This
 		// value can be used to control permission to manipulate tasks as well as

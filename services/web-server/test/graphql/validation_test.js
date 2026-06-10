@@ -1,6 +1,6 @@
 import assert from 'assert';
 import gql from 'graphql-tag';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 import helper from '../helper.js';
 
 helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
@@ -58,43 +58,6 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
       } catch (err) {
         assert.ok(err.networkError.statusCode >= 400);
         assert.ok(/exceeds maximum operation depth/.test(JSON.stringify(err.networkError.result)));
-      }
-    });
-    test('circular fragments return a validation error', async function() {
-      const client = helper.getHttpClient({ suppressErrors: true });
-
-      try {
-        await client.query({
-          query: gql`
-            query CircularFragment {
-              secrets {
-                ...FragA
-              }
-            }
-
-            fragment FragA on SecretsConnection {
-              pageInfo {
-                hasNextPage
-              }
-              ...FragB
-            }
-
-            fragment FragB on SecretsConnection {
-              pageInfo {
-                hasPreviousPage
-              }
-              ...FragA
-            }
-          `,
-        });
-        assert.fail('Expected query to fail validation');
-      } catch (err) {
-        assert.ok(err.networkError.statusCode >= 400);
-        const { errors } = err.networkError.result || {};
-        assert.ok(
-          Array.isArray(errors) && errors.length > 0,
-          `unexpected validation error payload: ${JSON.stringify(err.networkError.result)}`,
-        );
       }
     });
   });

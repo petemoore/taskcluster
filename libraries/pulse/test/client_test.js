@@ -4,7 +4,7 @@ import assume from 'assume';
 import debugModule from 'debug';
 import slugid from 'slugid';
 import helper from './helper.js';
-import { suiteName } from '@taskcluster/lib-testing';
+import { suiteName } from 'taskcluster-lib-testing';
 
 helper.secrets.mockSuite(suiteName(), ['pulse'], function(mock, skipping) {
   if (mock) {
@@ -13,7 +13,7 @@ helper.secrets.mockSuite(suiteName(), ['pulse'], function(mock, skipping) {
   let connectionString, credentials;
 
   // use a unique name for each test run, just to ensure nothing interferes
-  const unique = Date.now().toString();
+  const unique = new Date().getTime().toString();
   const exchangeName = `exchanges/test/${unique}`;
   const queueName = `queues/test/${unique}`;
   const routingKey = 'greetings';

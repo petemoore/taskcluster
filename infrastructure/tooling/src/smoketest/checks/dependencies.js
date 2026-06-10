@@ -1,4 +1,4 @@
-import taskcluster from '@taskcluster/client';
+import taskcluster from 'taskcluster-client';
 
 export const scopeExpression = {
   AllOf: [
@@ -41,7 +41,7 @@ tasks.push({
       utils.status({ message: 'Created task ' + taskIds[i] });
     }
     let pollStartTime = new Date();
-    while (Date.now() - pollStartTime < 1200000) {
+    while (new Date() - pollStartTime < 1200000) {
       let statuses = [];
       let message = 'Task execution status:';
       for (let i = 0; i < taskCount; i++) {
@@ -66,7 +66,7 @@ tasks.push({
       utils.status({ message: message });
       if (statuses[statuses.length - 1].status.state === 'completed') {
         return {
-          'target-dependencies': statuses[statuses.length - 1].status.state,
+          ['target-dependencies']: statuses[statuses.length - 1].status.state,
         };
       }
 

@@ -2,11 +2,10 @@ package artifacts
 
 import (
 	"fmt"
-	"log"
 
-	"github.com/taskcluster/taskcluster/v100/clients/client-go/tcqueue"
-	"github.com/taskcluster/taskcluster/v100/internal/mocktc/tc"
-	"github.com/taskcluster/taskcluster/v100/workers/generic-worker/gwconfig"
+	"github.com/taskcluster/taskcluster/v86/clients/client-go/tcqueue"
+	"github.com/taskcluster/taskcluster/v86/internal/mocktc/tc"
+	"github.com/taskcluster/taskcluster/v86/workers/generic-worker/gwconfig"
 )
 
 type RedirectArtifact struct {
@@ -17,14 +16,14 @@ type RedirectArtifact struct {
 }
 
 func (redirectArtifact *RedirectArtifact) ProcessResponse(response any, logger Logger, serviceFactory tc.ServiceFactory, config *gwconfig.Config) error {
-	output := fmt.Sprintf("Uploading redirect artifact %v to ", redirectArtifact.Name)
+	log := fmt.Sprintf("Uploading redirect artifact %v to ", redirectArtifact.Name)
 	if redirectArtifact.HideURL {
-		output += "(URL hidden) "
+		log += "(URL hidden) "
 	} else {
-		output += fmt.Sprintf("URL %v ", redirectArtifact.URL)
+		log += fmt.Sprintf("URL %v ", redirectArtifact.URL)
 	}
-	output += fmt.Sprintf("with mime type %q and expiry %v", redirectArtifact.ContentType, redirectArtifact.Expires)
-	log.Print(output)
+	log += fmt.Sprintf("with mime type %q and expiry %v", redirectArtifact.ContentType, redirectArtifact.Expires)
+	logger.Infof(log)
 	// nothing to do
 	return nil
 }

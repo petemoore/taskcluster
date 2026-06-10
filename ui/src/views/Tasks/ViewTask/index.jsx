@@ -21,7 +21,6 @@ import CloseIcon from 'mdi-react/CloseIcon';
 import FlashIcon from 'mdi-react/FlashIcon';
 import ConsoleLineIcon from 'mdi-react/ConsoleLineIcon';
 import RestartIcon from 'mdi-react/RestartIcon';
-import ChartIcon from 'mdi-react/ChartBarIcon';
 import Spinner from '../../../components/Spinner';
 import Dashboard from '../../../components/Dashboard';
 import Markdown from '../../../components/Markdown';
@@ -38,6 +37,7 @@ import Breadcrumbs from '../../../components/Breadcrumbs';
 import splitTaskQueueId from '../../../utils/splitTaskQueueId';
 import { gqlTaskToApi } from '../../../utils/gqlToApi';
 import {
+  ACTIONS_JSON_KNOWN_KINDS,
   ARTIFACTS_PAGE_SIZE,
   DEPENDENTS_PAGE_SIZE,
   VALID_TASK,
@@ -112,6 +112,16 @@ const getCachesFromTask = task =>
       dependentsConnection: {
         limit: DEPENDENTS_PAGE_SIZE,
       },
+      taskActionsFilter: {
+        kind: {
+          $in: ACTIONS_JSON_KNOWN_KINDS,
+        },
+        context: {
+          $not: {
+            $size: 0,
+          },
+        },
+      },
     },
   }),
 })
@@ -121,14 +131,43 @@ export default class ViewTask extends Component {
     const {
       data: { task },
     } = props;
+    const taskActions = [];
+    const actionInputs = state.actionInputs || {};
+    const actionData = state.actionData || {};
 
     if (taskId !== state.previousTaskId && task) {
+      const { taskActions: actions } = task;
+
       updateTaskIdHistory(taskId);
 
+      actions &&
+        actions.actions.forEach(action => {
+          const schema = action.schema || {};
+
+          // if an action with this name has already been selected,
+          // don't consider this version
+          if (
+            task &&
+            task.tags &&
+            taskInContext(action.context, task.tags) &&
+            !taskActions.some(({ name }) => name === action.name)
+          ) {
+            taskActions.push(action);
+          } else {
+            return;
+          }
+
+          actionInputs[action.name] = dump(jsonSchemaDefaults(schema) || {});
+          actionData[action.name] = {
+            action,
+          };
+        });
       const caches = getCachesFromTask(task);
 
       return {
-        dialogOpen: false,
+        taskActions,
+        actionInputs,
+        actionData,
         previousTaskId: taskId,
         caches,
         selectedCaches: new Set(caches),
@@ -138,40 +177,12 @@ export default class ViewTask extends Component {
     return null;
   }
 
-  getTaskActionsData() {
-    const taskActions = [];
-    const actionInputs = {};
-    const actionData = {};
-    const {
-      data: { task },
-    } = this.props;
-
-    if (Array.isArray(task?.taskActions?.actions)) {
-      task?.taskActions?.actions.forEach(action => {
-        // if an action with this name has already been selected,
-        // don't consider this version
-        if (
-          task?.tags &&
-          taskInContext(action.context, task.tags) &&
-          !taskActions.some(({ name }) => name === action.name)
-        ) {
-          taskActions.push(action);
-        } else {
-          return;
-        }
-
-        const schema = action.schema || {};
-
-        actionInputs[action.name] = dump(jsonSchemaDefaults(schema) || {});
-        actionData[action.name] = { action };
-      });
-    }
-
-    return { taskActions, actionInputs, actionData };
-  }
-
   state = {
+    // eslint-disable-next-line react/no-unused-state
     previousTaskId: null,
+    taskActions: [],
+    actionInputs: {},
+    actionData: {},
     selectedAction: null,
     dialogOpen: false,
     actionLoading: false,
@@ -179,7 +190,6 @@ export default class ViewTask extends Component {
     dialogError: null,
     caches: null,
     selectedCaches: null,
-    formInputs: null,
   };
 
   listener = null;
@@ -190,7 +200,7 @@ export default class ViewTask extends Component {
       data: { task, subscribeToMore, refetch },
     } = this.props;
 
-    if (task && taskId !== task.taskId) {
+    if (task && taskId !== task) {
       this.subscribe(task.taskId, subscribeToMore, refetch);
     }
   }
@@ -241,14 +251,12 @@ export default class ViewTask extends Component {
   }
 
   handleActionClick = name => () => {
-    const { actionData, actionInputs } = this.getTaskActionsData();
-    const { action } = actionData[name];
+    const { action } = this.state.actionData[name];
 
     this.setState({
       dialogError: null,
       dialogOpen: true,
       selectedAction: action,
-      formInputs: actionInputs[name] ?? '',
     });
   };
 
@@ -277,28 +285,26 @@ export default class ViewTask extends Component {
     }
   };
 
-  handleActionTaskSubmit =
-    ({ name }) =>
-    async () => {
-      this.preRunningAction();
+  handleActionTaskSubmit = ({ name }) => async () => {
+    this.preRunningAction();
 
-      const {
-        client,
-        data: { task },
-      } = this.props;
-      const { formInputs } = this.state;
-      const { actionData } = this.getTaskActionsData();
-      const { action } = actionData[name];
-      const taskId = await submitTaskAction({
-        task,
-        taskActions: task.taskActions,
-        form: formInputs,
-        action,
-        apolloClient: client,
-      });
+    const {
+      client,
+      data: { task },
+    } = this.props;
+    const { actionInputs, actionData } = this.state;
+    const form = actionInputs[name];
+    const { action } = actionData[name];
+    const taskId = await submitTaskAction({
+      task,
+      taskActions: task.taskActions,
+      form,
+      action,
+      apolloClient: client,
+    });
 
-      return taskId;
-    };
+    return taskId;
+  };
 
   handleArtifactsPageChange = ({ cursor, previousCursor }) => {
     const {
@@ -522,20 +528,14 @@ export default class ViewTask extends Component {
     this.handleEdit(task);
   };
 
-  handleFormChange = value =>
+  handleFormChange = (value, name) =>
     this.setState({
-      formInputs: value,
+      actionInputs: {
+        // eslint-disable-next-line react/no-access-state-in-setstate
+        ...this.state.actionInputs,
+        [name]: value,
+      },
     });
-
-  handleOpenLogProfiler = () => {
-    const { taskId } = this.props.match.params;
-    const profileUrl = `${window.env.TASKCLUSTER_ROOT_URL}/api/web-server/v1/task/${taskId}/profile`;
-    const profilerUrl = `https://profiler.firefox.com/from-url/${encodeURIComponent(
-      profileUrl
-    )}`;
-
-    window.open(profilerUrl, '_blank');
-  };
 
   handlePurgeWorkerCacheClick = () => {
     const title = 'Purge Worker Cache';
@@ -651,6 +651,7 @@ export default class ViewTask extends Component {
   };
 
   handleSelectCacheClick = cache => () => {
+    // eslint-disable-next-line react/no-access-state-in-setstate
     const selectedCaches = new Set([...this.state.selectedCaches]);
 
     if (selectedCaches.has(cache)) {
@@ -662,6 +663,7 @@ export default class ViewTask extends Component {
     this.setState({
       selectedCaches,
       dialogActionProps: {
+        // eslint-disable-next-line react/no-access-state-in-setstate
         ...this.state.dialogActionProps,
         body: this.renderPurgeWorkerCacheDialogBody(selectedCaches),
       },
@@ -870,13 +872,14 @@ export default class ViewTask extends Component {
     } = this.props;
     const {
       dialogActionProps,
+      actionData,
+      taskActions,
       selectedAction,
       dialogOpen,
+      actionInputs,
       actionLoading,
       dialogError,
-      formInputs,
     } = this.state;
-    const { actionData, taskActions } = this.getTaskActionsData();
     let tags;
 
     if (task) {
@@ -894,7 +897,7 @@ export default class ViewTask extends Component {
             defaultValue={match.params.taskId}
           />
         }>
-        <Helmet state={task?.status.state} />
+        <Helmet state={task && task.status.state} />
         {loading && (
           <Fragment>
             <Spinner loading />
@@ -1058,13 +1061,8 @@ export default class ViewTask extends Component {
                   onClick={this.handleCreateInteractiveTaskClick}
                 />
               )}
-              <SpeedDialAction
-                tooltipOpen
-                icon={<ChartIcon />}
-                tooltipTitle="Profile Task Log"
-                onClick={this.handleOpenLogProfiler}
-              />
-              {taskActions?.length &&
+              {taskActions &&
+                taskActions.length &&
                 taskActions.map(action => (
                   <SpeedDialAction
                     requiresAuth
@@ -1089,7 +1087,7 @@ export default class ViewTask extends Component {
                   body: (
                     <TaskActionForm
                       action={selectedAction}
-                      form={formInputs}
+                      form={actionInputs[selectedAction.name]}
                       onFormChange={this.handleFormChange}
                     />
                   ),

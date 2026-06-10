@@ -1,8 +1,8 @@
 import assert from 'assert';
 import debugFactory from 'debug';
-const debug = debugFactory('@taskcluster/lib-testing:schemas');
+const debug = debugFactory('taskcluster-lib-testing:schemas');
 import fs from 'fs';
-import SchemaSet from '@taskcluster/lib-validate';
+import SchemaSet from 'taskcluster-lib-validate';
 import libUrls from 'taskcluster-lib-urls';
 import path from 'path';
 
@@ -27,7 +27,7 @@ import path from 'path';
 let schemas = function(options) {
   // Validate options
   assert(options.schemasetOptions, 'Options must be given for validator');
-  assert(Array.isArray(options.cases), 'Array of cases must be given');
+  assert(options.cases instanceof Array, 'Array of cases must be given');
   assert(options.serviceName);
 
   let validate;

@@ -2,8 +2,8 @@ import subject from '../src/index.js';
 import assume from 'assume';
 import debugFactory from 'debug';
 const debug = debugFactory('iterate-test');
-import { MonitorManager } from '@taskcluster/lib-monitor';
-import testing from '@taskcluster/lib-testing';
+import { MonitorManager } from 'taskcluster-lib-monitor';
+import testing from 'taskcluster-lib-testing';
 
 const possibleEvents = [
   'started',
@@ -124,7 +124,7 @@ suite(testing.suiteName(), () => {
     assume(monitor.manager.messages.length).atleast(5);
     assume(monitor.manager.messages[0].Type).equals('monitor.periodic');
 
-    assume(Date.now()).atleast(500);
+    assume(+new Date()).atleast(500);
   }));
 
   test('should stop in the midst of waitTime', runWithFakeTime(async function() {
@@ -144,7 +144,7 @@ suite(testing.suiteName(), () => {
     await testing.sleep(1000);
     await i.stop();
 
-    assume(Date.now()).between(1000, 1100);
+    assume(+new Date()).between(1000, 1100);
   }));
 
   test('should stop after correct number of iterations', runWithFakeTime(async function() {
