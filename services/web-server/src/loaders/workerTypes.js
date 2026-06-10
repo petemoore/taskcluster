@@ -1,4 +1,5 @@
 import DataLoader from 'dataloader';
+import sift from '../utils/sift.js';
 import ConnectionLoader from '../ConnectionLoader.js';
 
 export default ({ queue }, isAuthed, rootUrl, monitor, strategies, req, cfg, requestId) => {
@@ -14,9 +15,10 @@ export default ({ queue }, isAuthed, rootUrl, monitor, strategies, req, cfg, req
     ),
   );
   const workerTypes = new ConnectionLoader(
-    async ({ provisionerId, options }) => {
+    async ({ provisionerId, options, filter }) => {
       const raw = await queue.listWorkerTypes(provisionerId, options);
-      return { ...raw, items: raw.workerTypes };
+      const workerTypes = sift(filter, raw.workerTypes);
+      return { ...raw, items: workerTypes };
     },
   );
   const pendingTasks = new DataLoader(queries =>
