@@ -13,7 +13,7 @@ import (
 
 	"github.com/mcuadros/go-defaults"
 	"github.com/taskcluster/slugid-go/slugid"
-	"github.com/taskcluster/taskcluster/v100/workers/generic-worker/gwconfig"
+	"github.com/taskcluster/taskcluster/v99/workers/generic-worker/gwconfig"
 )
 
 func TestMissingScopes(t *testing.T) {
@@ -559,7 +559,7 @@ func TestWritableDirectoryCacheNoSHA256(t *testing.T) {
 	// engine or insecure engine but is independent of whether running as current
 	// user or not.
 	grantingCacheFile, _ := grantingDenying(t, "file", true)
-	grantingDir, _ := grantingDenying(t, "directory", false, t.Name())
+	updatingOwnership := updateOwnership(t)
 
 	// No cache on first pass
 	pass1 := append([]string{
@@ -577,7 +577,7 @@ func TestWritableDirectoryCacheNoSHA256(t *testing.T) {
 		`Removing file '.*'`,
 	)
 	pass1 = append(pass1,
-		grantingDir...,
+		updatingOwnership...,
 	)
 	pass1 = append(pass1,
 		`Successfully mounted writable directory cache '.*`+t.Name()+`'`,
@@ -589,7 +589,7 @@ func TestWritableDirectoryCacheNoSHA256(t *testing.T) {
 		`Moving existing writable directory cache banana-cache from .* to .*` + t.Name(),
 		`Creating directory .*`,
 	},
-		grantingDir...,
+		updatingOwnership...,
 	)
 	pass2 = append(pass2,
 		`Successfully mounted writable directory cache '.*`+t.Name()+`'`,
@@ -798,9 +798,7 @@ func TestMounts(t *testing.T) {
 		"19168d6dc3cc840bd02658e30d761cd555bb1f2bb42da18edf08917dcaa55cf5",
 		filepath.Join(absPathTestDir, "abs-path-dir", "package.json"),
 	)
-	if entries := directoryCaches["apple-cache"]; len(entries) == 0 {
-		t.Error("Expected apple-cache to be persisted, but no pool entries found")
-	} else if _, err := os.Stat(entries[0].Location); err != nil {
+	if _, err := os.Stat(directoryCaches["apple-cache"].Location); err != nil {
 		t.Errorf("Expected apple-cache to be persisted, but got: %v", err)
 	}
 
@@ -839,7 +837,7 @@ func TestMounts(t *testing.T) {
 	checkSHA256(
 		t,
 		"51d818981374a447f0876610fd2baeeb911dd5ad60c6e6b4d2b6b6798ba5c071",
-		filepath.Join(directoryCaches["devtools-app"][0].Location, "foo.bar"),
+		filepath.Join(directoryCaches["devtools-app"].Location, "foo.bar"),
 	)
 }
 
@@ -875,7 +873,7 @@ func TestCachesCanBeModified(t *testing.T) {
 		}
 
 		getCounter := func() int {
-			counterFile := filepath.Join(directoryCaches["test-modifications"][0].Location, "counter")
+			counterFile := filepath.Join(directoryCaches["test-modifications"].Location, "counter")
 			bytes, err := os.ReadFile(counterFile)
 			if err != nil {
 				t.Fatalf("Error when trying to read cache file: %v", err)
@@ -919,7 +917,7 @@ func TestCacheMoved(t *testing.T) {
 	// engine or insecure engine but is independent of whether running as current
 	// user or not.
 	grantingCacheFile, _ := grantingDenying(t, "file", true)
-	grantingDir, _ := grantingDenying(t, "directory", false, t.Name())
+	updatingOwnership := updateOwnership(t)
 
 	// No cache on first pass
 	pass1 := append([]string{
@@ -937,7 +935,7 @@ func TestCacheMoved(t *testing.T) {
 		`Removing file '.*'`,
 	)
 	pass1 = append(pass1,
-		grantingDir...,
+		updatingOwnership...,
 	)
 	pass1 = append(pass1,
 		`Successfully mounted writable directory cache '.*`+t.Name()+`'`,
@@ -961,7 +959,7 @@ func TestCacheMoved(t *testing.T) {
 		`Removing file '.*'`,
 	)
 	pass2 = append(pass2,
-		grantingDir...,
+		updatingOwnership...,
 	)
 	pass2 = append(pass2,
 		`Successfully mounted writable directory cache '.*`+t.Name()+`'`,

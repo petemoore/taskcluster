@@ -172,6 +172,7 @@ export default class ConnectionDataTable extends Component {
       !this.props.connection.pageInfo.previousCursor &&
       prevProps.connection.pageInfo.previousCursor
     ) {
+      // eslint-disable-next-line react/no-did-update-set-state
       this.setState({ page: 0 });
     }
   }
@@ -199,7 +200,7 @@ export default class ConnectionDataTable extends Component {
     }
   };
 
-  handlePageChange = (_e, nextPage) => {
+  handlePageChange = (e, nextPage) => {
     const { connection, onPageChange } = this.props;
     const { page } = this.state;
 
@@ -285,7 +286,7 @@ export default class ConnectionDataTable extends Component {
       rowHeight,
     } = this.props;
     const { count } = this.getPaginationMetadata();
-    const colSpan = columnsSize || headers?.length || 1;
+    const colSpan = columnsSize || (headers && headers.length) || 1;
     const { filterValue } = this.state;
     const { edges } = connection;
     const rows =
@@ -376,9 +377,8 @@ export default class ConnectionDataTable extends Component {
                   <TableCell colSpan={colSpan}>
                     <em>
                       {searchTerm || filterValue
-                        ? `No items for this page with search term ${
-                            searchTerm || filterValue
-                          }.`
+                        ? `No items for this page with search term ${searchTerm ||
+                            filterValue}.`
                         : noItemsMessage}
                     </em>
                   </TableCell>

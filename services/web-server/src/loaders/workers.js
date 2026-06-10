@@ -1,4 +1,5 @@
 import DataLoader from 'dataloader';
+import sift from '../utils/sift.js';
 import ConnectionLoader from '../ConnectionLoader.js';
 import WorkerCompact from '../entities/WorkerCompact.js';
 
@@ -20,6 +21,7 @@ export default ({ workerManager }, isAuthed, rootUrl, monitor, strategies, req, 
       provisionerId,
       workerType,
       options,
+      filter,
       isQuarantined,
       workerState,
     }) => {
@@ -35,7 +37,7 @@ export default ({ workerManager }, isAuthed, rootUrl, monitor, strategies, req, 
         workerType,
         opts,
       );
-      const workers = raw.workers;
+      const workers = sift(filter, raw.workers);
 
       return {
         ...raw,

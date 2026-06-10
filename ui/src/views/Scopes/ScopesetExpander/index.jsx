@@ -80,45 +80,49 @@ export default class ScopesetExpander extends Component {
       <Dashboard
         title="Expand Scopes"
         helpView={<HelpView description={description} />}>
-        <CodeEditor
-          className={classes.editor}
-          onChange={this.handleScopesChange}
-          placeholder="new-scope:for-something:*"
-          mode="scopemode"
-          value={scopeText}
-        />
-        {scopes && (
-          <Query query={scopesetQuery} variables={{ scopes }}>
-            {({ loading, error, data }) => (
-              <Fragment>
-                <ErrorPanel error={error} />
-                <List dense>
-                  {loading && (
-                    <ListItem>
-                      <Spinner />
-                    </ListItem>
-                  )}
-                  {data?.expandScopes?.map(scope => (
-                    <Link key={scope} to={scopeLink(scope)}>
-                      <ListItem button className={classes.listItemButton}>
-                        <code>{scope}</code>
-                        <LinkIcon size={16} />
+        <Fragment>
+          <CodeEditor
+            className={classes.editor}
+            onChange={this.handleScopesChange}
+            placeholder="new-scope:for-something:*"
+            mode="scopemode"
+            value={scopeText}
+          />
+          {scopes && (
+            <Query query={scopesetQuery} variables={{ scopes }}>
+              {({ loading, error, data }) => (
+                <Fragment>
+                  <ErrorPanel error={error} />
+                  <List dense>
+                    {loading && (
+                      <ListItem>
+                        <Spinner />
                       </ListItem>
-                    </Link>
-                  ))}
-                </List>
-              </Fragment>
-            )}
-          </Query>
-        )}
-        <Button
-          tooltipProps={{ title: 'Expand Scopes' }}
-          spanProps={{ className: classes.actionButton }}
-          color="secondary"
-          variant="circular"
-          onClick={this.handleExpandScopesClick}>
-          <ArrowExpandVerticalIcon />
-        </Button>
+                    )}
+                    {data &&
+                      data.expandScopes &&
+                      data.expandScopes.map(scope => (
+                        <Link key={scope} to={scopeLink(scope)}>
+                          <ListItem button className={classes.listItemButton}>
+                            <code>{scope}</code>
+                            <LinkIcon size={16} />
+                          </ListItem>
+                        </Link>
+                      ))}
+                  </List>
+                </Fragment>
+              )}
+            </Query>
+          )}
+          <Button
+            tooltipProps={{ title: 'Expand Scopes' }}
+            spanProps={{ className: classes.actionButton }}
+            color="secondary"
+            variant="round"
+            onClick={this.handleExpandScopesClick}>
+            <ArrowExpandVerticalIcon />
+          </Button>
+        </Fragment>
       </Dashboard>
     );
   }

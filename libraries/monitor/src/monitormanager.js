@@ -100,7 +100,6 @@ export class MonitorManager {
     buckets = undefined,
     percentiles = undefined,
     serviceName = undefined,
-    global = false,
   }) {
     assert(id, `Must provide an internal metric name for this metric ${name}`);
     assert(name, `Must provide a name for this metric ${type} ${title}`);
@@ -149,7 +148,6 @@ export class MonitorManager {
       percentiles,
       serviceName,
       registers,
-      global,
     };
   }
 
@@ -173,7 +171,7 @@ export class MonitorManager {
     assert(!MonitorManager.#registeredTypes[name], `Cannot register event ${name} twice`);
     assert(level === 'any' || LEVELS[level] !== undefined, `${level} is not a valid level.`);
     assert(Number.isInteger(version), 'Version must be an integer');
-    assert(!fields.v, '"v" is a reserved field for messages');
+    assert(!fields['v'], '"v" is a reserved field for messages');
     /** @type {Record<string, string>} */
     const cleaned = {};
     Object.entries(fields).forEach(([field, desc]) => {
@@ -263,9 +261,9 @@ export class MonitorManager {
         o[c[0]] = c[1];
         return o;
       }, levels);
-      assert(levels.root, 'Must specify `root:` level if using child-specific levels.');
+      assert(levels['root'], 'Must specify `root:` level if using child-specific levels.');
     } else {
-      levels.root = level;
+      levels['root'] = level;
     }
     manager.levels = levels;
 
@@ -358,7 +356,7 @@ export class MonitorManager {
       metrics: Object.entries(metrics).map(([name, metric]) => {
         return {
           name,
-          ..._.omit(metric, ['serviceName', 'global']),
+          ..._.omit(metric, ['serviceName']),
         };
       }).sort((a, b) => a.name.localeCompare(b.name)),
     };
