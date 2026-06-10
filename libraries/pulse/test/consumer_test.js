@@ -20,7 +20,7 @@ helper.secrets.mockSuite(suiteName(), ['pulse'], function(mock, skipping) {
 
   suite('PulseConsumer', function() {
     // use a unique name for each test run, just to ensure nothing interferes
-    const unique = Date.now().toString();
+    const unique = new Date().getTime().toString();
     const exchangeName = `exchanges/test/${unique}`;
     const routingKey = 'greetings.earthling.foo.bar.bing';
     const routingKeyReference = [
