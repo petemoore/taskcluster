@@ -289,11 +289,11 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
     provider._now = () => taskcluster.fromNow('-10 years');
 
     // Use a date within the validity window of the leaf certificate embedded in
-    // azure_signature_good.json (notBefore: Oct 25 2025, notAfter: Apr 23 2026).
-    // This must also be before the message's expiresOn (2025-11-19) so that the
+    // azure_signature_good.json (notBefore: Jan 29 2026, notAfter: Jul 28 2026).
+    // This must also be before the message's expiresOn (2026-04-23) so that the
     // message-expiry check (which uses _now()) still passes in most tests.
     // Update this date when azure_signature_good.json is regenerated with a new cert.
-    provider._certValidityDate = () => new Date('2025-11-01');
+    provider._certValidityDate = () => new Date('2026-03-01');
 
     await helper.db.fns.delete_worker_pool(workerPoolId);
 
