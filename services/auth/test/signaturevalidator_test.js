@@ -62,7 +62,7 @@ suite(testing.suiteName(), function() {
   let makeTest = function(name, input, expected) {
     test(name, async function() {
       // defer creation of input until the test runs, if necessary
-      if (typeof input === 'function') {
+      if (typeof input == 'function') {
         input = input();
       }
 
@@ -90,7 +90,7 @@ suite(testing.suiteName(), function() {
 
         // create the authorization "header"
         let url = 'https://' + input.host + input.resource;
-        input.authorization = hawk.client.header(
+        input['authorization'] = hawk.client.header(
           url, input.method, input.authorization).header;
       }
 
