@@ -58,7 +58,15 @@ module.exports = (_, { mode }) => ({
     fallback: {
       fs: false,
       tls: false,
+      net: false,
+      dns: false,
+      vm: false,
       buffer: require.resolve("buffer/"),
+      crypto: require.resolve("crypto-browserify"),
+      path: require.resolve("path-browserify"),
+      process: require.resolve("process/browser"),
+      stream: require.resolve("stream-browserify"),
+      url: require.resolve("url/"),
     },
   },
   optimization: {
@@ -110,14 +118,6 @@ module.exports = (_, { mode }) => ({
   },
   module: {
     rules: [
-      {
-        test: /\.html$/,
-        use: [
-          {
-            loader: "html-loader",
-          },
-        ],
-      },
       {
         test: /\.(js|jsx)$/,
         include: [
@@ -306,6 +306,10 @@ module.exports = (_, { mode }) => ({
   plugins: [
     new webpack.ProvidePlugin({
       Buffer: ["buffer", "buffer"],
+      // Use require.resolve so that the absolute path is embedded in the config
+      // and webpack can find it regardless of the requesting module's location
+      // (e.g., modules in the root workspace's node_modules).
+      process: require.resolve("process/browser"),
     }),
     new HtmlWebpackPlugin({
       template: "./src/index.html",
@@ -360,7 +364,7 @@ module.exports = (_, { mode }) => ({
       initialClean: false,
       outputPath: "",
     }),
-    new CopyPlugin({ patterns: [{ context: "src/static", from: "**/*", to: "static" }] }),
+    new CopyPlugin({ patterns: [{ context: "src/static", from: "**/*", to: "static", noErrorOnMissing: true }] }),
   ],
   entry: {
     index: [`${__dirname}/src/index.jsx`],
