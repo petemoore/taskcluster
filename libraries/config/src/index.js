@@ -21,7 +21,7 @@ const config = ({
   serviceName,
   getEnvVars = false,
 }) => {
-  assert(Array.isArray(files), 'Expected an array of files');
+  assert(files instanceof Array, 'Expected an array of files');
   assert(typeof env === 'object', 'Expected env to be an object');
   assert(serviceName, 'serviceName is required');
 

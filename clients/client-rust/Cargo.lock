@@ -1212,9 +1212,9 @@ checksum = "2b15c43186be67a4fd63bee50d0303afffcef381492ebe2c5d87f324e1b8815c"
 
 [[package]]
 name = "reqwest"
-version = "0.13.4"
+version = "0.13.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "219c5811de6525e5416c7d5d53bb656d3afdbc6c5af816e0802bcfa42dbdc1c3"
+checksum = "62e0021ea2c22aed41653bc7e1419abb2c97e038ff2c33d0e1309e49a97deec0"
 dependencies = [
  "base64",
  "bytes",
@@ -1446,9 +1446,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.150"
+version = "1.0.149"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e8014e44b4736ed0538adeecded0fce2a272f22dc9578a7eb6b2d9993c74cfb9"
+checksum = "83fc039473c5595ace860d8c4fafa220ff474b3fc6bfdb4293327f1a37e94d86"
 dependencies = [
  "itoa",
  "memchr",
@@ -1604,7 +1604,7 @@ dependencies = [
 
 [[package]]
 name = "taskcluster"
-version = "100.3.0"
+version = "100.1.1"
 dependencies = [
  "anyhow",
  "backon",
@@ -1624,7 +1624,7 @@ dependencies = [
 
 [[package]]
 name = "taskcluster-download"
-version = "100.3.0"
+version = "100.1.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1644,7 +1644,7 @@ dependencies = [
 
 [[package]]
 name = "taskcluster-integration-tests"
-version = "100.3.0"
+version = "100.1.1"
 dependencies = [
  "anyhow",
  "httptest",
@@ -1661,7 +1661,7 @@ dependencies = [
 
 [[package]]
 name = "taskcluster-upload"
-version = "100.3.0"
+version = "100.1.1"
 dependencies = [
  "anyhow",
  "async-trait",
