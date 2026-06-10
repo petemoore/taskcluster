@@ -12,12 +12,13 @@ module.exports = {
   bail: true,
   collectCoverageFrom: ["src/**/*.{mjs,jsx,js}"],
   testEnvironment: "jsdom",
-  testRegex: null,
   verbose: false,
   transform: {
     "\\.(mjs|jsx|js)$": "<rootDir>/__jest__/transformer.js",
     "^.+\\.(js|jsx)$": "babel-jest",
-    "\\.graphql$": "jest-transform-graphql",
+    // jest-transform-graphql returns a plain string; our wrapper adapts it to
+    // the Jest 28+ transformer API which requires { code: string }
+    "\\.graphql$": "<rootDir>/__jest__/graphqlTransformer.js",
   },
   testMatch: [
     "<rootDir>/src/**/*.test.(js|jsx)",
@@ -25,6 +26,9 @@ module.exports = {
   ],
   setupFilesAfterEnv: ["./jest.setup.js"],
   transformIgnorePatterns: [
-    "node_modules/(?!is-absolute-url|@taskcluster/client-web)",
+    // is-absolute-url and @taskcluster/client-web use ESM and must be transformed.
+    // dexie ships only an ESM build (dexie.mjs) in modern environments; it must
+    // be transformed so Jest (CommonJS) can consume it.
+    "node_modules/(?!is-absolute-url|@taskcluster/client-web|dexie)",
   ],
 };
