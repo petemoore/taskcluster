@@ -4,9 +4,9 @@ import helper from './helper.js';
 import assert from 'assert';
 import sinon from 'sinon';
 import libUrls from 'taskcluster-lib-urls';
-import testing from '@taskcluster/lib-testing';
-import taskcluster from '@taskcluster/client';
-import { LEVELS } from '@taskcluster/lib-monitor';
+import testing from 'taskcluster-lib-testing';
+import taskcluster from 'taskcluster-client';
+import { LEVELS } from 'taskcluster-lib-monitor';
 import { CHECKLOGS_TEXT, CHECKRUN_TEXT, CHECK_TASK_GROUP_TEXT } from '../src/constants.js';
 import utils from '../src/utils.js';
 import fs from 'fs';
@@ -35,7 +35,6 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
 
   const URL_PREFIX = 'https://tc-tests.example.com/tasks/groups/';
   const CUSTOM_CHECKRUN_TASKID = 'apple';
-  const CUSTOM_CHECKRUN_HOOK_TASKID = 'apple-hook';
   const CUSTOM_LIVELOG_NAME_TASKID = 'banana';
   const CUSTOM_CHECKRUN_TEXT = 'Hi there! This is your custom text';
   const LIVE_LOG_TEXT = 'Hi there! This is your live log';
@@ -90,7 +89,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
     taskGroupId, exchange, routingKey,
     taskId, state, reasonResolved,
     runId = 0, started,
-    resolved, retriesLeft,
+    resolved,
   }) {
     // set up to resolve when the handler has finished (even if it finishes with error)
     const handlerComplete = new Promise((resolve, reject) => {
@@ -108,7 +107,6 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
           taskGroupId,
           taskId,
           state,
-          retriesLeft,
           runs: Array.from({ length: runId + 1 }).map(() => ({
             reasonResolved,
             state: 'completed',
@@ -191,7 +189,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
       },
       use: () => ({
         getArtifact: async () => CUSTOM_CHECKRUN_TEXT,
-        buildSignedUrl: () => 'http://example.com',
+        buildSignedUrl: async () => 'http://example.com',
       }),
     };
 
@@ -1304,190 +1302,6 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
       assert(github.inst(INST_ID).repos.createCommitStatus.callCount === 0);
       assert(github.inst(INST_ID).issues.createComment.callCount === 0);
     });
-
-    suite('hooks', function () {
-      let mockTriggerHook;
-      let mockUse;
-
-      setup(function () {
-        mockTriggerHook = sinon.stub().resolves({ taskId: taskcluster.slugid() });
-        mockUse = sinon.stub().returns({ triggerHook: mockTriggerHook });
-        handlers.context.hooksClient = { use: mockUse };
-      });
-
-      test('hooks-only config triggers hook and creates build record', async function () {
-        github.inst(INST_ID).setTaskclusterYml({
-          owner: 'TaskclusterRobot',
-          repo: 'hooks-testing',
-          ref: COMMIT_SHA,
-          content: {
-            version: 1,
-            hooks: [{ name: 'project-test/decision-hook', context: { trustDomain: 'test-domain' } }],
-          },
-        });
-
-        await simulateJobMessage({ user: 'TaskclusterRobot' });
-
-        assert(mockTriggerHook.calledOnce);
-        const [hookGroup, hookName, payload] = mockTriggerHook.firstCall.args;
-        assert.equal(hookGroup, 'project-test');
-        assert.equal(hookName, 'decision-hook');
-        assert.deepEqual(payload.context, { trustDomain: 'test-domain' });
-        assert.ok(payload.taskId, 'payload should contain a pre-allocated taskId');
-        assert.ok(payload.event, 'payload should contain the event body');
-        assert.ok(payload.now, 'payload should contain now');
-        assert.equal(payload.tasks_for, 'github-push');
-
-        assert(mockUse.calledOnce);
-        assert.ok(mockUse.firstCall.args[0].authorizedScopes, 'use() should be called with authorizedScopes');
-
-        const [build] = await helper.db.fns.get_github_build_pr(payload.taskId);
-        assert.ok(build, 'build record should exist');
-        assert.equal(build.organization, 'TaskclusterRobot');
-        assert.equal(build.repository, 'hooks-testing');
-        assert.equal(build.sha, COMMIT_SHA);
-        assert.equal(build.state, 'pending');
-        assert.equal(build.event_type, 'push');
-        assert.equal(build.pull_number, null);
-
-        assert(handlers.createTasks.notCalled);
-      });
-
-      test('hook returning no taskId cleans up the build record', async function () {
-        mockTriggerHook.resolves({});
-
-        github.inst(INST_ID).setTaskclusterYml({
-          owner: 'TaskclusterRobot',
-          repo: 'hooks-testing',
-          ref: COMMIT_SHA,
-          content: {
-            version: 1,
-            hooks: [{ name: 'project-test/decision-hook' }],
-          },
-        });
-
-        await simulateJobMessage({ user: 'TaskclusterRobot' });
-
-        assert(mockTriggerHook.calledOnce);
-        const taskGroupId = mockTriggerHook.firstCall.args[2].taskId;
-        const builds = await helper.db.fns.get_github_build_pr(taskGroupId);
-        assert.deepEqual(builds, [], 'build record should be deleted when hook returns no taskId');
-      });
-
-      test('multiple hooks each get their own build record', async function () {
-        github.inst(INST_ID).setTaskclusterYml({
-          owner: 'TaskclusterRobot',
-          repo: 'hooks-testing',
-          ref: COMMIT_SHA,
-          content: {
-            version: 1,
-            hooks: [
-              { name: 'project-test/hook-one' },
-              { name: 'project-test/hook-two' },
-            ],
-          },
-        });
-
-        await simulateJobMessage({ user: 'TaskclusterRobot' });
-
-        assert.equal(mockTriggerHook.callCount, 2);
-        const taskGroupId1 = mockTriggerHook.firstCall.args[2].taskId;
-        const taskGroupId2 = mockTriggerHook.secondCall.args[2].taskId;
-        assert.notEqual(taskGroupId1, taskGroupId2, 'each hook should get a unique taskGroupId');
-
-        const [build1] = await helper.db.fns.get_github_build_pr(taskGroupId1);
-        const [build2] = await helper.db.fns.get_github_build_pr(taskGroupId2);
-        assert.ok(build1, 'build record for hook-one should exist');
-        assert.ok(build2, 'build record for hook-two should exist');
-        assert(handlers.createTasks.notCalled);
-      });
-
-      test('hooks and tasks both run when present in config', async function () {
-        github.inst(INST_ID).setTaskclusterYml({
-          owner: 'TaskclusterRobot',
-          repo: 'hooks-testing',
-          ref: COMMIT_SHA,
-          content: {
-            ...validYamlV1Json,
-            hooks: [{ name: 'project-test/decision-hook' }],
-          },
-        });
-
-        await simulateJobMessage({ user: 'TaskclusterRobot' });
-
-        assert(mockTriggerHook.calledOnce, 'hook should be triggered');
-        assert(handlers.createTasks.calledOnce, 'tasks should also be created');
-      });
-
-      test('hook trigger failure creates exception comment and cleans up build record', async function () {
-        mockTriggerHook.rejects(Object.assign(new Error('hook trigger failed'), { body: { error: 'hook error details' } }));
-
-        github.inst(INST_ID).setTaskclusterYml({
-          owner: 'TaskclusterRobot',
-          repo: 'hooks-testing',
-          ref: COMMIT_SHA,
-          content: {
-            version: 1,
-            hooks: [{ name: 'project-test/decision-hook' }],
-          },
-        });
-
-        await simulateJobMessage({ user: 'TaskclusterRobot' });
-
-        assert(github.inst(INST_ID).repos.createCommitComment.calledOnce);
-        const args = github.inst(INST_ID).repos.createCommitComment.args[0][0];
-        assert.equal(args.owner, 'TaskclusterRobot');
-        assert.equal(args.repo, 'hooks-testing');
-        assert.equal(args.commit_sha, COMMIT_SHA);
-        assert(args.body.includes('hook error details'));
-
-        const taskGroupId = mockTriggerHook.firstCall.args[2].taskId;
-        const builds = await helper.db.fns.get_github_build_pr(taskGroupId);
-        assert.deepEqual(builds, [], 'build record should be deleted when hook trigger fails');
-      });
-
-      test('hook failure does not prevent tasks from running', async function () {
-        mockTriggerHook.rejects(Object.assign(new Error('hook failed'), { body: { error: 'hook error' } }));
-
-        github.inst(INST_ID).setTaskclusterYml({
-          owner: 'TaskclusterRobot',
-          repo: 'hooks-testing',
-          ref: COMMIT_SHA,
-          content: {
-            ...validYamlV1Json,
-            hooks: [{ name: 'project-test/decision-hook' }],
-          },
-        });
-
-        await simulateJobMessage({ user: 'TaskclusterRobot' });
-
-        assert(github.inst(INST_ID).repos.createCommitComment.calledOnce, 'exception comment should be created for hook failure');
-        assert(handlers.createTasks.calledOnce, 'tasks should still run despite hook failure');
-      });
-
-      test('triggerHook reformats InsufficientScopes error with context', async function () {
-        const insufficientScopesErr = Object.assign(new Error('original scope error'), { code: 'InsufficientScopes' });
-        mockTriggerHook.rejects(insufficientScopesErr);
-
-        await assert.rejects(
-          () => handlers.triggerHook({ scopes: ['scope:a', 'scope:b'], name: 'group/name', payload: {} }),
-          err => {
-            assert(err.message.includes('Taskcluster-GitHub attempted to trigger a hook'), 'message should include context');
-            assert(err.message.includes('scope:a'), 'message should include the scopes');
-            assert(err.message.includes('original scope error'), 'message should include the original error');
-            return true;
-          },
-        );
-      });
-
-      test('triggerHook throws on invalid name format without calling use()', async function () {
-        await assert.rejects(
-          () => handlers.triggerHook({ scopes: [], name: 'invalid-no-slash', payload: {} }),
-          /Invalid hook name format/,
-        );
-        assert(mockUse.notCalled, 'use() should not be called for an invalid hook name');
-      });
-    });
   });
 
   suite('Statuses API: result status handler', function () {
@@ -1625,8 +1439,6 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
 
     const TASKGROUPID = 'AXB-sjV-SoCyibyq3P32o2';
     setup(function () {
-      sinon.stub(global, "fetch").resolves({ ok: false, body: { cancel: async () => {} } });
-      sinon.stub(utils, "extractLog").resolves('');
       sinon.stub(utils, "throttleRequest").returns({ status: 404, response: { error: { text: "Resource not found" } } });
     });
 
@@ -1721,42 +1533,6 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
       await assertChecksUpdate('failed');
     });
 
-    test('intermittent task with retries left gets neutral check result', async function () {
-      await addBuild({ state: 'pending', taskGroupId: TASKGROUPID });
-      await addCheckRun({ taskGroupId: TASKGROUPID, taskId: TASKID });
-      await simulateExchangeMessage({
-        taskGroupId: TASKGROUPID,
-        exchange: 'exchange/taskcluster-queue/v1/task-exception',
-        routingKey: 'route.checks',
-        taskId: TASKID,
-        reasonResolved: 'intermittent-task',
-        state: 'exception',
-        retriesLeft: 2,
-      });
-      await assertChecksUpdate('intermittent-task');
-    });
-
-    test('intermittent task with no retries left gets failure check result', async function () {
-      await addBuild({ state: 'pending', taskGroupId: TASKGROUPID });
-      await addCheckRun({ taskGroupId: TASKGROUPID, taskId: TASKID });
-      await simulateExchangeMessage({
-        taskGroupId: TASKGROUPID,
-        exchange: 'exchange/taskcluster-queue/v1/task-exception',
-        routingKey: 'route.checks',
-        taskId: TASKID,
-        reasonResolved: 'intermittent-task',
-        state: 'exception',
-        retriesLeft: 0,
-      });
-      // For intermittent tasks with no retries left, we expect 'failure' conclusion
-      assert(github.inst(9988).checks.update.calledOnce, 'checks.update was not called');
-      let args = github.inst(9988).checks.update.firstCall.args[0];
-      assert.equal(args.owner, 'TaskclusterRobot');
-      assert.equal(args.repo, 'hooks-testing');
-      assert.equal(args.check_run_id, '22222');
-      assert.equal(args.conclusion, 'failure');
-    });
-
     test('successful task started by decision task gets a success comment', async function () {
       await addBuild({ state: 'pending', taskGroupId: TASKGROUPID });
       await simulateExchangeMessage({
@@ -1791,12 +1567,12 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
       await addBuild({ state: 'pending', taskGroupId: TASKGROUPID });
       await addCheckRun({ taskGroupId: TASKGROUPID, taskId: CUSTOM_CHECKRUN_TASKID });
       sinon.restore();
-      sinon.stub(global, "fetch").resolves({ ok: true, body: { cancel: async () => {} } });
-      sinon.stub(utils, "extractLog").resolves('');
       sinon.stub(utils, "throttleRequest")
         .onFirstCall()
-        .returns({ status: 200, text: CUSTOM_CHECKRUN_TEXT })
+        .returns({ status: 404 })
         .onSecondCall()
+        .returns({ status: 200, text: CUSTOM_CHECKRUN_TEXT })
+        .onThirdCall()
         .returns({ status: 404 });
       await simulateExchangeMessage({
         taskGroupId: TASKGROUPID,
@@ -1814,38 +1590,9 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
       /* eslint-disable comma-dangle */
       assert.strictEqual(
         args.output.text,
-        `[${CHECKRUN_TEXT}](${libUrls.testRootUrl()}/tasks/${CUSTOM_CHECKRUN_TASKID}) | [${CHECKLOGS_TEXT}](${libUrls.testRootUrl()}/tasks/${CUSTOM_CHECKRUN_TASKID}/runs/0/logs/live/public/logs/live.log) | [${CHECK_TASK_GROUP_TEXT}](${libUrls.testRootUrl()}/tasks/groups/${TASKGROUPID})\n### Task Status\nStarted: ${STARTED}\nResolved: ${RESOLVED}\nTask Execution Time: 1 day\nTask Status: **completed**\nReason Resolved: **completed**\nTaskId: **${CUSTOM_CHECKRUN_TASKID}**\nRunId: **0**\n### Artifacts\n${buildArtifactLinks(50, CUSTOM_CHECKRUN_TASKID)}\n${CUSTOM_CHECKRUN_TEXT}\n`
+        `[${CHECKRUN_TEXT}](${libUrls.testRootUrl()}/tasks/${CUSTOM_CHECKRUN_TASKID}) | [${CHECKLOGS_TEXT}](${libUrls.testRootUrl()}/tasks/${CUSTOM_CHECKRUN_TASKID}/runs/0/logs/live/public/logs/live.log) | [${CHECK_TASK_GROUP_TEXT}](${libUrls.testRootUrl()}/tasks/groups/${TASKGROUPID})\n### Task Status\nStarted: ${STARTED}\nResolved: ${RESOLVED}\nTask Execution Time: 1 day\nTask Status: **completed**\nReason Resolved: **completed**\nRunId: **0**\n### Artifacts\n${buildArtifactLinks(50, CUSTOM_CHECKRUN_TASKID)}\n${CUSTOM_CHECKRUN_TEXT}\n`
       );
       /* eslint-enable comma-dangle */
-      sinon.restore();
-    });
-
-    test('uses github service credentials to fetch artifact from hook task', async function () {
-      await addBuild({ state: 'pending', taskGroupId: TASKGROUPID });
-      await addCheckRun({ taskGroupId: TASKGROUPID, taskId: CUSTOM_CHECKRUN_HOOK_TASKID });
-      sinon.restore();
-      sinon.stub(global, "fetch").resolves({ ok: true, body: { cancel: async () => {} } });
-      sinon.stub(utils, "extractLog").resolves('');
-      sinon.stub(handlers.queueClient, 'task').resolves({
-        metadata: { name: 'Task with custom check run', description: 'Task Description' },
-        extra: { github: { customCheckRun: { textArtifactName: 'public/text.md' } } },
-      });
-      const useSpy = sinon.spy(handlers.queueClient, 'use');
-      sinon.stub(utils, "throttleRequest").returns({ status: 200, text: CUSTOM_CHECKRUN_TEXT });
-      await simulateExchangeMessage({
-        taskGroupId: TASKGROUPID,
-        exchange: 'exchange/taskcluster-queue/v1/task-completed',
-        routingKey: 'route.checks',
-        taskId: CUSTOM_CHECKRUN_HOOK_TASKID,
-        reasonResolved: 'completed',
-        state: 'completed',
-        started: STARTED,
-        resolved: RESOLVED,
-      });
-      assert(
-        useSpy.getCalls().some(c => c.args[0].authorizedScopes?.[0] === 'queue:get-artifact:public/text.md'),
-        'use should be called with queue:get-artifact scope for the artifact',
-      );
       sinon.restore();
     });
 
@@ -1853,9 +1600,13 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
       await addBuild({ state: 'pending', taskGroupId: TASKGROUPID });
       await addCheckRun({ taskGroupId: TASKGROUPID, taskId: CUSTOM_CHECKRUN_TASKID });
       sinon.restore();
-      sinon.stub(global, "fetch").resolves({ ok: true, body: { cancel: async () => {} } });
-      sinon.stub(utils, "extractLog").resolves(LIVE_LOG_TEXT);
-      sinon.stub(utils, "throttleRequest").returns({ status: 404 });
+      sinon.stub(utils, "throttleRequest")
+        .onFirstCall()
+        .returns({ status: 200, text: LIVE_LOG_TEXT })
+        .onSecondCall()
+        .returns({ status: 404 })
+        .onThirdCall()
+        .returns({ status: 404 });
       await simulateExchangeMessage({
         taskGroupId: TASKGROUPID,
         exchange: 'exchange/taskcluster-queue/v1/task-completed',
@@ -1872,7 +1623,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
       /* eslint-disable comma-dangle */
       assert.strictEqual(
         args.output.text,
-        `[${CHECKRUN_TEXT}](${libUrls.testRootUrl()}/tasks/${CUSTOM_CHECKRUN_TASKID}) | [${CHECKLOGS_TEXT}](${libUrls.testRootUrl()}/tasks/${CUSTOM_CHECKRUN_TASKID}/runs/0/logs/live/public/logs/live.log) | [${CHECK_TASK_GROUP_TEXT}](${libUrls.testRootUrl()}/tasks/groups/${TASKGROUPID})\n### Task Status\nStarted: ${STARTED}\nResolved: ${RESOLVED}\nTask Execution Time: 1 day\nTask Status: **completed**\nReason Resolved: **completed**\nTaskId: **${CUSTOM_CHECKRUN_TASKID}**\nRunId: **0**\n### Artifacts\n${buildArtifactLinks(50, CUSTOM_CHECKRUN_TASKID)}\n\n---\n\n\`\`\`bash\n${LIVE_LOG_TEXT}\n\`\`\`\n`
+        `[${CHECKRUN_TEXT}](${libUrls.testRootUrl()}/tasks/${CUSTOM_CHECKRUN_TASKID}) | [${CHECKLOGS_TEXT}](${libUrls.testRootUrl()}/tasks/${CUSTOM_CHECKRUN_TASKID}/runs/0/logs/live/public/logs/live.log) | [${CHECK_TASK_GROUP_TEXT}](${libUrls.testRootUrl()}/tasks/groups/${TASKGROUPID})\n### Task Status\nStarted: ${STARTED}\nResolved: ${RESOLVED}\nTask Execution Time: 1 day\nTask Status: **completed**\nReason Resolved: **completed**\nRunId: **0**\n### Artifacts\n${buildArtifactLinks(50, CUSTOM_CHECKRUN_TASKID)}\n\n---\n\n\`\`\`bash\n${LIVE_LOG_TEXT}\n\`\`\`\n`
       );
       /* eslint-enable comma-dangle */
       sinon.restore();
@@ -1882,9 +1633,13 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
       await addBuild({ state: 'pending', taskGroupId: TASKGROUPID });
       await addCheckRun({ taskGroupId: TASKGROUPID, taskId: CUSTOM_LIVELOG_NAME_TASKID });
       sinon.restore();
-      sinon.stub(global, "fetch").resolves({ ok: true, body: { cancel: async () => {} } });
-      sinon.stub(utils, "extractLog").resolves(LIVE_LOG_TEXT);
-      sinon.stub(utils, "throttleRequest").returns({ status: 404 });
+      sinon.stub(utils, "throttleRequest")
+        .onFirstCall()
+        .returns({ status: 200, text: LIVE_LOG_TEXT })
+        .onSecondCall()
+        .returns({ status: 404 })
+        .onThirdCall()
+        .returns({ status: 404 });
       await simulateExchangeMessage({
         taskGroupId: TASKGROUPID,
         exchange: 'exchange/taskcluster-queue/v1/task-completed',
@@ -1901,7 +1656,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
       /* eslint-disable comma-dangle */
       assert.strictEqual(
         args.output.text,
-        `[${CHECKRUN_TEXT}](${libUrls.testRootUrl()}/tasks/${CUSTOM_LIVELOG_NAME_TASKID}) | [${CHECKLOGS_TEXT}](${libUrls.testRootUrl()}/tasks/${CUSTOM_LIVELOG_NAME_TASKID}/runs/0/logs/live/apple/banana.log) | [${CHECK_TASK_GROUP_TEXT}](${libUrls.testRootUrl()}/tasks/groups/${TASKGROUPID})\n### Task Status\nStarted: ${STARTED}\nResolved: ${RESOLVED}\nTask Execution Time: 1 day\nTask Status: **completed**\nReason Resolved: **completed**\nTaskId: **${CUSTOM_LIVELOG_NAME_TASKID}**\nRunId: **0**\n### Artifacts\n${buildArtifactLinks(50, CUSTOM_LIVELOG_NAME_TASKID)}\n\n---\n\n\`\`\`bash\n${LIVE_LOG_TEXT}\n\`\`\`\n`
+        `[${CHECKRUN_TEXT}](${libUrls.testRootUrl()}/tasks/${CUSTOM_LIVELOG_NAME_TASKID}) | [${CHECKLOGS_TEXT}](${libUrls.testRootUrl()}/tasks/${CUSTOM_LIVELOG_NAME_TASKID}/runs/0/logs/live/apple/banana.log) | [${CHECK_TASK_GROUP_TEXT}](${libUrls.testRootUrl()}/tasks/groups/${TASKGROUPID})\n### Task Status\nStarted: ${STARTED}\nResolved: ${RESOLVED}\nTask Execution Time: 1 day\nTask Status: **completed**\nReason Resolved: **completed**\nRunId: **0**\n### Artifacts\n${buildArtifactLinks(50, CUSTOM_LIVELOG_NAME_TASKID)}\n\n---\n\n\`\`\`bash\n${LIVE_LOG_TEXT}\n\`\`\`\n`
       );
       /* eslint-enable comma-dangle */
       sinon.restore();
@@ -1917,9 +1672,13 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
       await addBuild({ state: 'pending', taskGroupId: TASKGROUPID });
       await addCheckRun({ taskGroupId: TASKGROUPID, taskId: CUSTOM_LIVELOG_NAME_TASKID });
       sinon.restore();
-      sinon.stub(global, "fetch").resolves({ ok: true, body: { cancel: async () => {} } });
-      sinon.stub(utils, "extractLog").resolves(LIVE_LOG_TEXT);
-      sinon.stub(utils, "throttleRequest").returns({ status: 404 });
+      sinon.stub(utils, "throttleRequest")
+        .onFirstCall()
+        .returns({ status: 200, text: LIVE_LOG_TEXT })
+        .onSecondCall()
+        .returns({ status: 404 })
+        .onThirdCall()
+        .returns({ status: 404 });
       await simulateExchangeMessage({
         taskGroupId: TASKGROUPID,
         exchange: 'exchange/taskcluster-queue/v1/task-completed',
@@ -1937,7 +1696,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
       /* eslint-disable comma-dangle */
       assert.strictEqual(
         args.output.text,
-        `[${CHECKRUN_TEXT}](${libUrls.testRootUrl()}/tasks/${CUSTOM_LIVELOG_NAME_TASKID}) | [${CHECKLOGS_TEXT}](${libUrls.testRootUrl()}/tasks/${CUSTOM_LIVELOG_NAME_TASKID}/runs/0/logs/live/apple/banana.log) | [${CHECK_TASK_GROUP_TEXT}](${libUrls.testRootUrl()}/tasks/groups/${TASKGROUPID})\n### Task Status\nStarted: ${STARTED}\nResolved: ${RESOLVED}\nTask Execution Time: 1 day\nTask Status: **completed**\nReason Resolved: **completed**\nTaskId: **${CUSTOM_LIVELOG_NAME_TASKID}**\nRunId: **0**\n\n---\n\n\`\`\`bash\n${LIVE_LOG_TEXT}\n\`\`\`\n`
+        `[${CHECKRUN_TEXT}](${libUrls.testRootUrl()}/tasks/${CUSTOM_LIVELOG_NAME_TASKID}) | [${CHECKLOGS_TEXT}](${libUrls.testRootUrl()}/tasks/${CUSTOM_LIVELOG_NAME_TASKID}/runs/0/logs/live/apple/banana.log) | [${CHECK_TASK_GROUP_TEXT}](${libUrls.testRootUrl()}/tasks/groups/${TASKGROUPID})\n### Task Status\nStarted: ${STARTED}\nResolved: ${RESOLVED}\nTask Execution Time: 1 day\nTask Status: **completed**\nReason Resolved: **completed**\nRunId: **0**\n\n---\n\n\`\`\`bash\n${LIVE_LOG_TEXT}\n\`\`\`\n`
       );
       /* eslint-enable comma-dangle */
       sinon.restore();
@@ -1948,8 +1707,6 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
       await addBuild({ state: 'pending', taskGroupId: TASKGROUPID });
       await addCheckRun({ taskGroupId: TASKGROUPID, taskId: CUSTOM_CHECKRUN_TASKID });
       sinon.restore();
-      sinon.stub(global, "fetch").resolves({ ok: true, body: { cancel: async () => {} } });
-      sinon.stub(utils, "extractLog").resolves('');
       sinon.stub(utils, "throttleRequest")
         .onFirstCall()
         .returns({ status: 418, response: { error: { text: "I'm a tea pot" } } })
@@ -1973,12 +1730,12 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
       await addBuild({ state: 'pending', taskGroupId: TASKGROUPID });
       await addCheckRun({ taskGroupId: TASKGROUPID, taskId: CUSTOM_CHECKRUN_TASKID });
       sinon.restore();
-      sinon.stub(global, "fetch").resolves({ ok: true, body: { cancel: async () => {} } });
-      sinon.stub(utils, "extractLog").resolves(LIVE_LOG_TEXT);
       sinon.stub(utils, "throttleRequest")
         .onFirstCall()
-        .returns({ status: 404 })
+        .returns({ status: 200, text: LIVE_LOG_TEXT })
         .onSecondCall()
+        .returns({ status: 404 })
+        .onThirdCall()
         .returns({ status: 200, text: CUSTOM_CHECKRUN_ANNOTATIONS });
       await simulateExchangeMessage({
         taskGroupId: TASKGROUPID,
@@ -1999,12 +1756,12 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
       await addBuild({ state: 'pending', taskGroupId: TASKGROUPID });
       await addCheckRun({ taskGroupId: TASKGROUPID, taskId: CUSTOM_CHECKRUN_TASKID });
       sinon.restore();
-      sinon.stub(global, "fetch").resolves({ ok: true, body: { cancel: async () => {} } });
-      sinon.stub(utils, "extractLog").resolves('');
       sinon.stub(utils, "throttleRequest")
         .onFirstCall()
         .returns({ status: 404 })
         .onSecondCall()
+        .returns({ status: 404 })
+        .onThirdCall()
         .returns({ status: 200, text: "{{{invalid json!!" });
 
       await simulateExchangeMessage({
@@ -2028,8 +1785,6 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
       await addBuild({ state: 'pending', taskGroupId: TASKGROUPID });
       await addCheckRun({ taskGroupId: TASKGROUPID, taskId: CUSTOM_CHECKRUN_TASKID });
       sinon.restore();
-      sinon.stub(global, "fetch").resolves({ ok: true, body: { cancel: async () => {} } });
-      sinon.stub(utils, "extractLog").resolves('');
       sinon.stub(utils, "throttleRequest")
         .onFirstCall()
         .returns({ status: 404 })
@@ -2065,9 +1820,13 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
       await addBuild({ state: 'pending', taskGroupId: TASKGROUPID });
       await addCheckRun({ taskGroupId: TASKGROUPID, taskId: CUSTOM_LIVELOG_NAME_TASKID });
       sinon.restore();
-      sinon.stub(global, "fetch").resolves({ ok: true, body: { cancel: async () => {} } });
-      sinon.stub(utils, "extractLog").resolves(LIVE_LOG_TEXT);
-      sinon.stub(utils, "throttleRequest").returns({ status: 404 });
+      sinon.stub(utils, "throttleRequest")
+        .onFirstCall()
+        .returns({ status: 200, text: LIVE_LOG_TEXT })
+        .onSecondCall()
+        .returns({ status: 404 })
+        .onThirdCall()
+        .returns({ status: 404 });
       await simulateExchangeMessage({
         taskGroupId: TASKGROUPID,
         exchange: 'exchange/taskcluster-queue/v1/task-completed',
@@ -2084,7 +1843,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
       /* eslint-disable comma-dangle */
       assert.strictEqual(
         args.output.text,
-        `[${CHECKRUN_TEXT}](${libUrls.testRootUrl()}/tasks/${CUSTOM_LIVELOG_NAME_TASKID}) | [${CHECKLOGS_TEXT}](${libUrls.testRootUrl()}/tasks/${CUSTOM_LIVELOG_NAME_TASKID}/runs/0/logs/live/apple/banana.log) | [${CHECK_TASK_GROUP_TEXT}](${libUrls.testRootUrl()}/tasks/groups/${TASKGROUPID})\n### Task Status\nStarted: n/a\nResolved: n/a\nTask Execution Time: n/a\nTask Status: **completed**\nReason Resolved: **completed**\nTaskId: **${CUSTOM_LIVELOG_NAME_TASKID}**\nRunId: **0**\n### Artifacts\n${buildArtifactLinks(50, CUSTOM_LIVELOG_NAME_TASKID)}\n\n---\n\n\`\`\`bash\n${LIVE_LOG_TEXT}\n\`\`\`\n`
+        `[${CHECKRUN_TEXT}](${libUrls.testRootUrl()}/tasks/${CUSTOM_LIVELOG_NAME_TASKID}) | [${CHECKLOGS_TEXT}](${libUrls.testRootUrl()}/tasks/${CUSTOM_LIVELOG_NAME_TASKID}/runs/0/logs/live/apple/banana.log) | [${CHECK_TASK_GROUP_TEXT}](${libUrls.testRootUrl()}/tasks/groups/${TASKGROUPID})\n### Task Status\nStarted: n/a\nResolved: n/a\nTask Execution Time: n/a\nTask Status: **completed**\nReason Resolved: **completed**\nRunId: **0**\n### Artifacts\n${buildArtifactLinks(50, CUSTOM_LIVELOG_NAME_TASKID)}\n\n---\n\n\`\`\`bash\n${LIVE_LOG_TEXT}\n\`\`\`\n`
       );
       /* eslint-enable comma-dangle */
       sinon.restore();
@@ -2099,8 +1858,6 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
     });
 
     setup(function () {
-      sinon.stub(global, "fetch").resolves({ ok: false, body: { cancel: async () => {} } });
-      sinon.stub(utils, "extractLog").resolves('');
       sinon.stub(utils, "throttleRequest").returns({ status: 404, response: { error: { text: "Resource not found" } } });
     });
 
@@ -2157,26 +1914,6 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
         state: 'running',
       });
       await assertCheckRunStatus('in_progress');
-    });
-
-    test('in_progress update sends started_at matching the worker claim time, not the queue time', async function () {
-      const claimedAt = '2026-05-15T10:00:00.000Z';
-      await addBuild({ state: 'running', taskGroupId: TASKGROUPID });
-      await addCheckRun({ taskGroupId: TASKGROUPID, taskId: TASKID });
-      await simulateExchangeMessage({
-        taskGroupId: TASKGROUPID,
-        exchange: 'exchange/taskcluster-queue/v1/task-running',
-        routingKey: 'route.checks',
-        taskId: TASKID,
-        state: 'running',
-        started: claimedAt,
-      });
-
-      assert(github.inst(9988).checks.update.calledOnce, 'checks.update was not called');
-      const [args] = github.inst(9988).checks.update.firstCall.args;
-      assert.equal(args.status, 'in_progress');
-      assert.equal(args.started_at, claimedAt,
-        'started_at must come from runs[runId].started, not GitHub defaults');
     });
 
     test('task is rerun and queued gets a queued check result and rerequested run', async function () {
@@ -2291,21 +2028,6 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
         taskId: TASKID,
       });
       assertStatusCreate('pending');
-    });
-
-    test('taskDefined create omits started_at so GitHub does not anchor elapsed time to queue time', async function () {
-      await addBuild({ state: 'pending', taskGroupId: TASKGROUPID });
-      await simulateExchangeMessage({
-        taskGroupId: TASKGROUPID,
-        exchange: 'exchange/taskcluster-queue/v1/task-defined',
-        routingKey: 'route.checks',
-        taskId: TASKID,
-      });
-
-      assert(github.inst(9988).checks.create.called, 'checks.create was not called');
-      const [args] = github.inst(9988).checks.create.firstCall.args;
-      assert.equal(args.started_at, undefined,
-        'started_at must be omitted before the worker claims the task');
     });
 
     test('skip check when build is not defined', async function () {

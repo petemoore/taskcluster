@@ -151,7 +151,7 @@ export default class AuthConsent extends Component {
           name="cancel"
           value="Deny"
           tooltipProps={{ title: 'Deny' }}
-          variant="circular"
+          variant="round"
           color="secondary"
           spanProps={{
             className: classNames(classes.fab, classes.denySpanProps),
@@ -162,7 +162,7 @@ export default class AuthConsent extends Component {
           type="submit"
           tooltipProps={{ title: 'Allow' }}
           classes={{ root: classes.allowIcon }}
-          variant="circular"
+          variant="round"
           spanProps={{ className: classes.fab }}>
           <CheckIcon />
         </Button>

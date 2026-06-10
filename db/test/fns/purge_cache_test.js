@@ -1,6 +1,6 @@
 import { strict as assert } from 'assert';
-import testing from '@taskcluster/lib-testing';
-import tc from '@taskcluster/client';
+import testing from 'taskcluster-lib-testing';
+import tc from 'taskcluster-client';
 const { fromNow } = tc;
 import helper from '../helper.js';
 
@@ -32,7 +32,7 @@ suite(testing.suiteName(), function() {
       }
     };
 
-    if (Array.isArray(caches)) {
+    if (caches instanceof Array) {
       caches = caches.sort();
       samples = samples.sort();
       caches.forEach((cache, idx) => {

@@ -6,7 +6,7 @@ import { annotateError } from './util.js';
 import Keyring from './Keyring.js';
 import { strict as assert } from 'assert';
 import { READ, WRITE, DUPLICATE_OBJECT, UNDEFINED_TABLE } from './constants.js';
-import { MonitorManager } from '@taskcluster/lib-monitor';
+import { MonitorManager } from 'taskcluster-lib-monitor';
 import pgConnectionString from 'pg-connection-string';
 const { parse: parseConnectionString } = pgConnectionString;
 
@@ -790,7 +790,7 @@ class Database {
   decrypt({ value }) {
     const key = this.keyring.getCryptoKey(value.kid, 'aes-256');
 
-    const n = value.__bufchunks_val;
+    const n = value['__bufchunks_val'];
     const chunks = [];
     for (let i = 0; i < n; i++) {
       chunks[i] = Buffer.from(value['__buf' + i + '_val'], 'base64');

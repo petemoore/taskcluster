@@ -1,6 +1,6 @@
 import assert from 'assert';
 import helper from './helper.js';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 import { WorkerPoolStats } from '../src/data.js';
 
 helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
@@ -110,7 +110,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
     ]);
     const wrc = await launchConfigSelector.forWorkerPool(wp);
 
-    const counts = getDistribution(wrc, 500);
+    const counts = getDistribution(wrc, 100);
     assert.ok(counts.lc1 > counts.lc2, 'lc1 should be chosen more often than lc2');
     assert.ok(counts.lc2 > counts.lc3, 'lc2 should be chosen more often than lc3');
     assert.ok(counts.unknown === undefined);
@@ -226,32 +226,5 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
 
     assert.equal(wrc.selectCapacity(5).length, 1);
     assert.equal(wrc.selectCapacity(25).length, 5);
-  });
-
-  test('single LC with negative weight due to errors still provisions when it has capacity', async function() {
-    const wp = await createWorkerPool([
-      genAwsLaunchConfig({ launchConfigId: 'lc1', initialWeight: 1, maxCapacity: 100 }),
-    ]);
-
-    // simulate: 60% capacity used, 50% error rate
-    // This will cause weight to go negative: 1 - 0.6 - 0.5 = -0.1
-    const workerPoolStats = new WorkerPoolStats(wp.workerPoolId);
-    workerPoolStats.capacityByLaunchConfig.set('lc1', 60);
-    workerPoolStats.totalErrors = 100;
-    workerPoolStats.errorsByLaunchConfig.set('lc1', 50);
-
-    const wrc = await launchConfigSelector.forWorkerPool(wp, workerPoolStats);
-
-    assert.equal(wrc.getAll().length, 1, 'Should have 1 config available');
-    assert.ok(wrc.totalWeight > 0, 'totalWeight should be positive');
-
-    const configs = wrc.selectCapacity(10);
-    assert.equal(configs.length, 10, 'Should provision 10 workers');
-    assert.equal(configs[0].launchConfigId, 'lc1', 'Should select lc1');
-
-    await assertDebugMessage(wp.workerPoolId,
-      { lc1: 0.01 },
-      { lc1: 40 },
-    );
   });
 });

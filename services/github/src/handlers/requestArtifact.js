@@ -1,16 +1,14 @@
 import utils from '../utils.js';
 
-export function buildArtifactUrl(queueClient, { taskId, runId, artifactName }) {
-  const limitedQueueClient = queueClient.use({ authorizedScopes: [`queue:get-artifact:${artifactName}`] });
-  return limitedQueueClient.buildSignedUrl(limitedQueueClient.getArtifact, taskId, runId, artifactName);
-}
-
 /**
  * Helper to request artifacts from statusHandler.
  */
-export async function requestArtifact(artifactName, { taskId, runId, debug, instGithub, build }) {
+export async function requestArtifact(artifactName, { taskId, runId, debug, instGithub, build, scopes }) {
   try {
-    const url = buildArtifactUrl(this.queueClient, { taskId, runId, artifactName });
+    const limitedQueueClient = this.queueClient.use({
+      authorizedScopes: scopes,
+    });
+    const url = limitedQueueClient.buildSignedUrl(limitedQueueClient.getArtifact, taskId, runId, artifactName);
     const res = await utils.throttleRequest({ url, method: 'GET' });
 
     if (res.status >= 400 && res.status !== 404) {
@@ -18,7 +16,7 @@ export async function requestArtifact(artifactName, { taskId, runId, debug, inst
       let errorMessage = `Failed to fetch task artifact \`${artifactName}\` for GitHub integration.\n`;
       switch (res.status) {
         case 403:
-          errorMessage = errorMessage.concat(`The GitHub service does not have permission to read this artifact. Make sure the artifact is public or grant the GitHub service the \`${requiredScope}\` scope.`);
+          errorMessage = errorMessage.concat(`Make sure your task has the scope \`${requiredScope}\`. See the documentation on the artifact naming.`);
           break;
         case 404:
           errorMessage = errorMessage.concat("Make sure the artifact exists, and there are no typos in its name.");

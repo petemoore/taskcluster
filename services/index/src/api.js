@@ -1,4 +1,4 @@
-import { APIBuilder, paginateResults } from '@taskcluster/lib-api';
+import { APIBuilder, paginateResults } from 'taskcluster-lib-api';
 import helpers from './helpers.js';
 
 /**
@@ -23,7 +23,7 @@ let builder = new APIBuilder({
   projectName: 'taskcluster-index',
   serviceName: 'index',
   apiVersion: 'v1',
-  context: ['queue', 'db', 'isPublicArtifact'],
+  context: ['queue', 'db'],
   params: {
     namespace: helpers.namespaceFormat,
     indexPath: helpers.namespaceFormat,
@@ -362,37 +362,16 @@ builder.declare({
     return res.reportError('ResourceNotFound', 'Indexed task not found', {});
   }
 
-  let isPublic = false;
-  try {
-    isPublic = await that.isPublicArtifact(artifactName);
-  } catch {
-    isPublic = false;
-  }
-
-  if (isPublic) {
-    try {
-      const artifact = await that.queue.latestArtifact(task.taskId, artifactName);
-      if (artifact.url) {
-        return res.redirect(303, artifact.url);
-      }
-    } catch {
-      // fall through to queue redirect
-    }
-    const url = that.queue.externalBuildUrl(
-      that.queue.getLatestArtifact,
-      task.taskId,
-      artifactName,
-    );
-    return res.redirect(303, url);
-  }
-
-  const url = that.queue.externalBuildSignedUrl(
+  // Build signed url for artifact
+  let url;
+  url = that.queue.externalBuildSignedUrl(
     that.queue.getLatestArtifact,
     task.taskId,
     artifactName, {
       expiration: 15 * 60,
     },
   );
+  // Redirect to artifact
   return res.redirect(303, url);
 });
 

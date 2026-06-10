@@ -10,8 +10,6 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
-    cooldown:
-      default-days: 7
     rebase-strategy: "disabled"
     groups:
       # Groups together all minor/patch version updates for dependencies
@@ -22,13 +20,11 @@ updates:
           - "minor"
           - "patch"
 
-  # Maintain node dependencies for @taskcluster/client
+  # Maintain node dependencies for taskcluster-client
   - package-ecosystem: "npm"
     directory: "/clients/client"
     schedule:
       interval: "monthly"
-    cooldown:
-      default-days: 7
     rebase-strategy: "disabled"
     groups:
       # Groups together all minor/patch version updates for dependencies
@@ -39,13 +35,11 @@ updates:
           - "minor"
           - "patch"
 
-  # Maintain node dependencies for @taskcluster/client-web
+  # Maintain node dependencies for taskcluster-client-web
   - package-ecosystem: "npm"
     directory: "/clients/client-web"
     schedule:
       interval: "monthly"
-    cooldown:
-      default-days: 7
     rebase-strategy: "disabled"
     groups:
       # Groups together all minor/patch version updates for dependencies
@@ -56,13 +50,11 @@ updates:
           - "minor"
           - "patch"
 
-  # Maintain cargo dependencies for taskcluster-client-rust
+  # Maintain node dependencies for taskcluster-client-rust
   - package-ecosystem: "cargo"
     directory: "/clients/client-rust"
     schedule:
       interval: "monthly"
-    cooldown:
-      default-days: 7
     rebase-strategy: "disabled"
     groups:
       # Groups together all minor/patch version updates for dependencies
@@ -73,34 +65,30 @@ updates:
           - "minor"
           - "patch"
 
-  # Maintain uv dependencies for taskcluster-client-python
-  - package-ecosystem: "uv"
-    directory: "/clients/client-py"
+  # Maintain node dependencies for taskcluster-ui
+  - package-ecosystem: "npm"
+    directory: "/ui"
     schedule:
       interval: "monthly"
-    cooldown:
-      default-days: 7
     rebase-strategy: "disabled"
     groups:
       # Groups together all minor/patch version updates for dependencies
-      client-python-deps:
+      ui-node-deps:
         patterns:
           - "*"
         update-types:
           - "minor"
           - "patch"
 
-  # Maintain node dependencies for @taskcluster/ui
+  # Maintain node dependencies for taskcluster-ui e2e tests
   - package-ecosystem: "npm"
-    directory: "/ui"
+    directory: "/ui/test/e2e"
     schedule:
       interval: "monthly"
-    cooldown:
-      default-days: 7
     rebase-strategy: "disabled"
     groups:
       # Groups together all minor/patch version updates for dependencies
-      ui-node-deps:
+      e2e-ui-test-node-deps:
         patterns:
           - "*"
         update-types:
@@ -112,8 +100,6 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
-    cooldown:
-      default-days: 7
     rebase-strategy: "disabled"
     groups:
       # Groups together all minor/patch version updates for dependencies
@@ -129,8 +115,6 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
-    cooldown:
-      default-days: 7
     rebase-strategy: "disabled"
     groups:
       # Groups together all minor/patch version updates for dependencies
@@ -146,8 +130,6 @@ updates:
     directory: "/taskcluster"
     schedule:
       interval: "monthly"
-    cooldown:
-      default-days: 7
     rebase-strategy: "disabled"
     groups:
       # Groups together all minor/patch version updates for dependencies
@@ -157,3 +139,12 @@ updates:
         update-types:
           - "minor"
           - "patch"
+
+  # Ignore docker worker dependencies
+  - package-ecosystem: "npm"
+    directory: "/workers/docker-worker"
+    schedule:
+      interval: "monthly"
+    rebase-strategy: "disabled"
+    ignore:
+      - dependency-name: "*"

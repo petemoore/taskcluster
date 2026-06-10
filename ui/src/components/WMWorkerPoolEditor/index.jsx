@@ -206,9 +206,6 @@ export default class WMWorkerPoolEditor extends Component {
       emailOnError: this.props.workerPool.emailOnError,
       config: JSON.stringify(this.props.workerPool.config || {}, null, 2),
     },
-    originalSerializedWorkerPool: this.props.isNewWorkerPool
-      ? null
-      : this.serializeWorkerPool(this.props.workerPool),
     invalidProviderConfig: false,
     actionLoading: false,
     error: null,
@@ -227,36 +224,6 @@ export default class WMWorkerPoolEditor extends Component {
       },
     },
   };
-
-  serializeWorkerPool(wp) {
-    let workerPoolId1;
-    let workerPoolId2;
-
-    if (wp.workerPoolId) {
-      const split = splitWorkerPoolId(wp.workerPoolId);
-
-      workerPoolId1 = split.provisionerId;
-      workerPoolId2 = split.workerType;
-    } else {
-      workerPoolId1 = wp.workerPoolId1;
-      workerPoolId2 = wp.workerPoolId2;
-    }
-
-    const config =
-      typeof wp.config === 'string'
-        ? wp.config
-        : JSON.stringify(wp.config || {}, null, 2);
-
-    return JSON.stringify({
-      workerPoolId1,
-      workerPoolId2,
-      providerId: wp.providerId,
-      description: wp.description,
-      owner: wp.owner,
-      emailOnError: wp.emailOnError,
-      config,
-    });
-  }
 
   handleInputChange = ({
     currentTarget: { name, value, validity, validationMessage },
@@ -363,7 +330,7 @@ export default class WMWorkerPoolEditor extends Component {
         },
         invalidProviderConfig: false,
       });
-    } catch (_err) {
+    } catch (err) {
       this.setState({
         workerPool: {
           ...workerPool,
@@ -386,12 +353,6 @@ export default class WMWorkerPoolEditor extends Component {
       await this.props[requestName]({
         workerPoolId: joinWorkerPoolId(workerPoolId1, workerPoolId2),
         payload,
-      });
-      this.setState({
-        originalSerializedWorkerPool: this.serializeWorkerPool(
-          this.state.workerPool
-        ),
-        actionLoading: false,
       });
     } catch (error) {
       this.setState({ error: formatError(error), actionLoading: false });
@@ -421,17 +382,26 @@ export default class WMWorkerPoolEditor extends Component {
     } = this.props;
     const { workerPool, error, actionLoading, validation } = this.state;
     const {
+      description,
+      emailOnError,
+      owner,
+      providerId,
       workerPoolId,
+      config,
       requestedCapacity,
       runningCapacity,
       stoppingCapacity,
       pendingTasks,
     } = this.props.workerPool;
-    const currentSerializedWorkerPool = this.serializeWorkerPool(
-      this.state.workerPool
-    );
     const isWorkerPoolDirty =
-      this.state.originalSerializedWorkerPool !== currentSerializedWorkerPool;
+      isNewWorkerPool ||
+      workerPool.description !== description ||
+      workerPool.emailOnError !== emailOnError ||
+      workerPool.owner !== owner ||
+      workerPool.providerId !== providerId ||
+      workerPool.config !== JSON.stringify(config || {}, null, 2) ||
+      joinWorkerPoolId(workerPool.workerPoolId1, workerPool.workerPoolId2) !==
+        workerPoolId;
     const { provisionerId, workerType } = splitWorkerPoolId(workerPoolId);
     const workerTypeUrl = `/provisioners/${provisionerId}/worker-types/${workerType}`;
     const workerPoolUrl = `/worker-manager/${encodeURIComponent(workerPoolId)}`;
@@ -477,46 +447,50 @@ export default class WMWorkerPoolEditor extends Component {
       <Fragment>
         <ErrorPanel fixed error={error} />
         {!isNewWorkerPool && (
-          <Paper component="ul" className={classes.overviewList}>
-            {workerPoolStats.map(({ label, value, className, Icon, href }) => {
-              return (
-                <ButtonBase
-                  focusRipple
-                  key={className}
-                  name={className}
-                  variant="contained"
-                  href={href}
-                  className={classNames(
-                    classes[className],
-                    classes.statusButton
-                  )}>
-                  <div>
-                    <Icon
-                      color="white"
-                      className={classes.statusIcon}
-                      size={32}
-                    />
-                  </div>
-                  <div>
-                    <Typography
-                      align="right"
-                      className={classes.statusButtonTypography}
-                      variant="h4">
-                      {value || 0}
-                    </Typography>
-                    <Typography
+          <Fragment>
+            <Paper component="ul" className={classes.overviewList}>
+              {workerPoolStats.map(
+                ({ label, value, className, Icon, href }) => {
+                  return (
+                    <ButtonBase
+                      focusRipple
+                      key={className}
+                      name={className}
+                      variant="contained"
+                      href={href}
                       className={classNames(
-                        classes.statusTitle,
-                        classes.statusButtonTypography
-                      )}
-                      variant="caption">
-                      {titleCase(label)}
-                    </Typography>
-                  </div>
-                </ButtonBase>
-              );
-            })}
-          </Paper>
+                        classes[className],
+                        classes.statusButton
+                      )}>
+                      <div>
+                        <Icon
+                          color="white"
+                          className={classes.statusIcon}
+                          size={32}
+                        />
+                      </div>
+                      <div>
+                        <Typography
+                          align="right"
+                          className={classes.statusButtonTypography}
+                          variant="h4">
+                          {value || 0}
+                        </Typography>
+                        <Typography
+                          className={classNames(
+                            classes.statusTitle,
+                            classes.statusButtonTypography
+                          )}
+                          variant="caption">
+                          {titleCase(label)}
+                        </Typography>
+                      </div>
+                    </ButtonBase>
+                  );
+                }
+              )}
+            </Paper>
+          </Fragment>
         )}
         <List>
           <div>
@@ -636,7 +610,7 @@ export default class WMWorkerPoolEditor extends Component {
           tooltipProps={{ title: 'Save Worker Pool' }}
           onClick={this.handleOnClick}
           classes={{ root: classes.saveIcon }}
-          variant="circular">
+          variant="round">
           <ContentSaveIcon />
         </Button>
 

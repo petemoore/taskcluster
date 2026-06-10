@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import azure from 'fast-azure-storage';
-import { APIBuilder } from '@taskcluster/lib-api';
+import { APIBuilder } from 'taskcluster-lib-api';
 
 // keyed by account/tableName, the last time createTable was called for the
 // given table.  This is used to avoid lots of redundant calls to createTable
@@ -125,7 +125,7 @@ export const azureBuilder = builder => {
     if (level === 'read-write') {
       // only try to create if we haven't done so in this process recently
       const key = `${account}/${tableName}`;
-      if (!tableLastCreated[key] || Date.now() - tableLastCreated[key] > 6 * 3600 * 1000) {
+      if (!tableLastCreated[key] || new Date() - tableLastCreated[key] > 6 * 3600 * 1000) {
         try {
           await table.createTable(tableName);
         } catch (err) {
@@ -248,7 +248,7 @@ export const azureBuilder = builder => {
     // Create container ignore error, if it already exists
     if (level === 'read-write') {
       const key = `${account}/${container}`;
-      if (!containerLastCreated[key] || Date.now() - containerLastCreated[key] > 6 * 3600 * 1000) {
+      if (!containerLastCreated[key] || new Date() - containerLastCreated[key] > 6 * 3600 * 1000) {
         try {
           await blob.createContainer(container);
         } catch (err) {

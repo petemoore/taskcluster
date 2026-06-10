@@ -6,13 +6,13 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/taskcluster/taskcluster/v100/clients/client-go/tcauth"
-	"github.com/taskcluster/taskcluster/v100/clients/client-go/tcindex"
-	"github.com/taskcluster/taskcluster/v100/clients/client-go/tcobject"
-	"github.com/taskcluster/taskcluster/v100/clients/client-go/tcpurgecache"
-	"github.com/taskcluster/taskcluster/v100/clients/client-go/tcqueue"
-	"github.com/taskcluster/taskcluster/v100/clients/client-go/tcsecrets"
-	"github.com/taskcluster/taskcluster/v100/clients/client-go/tcworkermanager"
+	"github.com/taskcluster/taskcluster/v86/clients/client-go/tcauth"
+	"github.com/taskcluster/taskcluster/v86/clients/client-go/tcindex"
+	"github.com/taskcluster/taskcluster/v86/clients/client-go/tcobject"
+	"github.com/taskcluster/taskcluster/v86/clients/client-go/tcpurgecache"
+	"github.com/taskcluster/taskcluster/v86/clients/client-go/tcqueue"
+	"github.com/taskcluster/taskcluster/v86/clients/client-go/tcsecrets"
+	"github.com/taskcluster/taskcluster/v86/clients/client-go/tcworkermanager"
 )
 
 type Auth interface {
@@ -23,14 +23,12 @@ type Auth interface {
 
 type Index interface {
 	FindTask(indexPath string) (*tcindex.IndexedTaskResponse, error)
-	InsertTask(namespace string, itr *tcindex.InsertTaskRequest) (*tcindex.IndexedTaskResponse, error)
 }
 
 type WorkerManager interface {
 	RegisterWorker(payload *tcworkermanager.RegisterWorkerRequest) (*tcworkermanager.RegisterWorkerResponse, error)
 	WorkerPool(workerPoolId string) (*tcworkermanager.WorkerPoolFullDefinition, error)
 	CreateWorkerPool(workerPoolId string, payload *tcworkermanager.WorkerPoolDefinition) (*tcworkermanager.WorkerPoolFullDefinition, error)
-	ShouldWorkerTerminate(workerPoolId, workerGroup, workerId string) (*tcworkermanager.ShouldWorkerTerminateResponse, error)
 }
 
 type PurgeCache interface {

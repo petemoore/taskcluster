@@ -8,7 +8,7 @@ import sslify from 'express-sslify';
 import hsts from 'hsts';
 import csp from 'content-security-policy';
 import { v4 } from 'uuid';
-import { loadVersion } from '@taskcluster/lib-api';
+import { loadVersion } from 'taskcluster-lib-api';
 
 /**
  * Attach trace headers to requests. This is exported
@@ -95,10 +95,6 @@ const createServer = function() {
 
       return new Promise((accept, reject) => {
         server.close(accept);
-        // force-close all open connections so the port is released immediately;
-        // called after server.close per Node.js docs to avoid race conditions
-        // where new connections arrive between the two calls
-        server.closeAllConnections();
       }).then(() => {
         debug('Server terminated on port ' + this.get('port'));
       });

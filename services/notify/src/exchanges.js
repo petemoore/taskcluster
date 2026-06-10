@@ -1,4 +1,4 @@
-import { Exchanges } from '@taskcluster/lib-pulse';
+import { Exchanges } from 'taskcluster-lib-pulse';
 import assert from 'assert';
 
 /** Declaration of exchanges offered by the queue */
@@ -53,7 +53,7 @@ const commonRoutingKeyBuilder = function(message, routing) {
 
 /** Build list of routing keys to CC */
 const commonCCBuilder = function(message, routes) {
-  assert(Array.isArray(routes), 'Routes must be an array');
+  assert(routes instanceof Array, 'Routes must be an array');
   return routes.map(route => 'route.' + route);
 };
 

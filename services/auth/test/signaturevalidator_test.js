@@ -3,13 +3,11 @@ import _ from 'lodash';
 import assert from 'assert';
 import slugid from 'slugid';
 import crypto from 'crypto';
-import taskcluster from '@taskcluster/client';
+import taskcluster from 'taskcluster-client';
 import createSignatureValidator from '../src/signaturevalidator.js';
 import utils from 'taskcluster-lib-scopes';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 import helper from './helper.js';
-
-import { normalizeClientId } from '../src/signaturevalidator.js';
 
 suite(testing.suiteName(), function() {
   let one_hour = taskcluster.fromNow('1 hour');
@@ -62,7 +60,7 @@ suite(testing.suiteName(), function() {
   let makeTest = function(name, input, expected) {
     test(name, async function() {
       // defer creation of input until the test runs, if necessary
-      if (typeof input === 'function') {
+      if (typeof input == 'function') {
         input = input();
       }
 
@@ -90,7 +88,7 @@ suite(testing.suiteName(), function() {
 
         // create the authorization "header"
         let url = 'https://' + input.host + input.resource;
-        input.authorization = hawk.client.header(
+        input['authorization'] = hawk.client.header(
           url, input.method, input.authorization).header;
       }
 
@@ -815,13 +813,4 @@ suite(testing.suiteName(), function() {
       },
     },
   }), success(['anonscope', 'assume:anonymous', 'scope3'], { clientId: 'root/temp-url' }));
-
-  // prometheus metrics utils
-  test('normalizeClientId', () => {
-    assert.equal(normalizeClientId('auth-failed:no-auth'), 'auth-failed:no-auth');
-    assert.equal(normalizeClientId('github/123|name'), 'github/123|name');
-    assert.equal(normalizeClientId('task-client/aAy19ddd'), 'task-client/*');
-    assert.equal(normalizeClientId('worker/prov/grp/wrk/11'), 'worker/*');
-  });
-
 });
