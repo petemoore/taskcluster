@@ -17,7 +17,7 @@ describe('exchangesList', () => {
   });
 
   it('should return list of entries', async () => {
-    const fetchList = require('./exchangesList').default;
+    const fetchList = require('./exchangesList').default; // eslint-disable-line global-require
 
     const exchanges = await fetchList();
 

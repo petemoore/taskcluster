@@ -35,7 +35,6 @@ import { Counter, Gauge, Histogram, Summary, Registry as PromClientRegistry, Pus
  * @property {number[]} [buckets] - Buckets for histograms.
  * @property {number[]} [percentiles] - Percentiles for summaries.
  * @property {string} [serviceName] - Service this metric belongs to.
- * @property {boolean} [global=false] - If true, metric is propagated to any registry exposed via exposeMetrics.
  */
 
 /**
@@ -43,7 +42,6 @@ import { Counter, Gauge, Histogram, Summary, Registry as PromClientRegistry, Pus
  * @property {'counter' | 'gauge' | 'histogram' | 'summary'} type - Type of the metric
  * @property {Record<string, string>} labels - Object of allowed labels and their descriptions
  * @property {import('prom-client').Metric<string>} metric - The actual metric instance
- * @property {boolean} global - If true, metric is propagated to any registry exposed via exposeMetrics
  */
 
 export class PrometheusPlugin {
@@ -88,13 +86,6 @@ export class PrometheusPlugin {
    * @param {string} [exposedRegistry='default'] - Registry to expose
    */
   exposeMetrics(exposedRegistry = 'default') {
-    // Propagate global metrics into non-default registries so they
-    // appear on every process's /metrics endpoint regardless of which
-    // registry the process serves.
-    if (exposedRegistry !== 'default') {
-      this.#propagateGlobalMetrics(exposedRegistry);
-    }
-
     // Start server if configured
     if (this.serverOptions) {
       this.startHttpServer(this.serverOptions, exposedRegistry);
@@ -103,14 +94,10 @@ export class PrometheusPlugin {
     // Start push if configured
     if (this.pushOptions) {
       assert(this.pushOptions.gateway, 'Push gateway URL is required');
-      const pushRegistry = this.pushOptions.registry || exposedRegistry;
-      if (pushRegistry !== 'default' && pushRegistry !== exposedRegistry) {
-        this.#propagateGlobalMetrics(pushRegistry);
-      }
       this.pushGateway = new Pushgateway(
         this.pushOptions.gateway,
         null,
-        this.#getRegistry(pushRegistry),
+        this.#getRegistry(this.pushOptions.registry || exposedRegistry),
       );
     }
   }
@@ -127,20 +114,6 @@ export class PrometheusPlugin {
   }
 
   /**
-   * Copy metrics marked as `global` into the given registry.
-   * prom-client's registerMetric no-ops when the same instance is already present.
-   * @param {string} registryName
-   */
-  #propagateGlobalMetrics(registryName) {
-    const registry = this.#getRegistry(registryName);
-    for (const info of Object.values(this.metricsStore)) {
-      if (info.global) {
-        registry.registerMetric(info.metric);
-      }
-    }
-  }
-
-  /**
    * Register a metric with the Prometheus registry.
    * @param {string} name - The name of the metric.
    * @param {MetricDefinition} definition - The metric definition.
@@ -153,7 +126,6 @@ export class PrometheusPlugin {
     buckets,
     percentiles,
     registers = ['default'],
-    global = false,
   }) {
     /** @type {import('prom-client').Metric<string>} */
     let metric;
@@ -193,7 +165,6 @@ export class PrometheusPlugin {
       type,
       metric,
       labels,
-      global,
     };
 
     return metric;

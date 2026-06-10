@@ -181,14 +181,14 @@ export default class ProvisionerDetailsTable extends Component {
     return (
       <div className={classes.metadataContainer}>
         <Typography variant="h5" className={classes.headline}>
-          {drawerProvisioner?.provisionerId}
+          {drawerProvisioner && drawerProvisioner.provisionerId}
         </Typography>
         <List>
           <ListItem>
             <ListItemText
               primary="Description"
               secondary={
-                drawerProvisioner?.description ? (
+                drawerProvisioner && drawerProvisioner.description ? (
                   <Markdown>{drawerProvisioner.description}</Markdown>
                 ) : (
                   'n/a'
@@ -200,7 +200,9 @@ export default class ProvisionerDetailsTable extends Component {
             <ListItemText
               primary="Actions"
               secondary={
-                drawerProvisioner?.actions.length ? this.renderActions() : 'n/a'
+                drawerProvisioner && drawerProvisioner.actions.length
+                  ? this.renderActions()
+                  : 'n/a'
               }
             />
           </ListItem>
