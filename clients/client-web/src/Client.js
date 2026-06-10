@@ -1,7 +1,24 @@
 import { withRootUrl } from 'taskcluster-lib-urls';
-import { stringify } from 'query-string';
 import hawk from 'hawk';
 import fetch from './fetch';
+
+// Native replacement for query-string's stringify.
+// query-string v8+ is pure ESM and uses modern syntax (optional chaining,
+// nullish coalescing) that webpack 4 cannot parse from node_modules without
+// additional Babel configuration.  URLSearchParams achieves the same result
+// for the simple object-to-query-string conversion we need here.
+const stringify = (params) => {
+  if (!params || typeof params !== 'object') {
+    return '';
+  }
+
+  // Filter out null/undefined values to match query-string default behaviour
+  const filtered = Object.fromEntries(
+    Object.entries(params).filter(([, v]) => v != null),
+  );
+
+  return new URLSearchParams(filtered).toString();
+};
 
 export default class Client {
   constructor(options = {}) {
