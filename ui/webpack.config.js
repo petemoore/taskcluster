@@ -2,6 +2,7 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
+const NodePolyfillPlugin = require("node-polyfill-webpack-plugin");
 const generateEnvJs = require("./generate-env-js");
 const DEFAULT_PORT = 5080;
 const port = process.env.PORT || DEFAULT_PORT;
@@ -24,27 +25,22 @@ if (process.env.GENERATE_ENV_JS) {
 }
 
 module.exports = (_, { mode }) => ({
-  devtool: mode === "production" ? false : "cheap-module-eval-source-map",
+  devtool: mode === "production" ? false : "eval-cheap-module-source-map",
   target: "web",
   context: __dirname,
   watchOptions: {
-    ignored: (p) => !p.startsWith(__dirname),
+    ignored: /node_modules/,
   },
   externals: { bindings: "bindings" },
   output: {
     path: `${__dirname}/build`,
     publicPath: "/",
-    filename: "assets/[name].[hash:8].js",
+    filename: "assets/[name].[contenthash:8].js",
   },
   stats: {
     children: false,
     entrypoints: false,
     modules: false,
-  },
-  node: {
-    Buffer: true,
-    fs: "empty",
-    tls: "empty",
   },
   resolve: {
     alias: {
@@ -66,46 +62,55 @@ module.exports = (_, { mode }) => ({
     runtimeChunk: "single",
   },
   devServer: {
+    host: "localhost",
     port,
     historyApiFallback: {
       disableDotRule: true,
       rewrites: [{ from: /^\/docs/, to: "/docs.html" }],
     },
-    proxy: {
-      "/login": {
+    proxy: [
+      {
+        context: ["/login"],
         target: proxyTarget,
         changeOrigin: true,
       },
-      "/graphql": {
+      {
+        context: ["/graphql"],
         target: proxyTarget,
         changeOrigin: true,
       },
-      "/schemas": {
+      {
+        context: ["/schemas"],
         target: proxyTarget,
         changeOrigin: true,
       },
-      "/references": {
+      {
+        context: ["/references"],
         target: proxyTarget,
         changeOrigin: true,
       },
-      "/subscription": {
+      {
+        context: ["/subscription"],
         ws: true,
         changeOrigin: true,
         target: proxyTarget.replace(/^http(s)?:/, "ws$1:"),
-        onError: function(err, req, res) {
-          console.warn("[WS Proxy Error]", err.code, err.message);
-        },
-        onProxyReqWs: function(proxyReq, req, socket) {
-          socket.on("error", function(err) {
-            console.warn("[WS Socket Error]", err.code, err.message);
-          });
+        on: {
+          error: function(err, req, res) {
+            console.warn("[WS Proxy Error]", err.code, err.message);
+          },
+          proxyReqWs: function(proxyReq, req, socket) {
+            socket.on("error", function(err) {
+              console.warn("[WS Socket Error]", err.code, err.message);
+            });
+          },
         },
       },
-      "/api/web-server": {
+      {
+        context: ["/api/web-server"],
         target: proxyTarget,
         changeOrigin: true,
       },
-    },
+    ],
   },
   module: {
     rules: [
@@ -115,7 +120,14 @@ module.exports = (_, { mode }) => ({
           {
             loader: "html-loader",
             options: {
-              attrs: ["img:src", "link:href"],
+              // Disable automatic source resolution. html-loader v5 processes
+              // ALL src/href attributes by default (including <script src>),
+              // which causes webpack to try to bundle /static/env.js as a
+              // module. That file is only served at runtime (not a webpack
+              // module), so we must not let html-loader touch script tags.
+              // Static assets (images, stylesheets) are served via CopyPlugin
+              // and do not need to go through webpack's asset pipeline here.
+              sources: false,
             },
           },
         ],
@@ -213,9 +225,6 @@ module.exports = (_, { mode }) => ({
             use: [
               {
                 loader: MiniCssExtractPlugin.loader,
-                options: {
-                  esModule: true,
-                },
               },
               {
                 loader: "css-loader",
@@ -231,9 +240,6 @@ module.exports = (_, { mode }) => ({
             use: [
               {
                 loader: MiniCssExtractPlugin.loader,
-                options: {
-                  esModule: true,
-                },
               },
               {
                 loader: "css-loader",
@@ -308,13 +314,11 @@ module.exports = (_, { mode }) => ({
   plugins: [
     new HtmlWebpackPlugin({
       template: "./src/index.html",
-      templateContent: false,
       filename: "docs.html",
       publicPath: "auto",
       hash: false,
       inject: "body",
       scriptLoading: "blocking",
-      compile: true,
       favicon: false,
       minify: "auto",
       cache: true,
@@ -326,18 +330,14 @@ module.exports = (_, { mode }) => ({
       base: false,
       title: "Webpack App",
       xhtml: false,
-      appMountId: "root",
-      lang: "en",
     }),
     new HtmlWebpackPlugin({
       template: "./src/index.html",
-      templateContent: false,
       filename: "index.html",
       publicPath: "auto",
       hash: false,
       inject: "body",
       scriptLoading: "blocking",
-      compile: true,
       favicon: false,
       minify: "auto",
       cache: true,
@@ -349,13 +349,11 @@ module.exports = (_, { mode }) => ({
       base: false,
       title: "Webpack App",
       xhtml: false,
-      appMountId: "root",
-      lang: "en",
     }),
     new MiniCssExtractPlugin({
-      filename: "assets/[name].[hash:8].css",
+      filename: "assets/[name].[contenthash:8].css",
       ignoreOrder: false,
-      chunkFilename: "assets/[name].[hash:8].css",
+      chunkFilename: "assets/[name].[contenthash:8].css",
     }),
     new CleanWebpackPlugin({
       dangerouslyAllowCleanPatternsOutsideProject: false,
@@ -369,7 +367,10 @@ module.exports = (_, { mode }) => ({
       initialClean: false,
       outputPath: "",
     }),
-    new CopyPlugin([{ context: "src/static", from: "**/*", to: "static" }]),
+    new CopyPlugin({
+      patterns: [{ from: STATIC_DIR, to: "static", noErrorOnMissing: true }],
+    }),
+    new NodePolyfillPlugin(),
   ],
   entry: {
     index: [`${__dirname}/src/index.jsx`],
