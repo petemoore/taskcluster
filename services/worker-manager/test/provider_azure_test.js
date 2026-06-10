@@ -4,7 +4,7 @@ import sinon from 'sinon';
 import assert from 'assert';
 import helper from './helper.js';
 import { FakeAzure } from './fakes/index.js';
-import { AzureProvider } from '../src/providers/azure/index.js';
+import { AzureProvider, isAllowedAiaLocation } from '../src/providers/azure/index.js';
 import { dnToString, getAuthorityAccessInfo, getCertFingerprint, cloneCaStore } from '../src/providers/azure/utils.js';
 import testing from '@taskcluster/lib-testing';
 import forge from 'node-forge';
@@ -141,6 +141,37 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
           { method: "OSCP", location: "http://ocsp.digicert.com" },
           { method: 'CA Issuer', location: 'http://cacerts.digicert.com/DigiCertGlobalRootG2.crt' },
         ]);
+    });
+
+    test('isAllowedAiaLocation allows trusted Azure CA hosts', async function() {
+      assert.equal(
+        isAllowedAiaLocation('http://www.microsoft.com/pkiops/certs/Microsoft%20Azure%20RSA%20TLS%20Issuing%20CA%2008.crt'),
+        true,
+      );
+      assert.equal(
+        isAllowedAiaLocation('http://WWW.MICROSOFT.COM/pkiops/certs/Microsoft%20Azure%20RSA%20TLS%20Issuing%20CA%2008.crt'),
+        true,
+      );
+      assert.equal(
+        isAllowedAiaLocation('http://cacerts.digicert.com/DigiCertGlobalRootG2.crt'),
+        true,
+      );
+      assert.equal(
+        isAllowedAiaLocation('https://caissuers.microsoft.com/foo.crt'),
+        true,
+      );
+    });
+
+    test('isAllowedAiaLocation rejects untrusted or malformed URLs', async function() {
+      assert.equal(isAllowedAiaLocation('http://169.254.169.254/metadata/attested/document'), false);
+      assert.equal(isAllowedAiaLocation('http://[::1]/cert.crt'), false);
+      assert.equal(isAllowedAiaLocation('http://localhost/cert.crt'), false);
+      assert.equal(isAllowedAiaLocation('http://evil.example/cert.crt'), false);
+      assert.equal(isAllowedAiaLocation('http://user:pass@www.microsoft.com/pkiops/certs/cert.crt'), false);
+      assert.equal(isAllowedAiaLocation('http://www.microsoft.com:444/cert.crt'), false);
+      assert.equal(isAllowedAiaLocation('http://www.microsoft.com/other-path/cert.crt'), false);
+      assert.equal(isAllowedAiaLocation('ftp://www.microsoft.com/cert.crt'), false);
+      assert.equal(isAllowedAiaLocation('not a url'), false);
     });
 
     test('cloneCaStore handles invalid inputs', async function() {
