@@ -1,7 +1,7 @@
 import assert from 'assert';
 import slugid from 'slugid';
 import _ from 'lodash';
-import taskcluster from '@taskcluster/client';
+import taskcluster from 'taskcluster-client';
 import * as uuid from 'uuid';
 import gcpCompute from '@googleapis/compute';
 import gcpIam from '@googleapis/iam';
@@ -37,6 +37,7 @@ export class GoogleProvider extends Provider {
       intervalDefault: 100 * 1000, // Intervals are enforced every 100 seconds
       intervalCapDefault: 2000, // The calls we make are all limited 20/sec so 20 * 100 are allowed
       timeout: 10 * 60 * 1000, // each cloud call should not take longer than 10 minutes
+      throwOnTimeout: true,
       monitor: this.monitor,
       providerId: this.providerId,
       errorHandler: ({ err, tries }) => {
@@ -81,22 +82,6 @@ export class GoogleProvider extends Provider {
       auth: client,
     });
     this.oauth2 = new gcpCompute.auth.OAuth2();
-  }
-
-  #extractGoogleApiErrors(err) {
-    if (err.response?.data?.error?.errors && Array.isArray(err.response.data.error.errors)) {
-      return err.response.data.error.errors;
-    }
-    if (err.errors && Array.isArray(err.errors)) {
-      return err.errors;
-    }
-    if (err.response?.data?.error?.message) {
-      return [{
-        message: err.response.data.error.message,
-        code: err.response.data.error.code,
-      }];
-    }
-    return null;
   }
 
   async setup() {
@@ -181,14 +166,13 @@ export class GoogleProvider extends Provider {
   }
 
   async removeWorker({ worker, reason }) {
-    // trigger event before saving worker state
-    await this.onWorkerRemoved({ worker, reason });
     await worker.update(this.db, w => {
       if ([Worker.states.REQUESTED, Worker.states.RUNNING].includes(w.state)) {
         w.lastModified = new Date();
         w.state = Worker.states.STOPPING;
       }
     });
+    await this.onWorkerRemoved({ worker, reason });
     try {
       // This returns an operation that we could track but the chances
       // that this fails due to user input being wrong are low so
@@ -213,7 +197,6 @@ export class GoogleProvider extends Provider {
   async provision({ workerPool, workerPoolStats }) {
     const { workerPoolId } = workerPool;
     const workerInfo = workerPoolStats?.forProvision() ?? {};
-    const workerInfoByWorkerGroup = workerPoolStats?.forProvisionByWorkerGroup() ?? new Map();
 
     if (!workerPool.providerData[this.providerId]) {
       await this.db.fns.update_worker_pool_provider_data(
@@ -222,10 +205,8 @@ export class GoogleProvider extends Provider {
 
     let toSpawn = await this.estimator.simple({
       workerPoolId,
-      providerId: this.providerId,
       ...workerPool.config,
       workerInfo,
-      workerInfoByWorkerGroup,
     });
 
     if (toSpawn === 0 || workerPool.config?.launchConfigs?.length === 0) {
@@ -335,11 +316,10 @@ export class GoogleProvider extends Provider {
         }));
         op = res.data;
       } catch (err) {
-        const errors = this.#extractGoogleApiErrors(err);
-        if (!errors) {
+        if (!err.errors) {
           throw err;
         }
-        for (const error of errors) {
+        for (const error of err.errors) {
           await this.reportError({
             workerPool,
             kind: 'creation-error',
@@ -347,7 +327,6 @@ export class GoogleProvider extends Provider {
             description: error.message,
             extra: {
               config: cfg,
-              errorCode: error.code,
             },
             launchConfigId: launchConfig.launchConfigId,
           });
@@ -387,7 +366,6 @@ export class GoogleProvider extends Provider {
    */
   async scanPrepare() {
     this.seen = {};
-    this.seenByWorkerGroup = {};
     this.errors = {};
   }
 
@@ -398,7 +376,6 @@ export class GoogleProvider extends Provider {
   async checkWorker({ worker }) {
     const states = Worker.states;
     this.seen[worker.workerPoolId] = this.seen[worker.workerPoolId] || 0;
-    this.seenByWorkerGroup[worker.workerPoolId] = this.seenByWorkerGroup[worker.workerPoolId] || {};
     this.errors[worker.workerPoolId] = this.errors[worker.workerPoolId] || [];
 
     const monitor = this.workerMonitor({ worker });
@@ -414,8 +391,6 @@ export class GoogleProvider extends Provider {
       monitor.debug(`instance status is ${status}`);
       if (['PROVISIONING', 'STAGING', 'RUNNING'].includes(status)) {
         this.seen[worker.workerPoolId] += worker.capacity || 1;
-        this.seenByWorkerGroup[worker.workerPoolId][worker.workerGroup] =
-          (this.seenByWorkerGroup[worker.workerPoolId][worker.workerGroup] || 0) + (worker.capacity || 1);
 
         if (worker.providerData.terminateAfter && worker.providerData.terminateAfter < Date.now()) {
           // reload the worker to make sure we have the latest data
@@ -459,10 +434,6 @@ export class GoogleProvider extends Provider {
     }
     monitor.debug(`setting state to ${state}`);
     const now = new Date();
-    if (state === states.STOPPED) {
-      // trigger before changing worker.state
-      await this.onWorkerStopped({ worker });
-    }
     await worker.update(this.db, worker => {
       if (state !== undefined) {
         worker.state = state;
@@ -470,6 +441,9 @@ export class GoogleProvider extends Provider {
       }
       worker.lastChecked = now;
     });
+    if (state === states.STOPPED) {
+      await this.onWorkerStopped({ worker });
+    }
   }
 
   /**
@@ -488,18 +462,14 @@ export class GoogleProvider extends Provider {
         return; // In this case, the workertype has been deleted so we can just move on
       }
 
-      const seenByGroup = this.seenByWorkerGroup[workerPoolId] || {};
-      Object.entries(seenByGroup).forEach(([workerGroup, groupSeen]) =>
-        this.monitor.metric.scanSeen(groupSeen, {
-          providerId: this.providerId,
-          workerPoolId,
-          workerGroup,
-        }));
+      this.monitor.metric.scanSeen(seen, {
+        providerId: this.providerId,
+        workerPoolId,
+      });
 
       if (this.errors[workerPoolId].length) {
         await Promise.all(this.errors[workerPoolId].map(error => this.reportError({ workerPool, ...error })));
       }
-
       this.monitor.metric.scanErrors(this.errors[workerPoolId].length, {
         providerId: this.providerId,
         workerPoolId,

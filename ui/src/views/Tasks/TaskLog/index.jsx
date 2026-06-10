@@ -40,7 +40,10 @@ import { withAuth } from '../../../utils/Auth';
 })
 export default class TaskLog extends Component {
   getCurrentRun() {
-    return this.props.data.task?.status.runs[this.props.match.params.runId];
+    return (
+      this.props.data.task &&
+      this.props.data.task.status.runs[this.props.match.params.runId]
+    );
   }
 
   getLogUrl() {
@@ -56,12 +59,12 @@ export default class TaskLog extends Component {
     // extract the artifact name.
     if (rawName.startsWith('https%3A')) {
       const maybeArtifactUrl = decodeURIComponent(rawName);
-      const match =
-        /.*\/api\/queue\/v1\/task\/[^/]{22}\/runs\/\d+\/artifacts\/([^?]+)/.exec(
-          maybeArtifactUrl
-        );
+      const match = new RegExp(
+        '.*/api/queue/v1/task/[^/]{22}/runs/\\d+/artifacts/([^?]+)'
+      ).exec(maybeArtifactUrl);
 
       if (match) {
+        // eslint-disable-next-line prefer-destructuring
         name = match[1];
       }
     } else {
@@ -106,7 +109,7 @@ export default class TaskLog extends Component {
             onSubmit={this.handleTaskSearchSubmit}
           />
         }>
-        <Helmet state={run?.state} />
+        <Helmet state={run && run.state} />
         <Log
           url={url}
           stream={stream}
@@ -117,7 +120,7 @@ export default class TaskLog extends Component {
                 <Button
                   spanProps={{ className: classes.fab }}
                   tooltipProps={{ title: 'View Task' }}
-                  variant="circular"
+                  variant="round"
                   color="secondary">
                   <ArrowLeftIcon />
                 </Button>
@@ -126,7 +129,7 @@ export default class TaskLog extends Component {
                 onClick={() => this.goToLog()}
                 spanProps={{ className: classes.rawLog }}
                 tooltipProps={{ title: 'Raw Log' }}
-                variant="circular"
+                variant="round"
                 color="secondary">
                 <OpenInNewIcon size={20} />
               </Button>

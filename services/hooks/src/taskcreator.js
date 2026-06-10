@@ -1,5 +1,5 @@
 import assert from 'assert';
-import taskcluster from '@taskcluster/client';
+import taskcluster from 'taskcluster-client';
 import debugFactory from 'debug';
 const debug = debugFactory('hooks:taskcreator');
 import _ from 'lodash';
@@ -28,7 +28,7 @@ export class TaskCreator {
 
   taskForHook(hook, context, options) {
     const now = options.created;
-    let task = jsone(hook.task, _.defaults({}, context, { now, taskId: options.taskId }));
+    let task = jsone(hook.task, _.defaults({}, { now, taskId: options.taskId }, context));
     if (!task) {
       return;
     }
@@ -120,7 +120,7 @@ export class TaskCreator {
 
       if (!task) {
         this.monitor.count(`fire.${context.firedBy}.declined`);
-        return { declined: true };
+        return { response: {}, declined: true };
       }
       this.monitor.count(`fire.${context.firedBy}.created`);
 

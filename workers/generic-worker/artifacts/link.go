@@ -2,11 +2,10 @@ package artifacts
 
 import (
 	"fmt"
-	"log"
 
-	"github.com/taskcluster/taskcluster/v100/clients/client-go/tcqueue"
-	"github.com/taskcluster/taskcluster/v100/internal/mocktc/tc"
-	"github.com/taskcluster/taskcluster/v100/workers/generic-worker/gwconfig"
+	"github.com/taskcluster/taskcluster/v86/clients/client-go/tcqueue"
+	"github.com/taskcluster/taskcluster/v86/internal/mocktc/tc"
+	"github.com/taskcluster/taskcluster/v86/workers/generic-worker/gwconfig"
 )
 
 type LinkArtifact struct {
@@ -16,7 +15,7 @@ type LinkArtifact struct {
 }
 
 func (linkArtifact *LinkArtifact) ProcessResponse(response any, logger Logger, serviceFactory tc.ServiceFactory, config *gwconfig.Config) error {
-	log.Printf("Uploading link artifact %v to artifact %v with expiry %v", linkArtifact.Name, linkArtifact.Artifact, linkArtifact.Expires)
+	logger.Infof("Uploading link artifact %v to artifact %v with expiry %v", linkArtifact.Name, linkArtifact.Artifact, linkArtifact.Expires)
 	// nothing to do
 	return nil
 }

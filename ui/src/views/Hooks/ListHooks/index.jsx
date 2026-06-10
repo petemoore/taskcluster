@@ -12,17 +12,12 @@ import Button from '../../../components/Button';
 import ErrorPanel from '../../../components/ErrorPanel';
 import HooksListTable from '../../../components/HooksListTable';
 import hooksQuery from './hooks.graphql';
-import Breadcrumbs from '../../../components/Breadcrumbs';
-import Link from '../../../utils/Link';
 
 @withApollo
 @graphql(hooksQuery, {
-  options: ({ match: { params } }) => ({
+  options: {
     fetchPolicy: 'network-only',
-    variables: {
-      hookGroupId: params.hookGroupId || null,
-    },
-  }),
+  },
 })
 @withStyles(theme => ({
   actionButton: {
@@ -64,10 +59,9 @@ export default class ListHooks extends Component {
       classes,
       description,
       data: { loading, error, hookGroups },
-      match,
     } = this.props;
     const { search } = parse(window.location.search.slice(1));
-    const hooks = hookGroups?.flatMap(group => group?.hooks);
+    const hooks = hookGroups?.map(group => group?.hooks).flat();
 
     return (
       <Dashboard
@@ -80,16 +74,6 @@ export default class ListHooks extends Component {
             onSubmit={this.handleHookSearchSubmit}
           />
         }>
-        <div style={{ flexGrow: 1 }}>
-          <Breadcrumbs>
-            <Link to="/hooks">
-              <Typography variant="body2">Hooks</Typography>
-            </Link>
-            <Typography variant="body2" color="textSecondary">
-              {match.params?.hookGroupId}
-            </Typography>
-          </Breadcrumbs>
-        </div>
         {!hookGroups && loading && <Spinner loading />}
         <ErrorPanel fixed error={error} />
         {!loading &&
@@ -106,7 +90,7 @@ export default class ListHooks extends Component {
           spanProps={{ className: classes.actionButton }}
           tooltipProps={{ title: 'Create Hook' }}
           color="secondary"
-          variant="circular"
+          variant="round"
           onClick={this.handleCreateHook}>
           <PlusIcon />
         </Button>

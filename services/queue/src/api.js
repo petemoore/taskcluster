@@ -1,9 +1,9 @@
 import assert from 'assert';
 import _ from 'lodash';
-import { APIBuilder, paginateResults } from '@taskcluster/lib-api';
-import taskcluster from '@taskcluster/client';
+import { APIBuilder, paginateResults } from 'taskcluster-lib-api';
+import taskcluster from 'taskcluster-client';
 import taskCreds from './task-creds.js';
-import { UNIQUE_VIOLATION } from '@taskcluster/lib-postgres';
+import { UNIQUE_VIOLATION } from 'taskcluster-lib-postgres';
 import { Task, Worker, TaskQueue, Provisioner, TaskGroup } from './data.js';
 import { addSplitFields, useOnlyTaskQueueId, joinTaskQueueId, splitTaskQueueId } from './utils.js';
 import { loadArtifactsRoutes } from './artifacts.js';
@@ -67,9 +67,9 @@ const TASK_QUEUE_ID_PATTERN = new RegExp('^[a-zA-Z0-9-_]{1,38}/[a-z]([-a-z0-9]{0
  *
  * @type {APIBuilder<{
  *  cfg: object;
- *  db: import('@taskcluster/lib-postgres').Database;
- *  monitor: import('@taskcluster/lib-monitor').Monitor;
- *  publisher: import('@taskcluster/lib-pulse').PulsePublisher; // TODO add generic type
+ *  db: import('taskcluster-db').Database;
+ *  monitor: import('taskcluster-lib-monitor').Monitor;
+ *  publisher: import('taskcluster-lib-pulse').PulsePublisher; // TODO add generic type
  *  taskGroupExpiresExtension: object; // todo
  *  signPublicArtifactUrls: object; // todo
  *  publicBucket: import('./bucket.js');
@@ -108,7 +108,7 @@ let builder = new APIBuilder({
     '* **Error artifacts**, only consists of meta-data which the queue will',
     'store for you. These artifacts are only meant to indicate that you the',
     'worker or the task failed to generate a specific artifact, that you',
-    'would otherwise have uploaded. For example generic-worker will upload an',
+    'would otherwise have uploaded. For example docker-worker will upload an',
     'error artifact, if the file it was supposed to upload doesn\'t exists or',
     'turns out to be a directory. Clients requesting an error artifact will',
     'get a `424` (Failed Dependency) response. This is mainly designed to',
@@ -437,15 +437,8 @@ const cancelSingleTask = async (task, ctx) => {
     await ctx.publisher.taskException(_.defaults({
       status,
       runId,
-      task: { tags: task.tags || {} },
     }, _.pick(run, 'workerGroup', 'workerId')), task.routes);
     ctx.monitor.log.taskException({ taskId: task.taskId, runId });
-
-    const metricLabels = splitTaskQueueId(task.taskQueueId);
-    ctx.monitor.metric.exceptionTasks(1, {
-      ...metricLabels,
-      reasonResolved: run.reasonResolved,
-    });
   }
 
   return status;
@@ -706,14 +699,14 @@ let patchAndValidateTaskDef = function(taskId, taskDef, maxTaskDeadlineDays) {
   // Ensure: created < now < deadline (with drift up to 15 min)
   let created = new Date(taskDef.created);
   let deadline = new Date(taskDef.deadline);
-  if (created.getTime() < Date.now() - 15 * 60 * 1000) {
+  if (created.getTime() < new Date().getTime() - 15 * 60 * 1000) {
     return {
       code: 'InputError',
       message: '`created` cannot be in the past (max 15min drift)',
       details: { created: taskDef.created },
     };
   }
-  if (created.getTime() > Date.now() + 15 * 60 * 1000) {
+  if (created.getTime() > new Date().getTime() + 15 * 60 * 1000) {
     return {
       code: 'InputError',
       message: '`created` cannot be in the future (max 15min drift)',
@@ -727,7 +720,7 @@ let patchAndValidateTaskDef = function(taskId, taskDef, maxTaskDeadlineDays) {
       details: { created: taskDef.created, deadline: taskDef.deadline },
     };
   }
-  if (deadline.getTime() < Date.now()) {
+  if (deadline.getTime() < new Date().getTime()) {
     return {
       code: 'InputError',
       message: '`deadline` cannot be in the past',
@@ -735,7 +728,7 @@ let patchAndValidateTaskDef = function(taskId, taskDef, maxTaskDeadlineDays) {
     };
   }
 
-  let msToDeadline = deadline.getTime() - Date.now();
+  let msToDeadline = deadline.getTime() - new Date().getTime();
   // Validate that deadline is less than maxTaskDeadlineDays from now, allow 15 min drift
   if (msToDeadline > maxTaskDeadlineDays * 24 * 60 * 60 * 1000 + 15 * 60 * 1000) {
     return {
@@ -918,6 +911,14 @@ builder.declare({
     return;
   }
 
+  // Insert entry in deadline queue
+  await this.queueService.putDeadlineMessage(
+    taskId,
+    taskDef.taskGroupId,
+    taskDef.schedulerId,
+    new Date(taskDef.deadline),
+  );
+
   let task = Task.fromApi(taskId, taskDef);
   useOnlyTaskQueueId(task);
 
@@ -926,12 +927,8 @@ builder.declare({
   // idempotent and does a DB fetch.
   let initialStatus = task.status();
 
-  // The task row and the queue_task_deadlines row are inserted atomically
-  // inside create_task_atomic (db v124), so the task can never end up with
-  // missing deadline tracking.
-  const deadlineDelaySeconds = Math.floor(this.queueService.deadlineDelay / 1000);
   try {
-    await task.create(this.db, deadlineDelaySeconds);
+    await task.create(this.db);
   } catch (err) {
     if (err.code !== UNIQUE_VIOLATION) {
       throw err;
@@ -970,17 +967,9 @@ builder.declare({
   // the `taskDefined` message. (This can happen when two identical calls are
   // made to createTask in quick succession, but it is very unlikely.)
   if (initialStatus.state === 'unscheduled') {
-    // Publish task-defined. The task row is already committed in tasks; this
-    // publish is best-effort: a Pulse failure here does not affect correctness
-    // (consumers can read the task from the DB).
-    try {
-      await this.publisher.taskDefined({ status: initialStatus, task: taskPulseContents }, task.routes);
-    } catch (err) {
-      this.monitor.reportError(err, 'warning', {
-        note: 'task-defined Pulse publish failed; task row is already committed',
-        taskId,
-      });
-    }
+    // Publish task-defined message, we want this arriving before the
+    // task-pending message, so we have to await publication here
+    await this.publisher.taskDefined({ status: initialStatus, task: taskPulseContents }, task.routes);
     this.monitor.log.taskDefined({ taskId });
   }
 
@@ -990,17 +979,13 @@ builder.declare({
   // Same as above but for tasks with no dependencies, scheduling the first run.
   let runZeroState = (task.runs[runId] || { state: 'unscheduled' }).state;
   if (runZeroState === 'pending') {
-    // queue_pending_tasks insert is now atomic inside schedule_task (db v124),
-    // so a Pulse-publish failure here cannot leave the task invisible to workers.
-    // Publish best-effort and log on failure rather than failing the response.
-    try {
-      await this.publisher.taskPending({ status, task: taskPulseContents, runId }, task.routes);
-    } catch (err) {
-      this.monitor.reportError(err, 'warning', {
-        note: 'task-pending Pulse publish failed; queue_pending_tasks row is already committed (db v124)',
-        taskId, runId,
-      });
-    }
+    await Promise.all([
+      // Put message into the task pending queue
+      this.queueService.putPendingMessage(task, runId),
+
+      // Publish message to pulse
+      this.publisher.taskPending({ status, task: taskPulseContents, runId }, task.routes),
+    ]);
     this.monitor.log.taskPending({ taskId, runId });
   }
 
@@ -1134,7 +1119,7 @@ builder.declare({
   });
 
   // Validate deadline
-  if (task.deadline.getTime() < Date.now()) {
+  if (task.deadline.getTime() < new Date().getTime()) {
     return res.reportError(
       'RequestConflict',
       'Task `{{taskId}}` can\'t be rescheduled past its deadline of ' +
@@ -1167,20 +1152,13 @@ builder.declare({
   let status = task.status();
   if (state === 'pending') {
     let runId = task.runs.length - 1;
-    // queue_pending_tasks insert is now atomic inside schedule_task / rerun_task
-    // (db v124). Publish best-effort.
-    try {
-      await this.publisher.taskPending({
+    await Promise.all([
+      this.queueService.putPendingMessage(task, runId),
+      this.publisher.taskPending({
         status: status,
         runId: runId,
-        task: { tags: task.tags || {} },
-      }, task.routes);
-    } catch (err) {
-      this.monitor.reportError(err, 'warning', {
-        note: 'task-pending Pulse publish failed; queue_pending_tasks row is already committed (db v124)',
-        taskId, runId,
-      });
-    }
+      }, task.routes),
+    ]);
     this.monitor.log.taskPending({ taskId, runId });
   }
 
@@ -1240,7 +1218,7 @@ builder.declare({
   });
 
   // Validate deadline
-  if (task.deadline.getTime() < Date.now()) {
+  if (task.deadline.getTime() < new Date().getTime()) {
     return res.reportError(
       'RequestConflict',
       'Task `{{taskId}}` can\'t be canceled past its deadline of ' +
@@ -1262,147 +1240,6 @@ builder.declare({
   const status = await cancelSingleTask(task, this);
 
   return res.reply({ status });
-});
-
-builder.declare({
-  method: 'post',
-  route: '/task/:taskId/priority',
-  name: 'changeTaskPriority',
-  stability: APIBuilder.stability.experimental,
-  category: 'Tasks',
-  scopes: {
-    AnyOf: [
-      'queue:change-task-priority:<taskId>',
-      'queue:change-task-priority-in-queue:<taskQueueId>',
-    ],
-  },
-  input: 'change-task-priority-request.yml',
-  output: 'task-status-response.yml',
-  title: 'Change Task Priority',
-  description: [
-    'This method updates the priority of a single unresolved task.',
-    '',
-    '* Claimed or running tasks keep their current run priority until they are retried.',
-    '* Emits `taskPriorityChanged` events so downstream tooling can observe manual overrides.',
-  ].join('\n'),
-}, async function (req, res) {
-  const { taskId } = req.params;
-  const { newPriority } = req.body;
-  let task = await Task.get(this.db, taskId);
-
-  if (!task) {
-    return res.reportError('ResourceNotFound',
-      'Task `{{taskId}}` not found. Are you sure it was created?', {
-        taskId,
-      });
-  }
-
-  await req.authorize({
-    taskId,
-    taskQueueId: task.taskQueueId,
-  });
-
-  if (task.deadline.getTime() <= Date.now()) {
-    return res.reportError(
-      'RequestConflict',
-      'Task `{{taskId}}` can\'t be reprioritized past its deadline of {{deadline}}.', {
-        taskId,
-        deadline: task.deadline.toJSON(),
-      },
-    );
-  }
-
-  const updateResult = await task.updatePriority(this.db, newPriority);
-  if (!updateResult) {
-    return res.reportError(
-      'RequestConflict',
-      'Task `{{taskId}}` is already resolved and cannot be reprioritized.', {
-        taskId,
-      },
-    );
-  }
-
-  this.LRUcache.delete(taskId);
-
-  const status = task.status();
-  await this.publisher.taskPriorityChanged({
-    status,
-    oldPriority: updateResult.oldPriority,
-    newPriority,
-  }, task.routes || []);
-  this.monitor.log.taskPriorityChanged({
-    taskId,
-    oldPriority: updateResult.oldPriority,
-    newPriority,
-  });
-
-  return res.reply({ status });
-});
-
-builder.declare({
-  method: 'post',
-  route: '/task-group/:taskGroupId/priority',
-  name: 'changeTaskGroupPriority',
-  stability: APIBuilder.stability.experimental,
-  category: 'Task-Groups',
-  scopes: 'queue:change-task-group-priority:<schedulerId>/<taskGroupId>',
-  input: 'change-task-priority-request.yml',
-  output: 'task-group-priority-change-response.yml',
-  title: 'Change Task Group Priority',
-  description: [
-    'This method applies a new priority to unresolved tasks within a task group.',
-    '',
-    '* Updates run in bounded batches to avoid long locks.',
-    '* Claimed or running tasks keep their current run priority until they are retried.',
-    '* Emits `taskGroupPriorityChanged` summary event at the end.',
-  ].join('\n'),
-}, async function (req, res) {
-  const { taskGroupId } = req.params;
-  const { newPriority } = req.body;
-
-  const taskGroup = await TaskGroup.get(this.db, taskGroupId);
-  if (!taskGroup) {
-    return res.reportError('ResourceNotFound',
-      'Task group `{{taskGroupId}}` not found.', { taskGroupId });
-  }
-
-  await req.authorize({
-    schedulerId: taskGroup.schedulerId,
-    taskGroupId,
-  });
-
-  if (!PRIORITY_LEVELS.includes(newPriority)) {
-    return res.reportError('InputError', 'Unknown priority `{{priority}}`.', { priority: newPriority });
-  }
-
-  let tasksAffected = 0;
-  const taskIds = [];
-  while (true) {
-    const rows = await this.db.fns.queue_change_task_group_priority(taskGroupId, newPriority, 200);
-    if (!rows.length) {
-      break;
-    }
-
-    rows.forEach(row => {
-      const task = Task.fromDb(row);
-      this.LRUcache.delete(task.taskId);
-      taskIds.push(task.taskId);
-    });
-
-    tasksAffected += rows.length;
-  }
-
-  const event = {
-    taskGroupId,
-    schedulerId: taskGroup.schedulerId,
-    newPriority,
-    tasksAffected,
-  };
-  this.monitor.log.taskGroupPriorityChanged({ ...event });
-  await this.publisher.taskGroupPriorityChanged({ ...event }, []);
-
-  const response = { ...event, taskIds };
-  return res.reply(response);
 });
 
 // Hack to get promises that resolve after 20s without creating a setTimeout
@@ -1458,7 +1295,7 @@ builder.declare({
   // Don't claim tasks when worker is quarantined (but do record the worker
   // being seen, and be sure to wait the 20 seconds so as not to cause a
   // tight loop of claimWork calls from the worker
-  if (worker && worker.quarantineUntil.getTime() > Date.now()) {
+  if (worker && worker.quarantineUntil.getTime() > new Date().getTime()) {
     await Promise.all([
       this.workerInfo.seen(taskQueueId, workerGroup, workerId),
       sleep20Seconds(),
@@ -1558,7 +1395,7 @@ builder.declare({
   const worker = await Worker.get(this.db, task.taskQueueId, workerGroup, workerId, new Date());
 
   // Don't record task when worker is quarantined
-  if (worker && worker.quarantineUntil.getTime() > Date.now()) {
+  if (worker && worker.quarantineUntil.getTime() > new Date().getTime()) {
     return res.reply({});
   }
 
@@ -1834,10 +1671,7 @@ let resolveTask = async function(req, res, taskId, runId, target) {
       workerGroup: run.workerGroup,
       workerId: run.workerId,
     }, task.routes);
-    this.monitor.metric.failedTasks(1, {
-      ...metricLabels,
-      reasonResolved: status.runs[runId].reasonResolved,
-    });
+    this.monitor.metric.failedTasks(1, metricLabels);
     this.monitor.log.taskFailed({ taskId, runId });
   }
 
@@ -1988,30 +1822,18 @@ builder.declare({
     tags: task.tags,
   };
 
-  // Publish message about taskException. The DB transition (resolve_task)
-  // has already committed atomically with queue_pending_tasks for any retry,
-  // so publish best-effort.
-  try {
-    await this.publisher.taskException({
-      status,
-      runId,
-      task: taskPulseContents,
-      workerGroup: run.workerGroup,
-      workerId: run.workerId,
-    }, task.routes);
-  } catch (err) {
-    this.monitor.reportError(err, 'warning', {
-      note: 'task-exception Pulse publish failed; DB is already consistent (db v124)',
-      taskId, runId,
-    });
-  }
+  // Publish message about taskException
+  await this.publisher.taskException({
+    status,
+    runId,
+    task: taskPulseContents,
+    workerGroup: run.workerGroup,
+    workerId: run.workerId,
+  }, task.routes);
   this.monitor.log.taskException({ taskId, runId });
 
   const metricLabels = splitTaskQueueId(task.taskQueueId);
-  this.monitor.metric.exceptionTasks(1, {
-    ...metricLabels,
-    reasonResolved: run.reasonResolved,
-  });
+  this.monitor.metric.exceptionTasks(1, metricLabels);
 
   // If a newRun was created and it is a retry with state pending then we
   // better publish messages about it. If we're not retrying the task, the task
@@ -2022,20 +1844,14 @@ builder.declare({
       newRun.state === 'pending' &&
       (newRun.reasonCreated === 'retry' ||
        newRun.reasonCreated === 'task-retry')) {
-    // queue_pending_tasks insert is now atomic inside resolve_task (db v124).
-    // Publish best-effort.
-    try {
-      await this.publisher.taskPending({
+    await Promise.all([
+      this.queueService.putPendingMessage(task, runId + 1),
+      this.publisher.taskPending({
         status,
         task: taskPulseContents,
         runId: runId + 1,
-      }, task.routes);
-    } catch (err) {
-      this.monitor.reportError(err, 'warning', {
-        note: 'task-pending Pulse publish failed for retry run; queue_pending_tasks row is already committed (db v124)',
-        taskId, runId: runId + 1,
-      });
-    }
+      }, task.routes),
+    ]);
     this.monitor.log.taskPending({ taskId, runId: runId + 1 });
   } else {
     // Update dependency tracker, as the task is resolved (no new run)

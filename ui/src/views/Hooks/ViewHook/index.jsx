@@ -1,6 +1,5 @@
 import React, { Component, Fragment } from 'react';
 import { graphql, withApollo } from 'react-apollo';
-import { Typography } from '@material-ui/core';
 import Spinner from '../../../components/Spinner';
 import Dashboard from '../../../components/Dashboard';
 import HookForm from '../../../components/HookForm';
@@ -13,8 +12,6 @@ import updateHookQuery from './updateHook.graphql';
 import triggerHookQuery from './triggerHook.graphql';
 import exchangesList from '../../../utils/exchangesList';
 import { VIEW_CLIENTS_PAGE_SIZE } from '../../../utils/constants';
-import Breadcrumbs from '../../../components/Breadcrumbs';
-import Link from '../../../utils/Link';
 
 @withApollo
 @graphql(hookQuery, {
@@ -156,7 +153,7 @@ export default class ViewHook extends Component {
     this.setState({ snackbar: { message, variant, open } });
   };
 
-  handleSnackbarClose = (_event, reason) => {
+  handleSnackbarClose = (event, reason) => {
     if (reason === 'clickaway') {
       return;
     }
@@ -171,7 +168,7 @@ export default class ViewHook extends Component {
   };
 
   render() {
-    const { isNewHook, data, match } = this.props;
+    const { isNewHook, data } = this.props;
     const {
       error: err,
       dialogError,
@@ -181,33 +178,24 @@ export default class ViewHook extends Component {
       snackbar,
       exchangesDictionary,
     } = this.state;
-    const error = data?.error || err;
+    const error = (data && data.error) || err;
     const hookLastFires = data?.hookLastFires?.edges
       ?.map(({ node }) => node)
       .sort((a, b) => new Date(b.taskCreateTime) - new Date(a.taskCreateTime));
 
     return (
       <Dashboard title={isNewHook ? 'Create Hook' : 'Hook'}>
-        <Breadcrumbs>
-          <Link to="/hooks">
-            <Typography variant="body2">Hooks</Typography>
-          </Link>
-          <Link to={`/hooks/${match.params?.hookGroupId}`}>
-            <Typography variant="body2">{match.params?.hookGroupId}</Typography>
-          </Link>
-          <Typography variant="body2" color="textSecondary">
-            {match.params?.hookId}
-          </Typography>
-        </Breadcrumbs>
         <ErrorPanel fixed error={error} />
         {isNewHook ? (
-          <HookForm
-            isNewHook
-            dialogError={dialogError}
-            actionLoading={actionLoading}
-            onCreateHook={this.handleCreateHook}
-            exchangesDictionary={exchangesDictionary}
-          />
+          <Fragment>
+            <HookForm
+              isNewHook
+              dialogError={dialogError}
+              actionLoading={actionLoading}
+              onCreateHook={this.handleCreateHook}
+              exchangesDictionary={exchangesDictionary}
+            />
+          </Fragment>
         ) : (
           <Fragment>
             {!data.hook && data.loading && <Spinner loading />}

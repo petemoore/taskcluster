@@ -10,13 +10,12 @@ import (
 	"time"
 
 	"github.com/mcuadros/go-defaults"
-	tcclient "github.com/taskcluster/taskcluster/v100/clients/client-go"
-	"github.com/taskcluster/taskcluster/v100/tools/d2g"
-	"github.com/taskcluster/taskcluster/v100/tools/d2g/dockerworker"
+	tcclient "github.com/taskcluster/taskcluster/v86/clients/client-go"
+	"github.com/taskcluster/taskcluster/v86/tools/d2g"
+	"github.com/taskcluster/taskcluster/v86/tools/d2g/dockerworker"
 )
 
 func TestD2GWithValidDockerWorkerPayload(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 	setup(t)
 	testTime := tcclient.Time(time.Now().AddDate(0, 0, 1))
 	image := map[string]any{
@@ -59,6 +58,18 @@ func TestD2GWithValidDockerWorkerPayload(t *testing.T) {
 	switch fmt.Sprintf("%s:%s", engine, runtime.GOOS) {
 	case "multiuser:linux":
 		_ = submitAndAssert(t, td, payload, "completed", "completed")
+		logtext := LogText(t)
+		t.Log(logtext)
+		// tests the default artifact expiry is not present in the
+		// translated task definition
+		if strings.Contains(logtext, "0001-01-01T00:00:00.000Z") {
+			t.Fatal("Was expecting log file to not contain '0001-01-01T00:00:00.000Z'")
+		}
+		// tests the set artifact expiry is present in the
+		// translated task definition
+		if testTimeStr := testTime.String(); !strings.Contains(logtext, testTimeStr) {
+			t.Fatalf("Was expecting log file to contain '%s'", testTimeStr)
+		}
 	case "insecure:linux":
 		_ = submitAndAssert(t, td, payload, "exception", "malformed-payload")
 		logtext := LogText(t)
@@ -72,7 +83,6 @@ func TestD2GWithValidDockerWorkerPayload(t *testing.T) {
 }
 
 func TestD2GVolumeArtifacts(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 	setup(t)
 	testTime := tcclient.Time(time.Now().AddDate(0, 0, 1))
 	image := map[string]any{
@@ -144,7 +154,6 @@ func TestD2GVolumeArtifacts(t *testing.T) {
 }
 
 func TestD2GArtifactDoesNotExist(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 	setup(t)
 	testTime := tcclient.Time(time.Now().AddDate(0, 0, 1))
 	image := map[string]any{
@@ -251,7 +260,6 @@ func TestD2GWithInvalidDockerWorkerPayload(t *testing.T) {
 }
 
 func TestD2GIssue6789(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 	setup(t)
 	payload := dockerworker.DockerWorkerPayload{
 		Command: []string{
@@ -288,7 +296,6 @@ func TestD2GIssue6789(t *testing.T) {
 }
 
 func TestD2GWithValidScopes(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 	setup(t)
 	image := map[string]any{
 		"name": "ubuntu:latest",
@@ -382,7 +389,6 @@ func TestD2GWithInvalidScopes(t *testing.T) {
 }
 
 func TestD2GLoopbackVideoDevice(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 	setup(t)
 	image := map[string]any{
 		"name": "ubuntu:latest",
@@ -428,7 +434,6 @@ func TestD2GLoopbackVideoDevice(t *testing.T) {
 }
 
 func TestD2GLoopbackVideoDeviceWithWorkerPoolScopes(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 	setup(t)
 	image := map[string]any{
 		"name": "ubuntu:latest",
@@ -474,7 +479,6 @@ func TestD2GLoopbackVideoDeviceWithWorkerPoolScopes(t *testing.T) {
 }
 
 func TestD2GLoopbackVideoDeviceNonRootUserInVideoGroup(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 	setup(t)
 	image := map[string]any{
 		"name": "ubuntu:latest",
@@ -526,7 +530,6 @@ func TestD2GLoopbackVideoDeviceNonRootUserInVideoGroup(t *testing.T) {
 }
 
 func TestD2GLoopbackVideoDeviceNonRootUserNotInVideoGroup(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 	setup(t)
 	image := map[string]any{
 		"name": "ubuntu:latest",
@@ -578,7 +581,6 @@ func TestD2GLoopbackVideoDeviceNonRootUserNotInVideoGroup(t *testing.T) {
 }
 
 func TestD2GLoopbackAudioDevice(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 	setup(t)
 	image := map[string]any{
 		"name": "ubuntu:latest",
@@ -627,7 +629,6 @@ func TestD2GLoopbackAudioDevice(t *testing.T) {
 }
 
 func TestD2GLoopbackAudioDeviceWithWorkerPoolScopes(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 	setup(t)
 	image := map[string]any{
 		"name": "ubuntu:latest",
@@ -676,7 +677,6 @@ func TestD2GLoopbackAudioDeviceWithWorkerPoolScopes(t *testing.T) {
 }
 
 func TestD2GLoopbackAudioDeviceNonRootUserInAudioGroup(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 	setup(t)
 	image := map[string]any{
 		"name": "ubuntu:latest",
@@ -730,7 +730,6 @@ func TestD2GLoopbackAudioDeviceNonRootUserInAudioGroup(t *testing.T) {
 }
 
 func TestD2GLoopbackAudioDeviceNonRootUserNotInAudioGroup(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 	setup(t)
 	image := map[string]any{
 		"name": "ubuntu:latest",
@@ -818,7 +817,6 @@ func TestD2GDevicesWithoutAllScopes(t *testing.T) {
 }
 
 func TestD2GHostSharedMemory(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 	setup(t)
 	image := map[string]any{
 		"name": "ubuntu:latest",
@@ -864,7 +862,6 @@ func TestD2GHostSharedMemory(t *testing.T) {
 }
 
 func TestD2GTaskclusterProxy(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 	setup(t)
 
 	dependentTaskID := CreateArtifactFromFile(t, "SampleArtifacts/_/X.txt", "SampleArtifacts/_/X.txt")
@@ -956,7 +953,6 @@ type (
 )
 
 func TestD2GChainOfTrustNamedDockerImage(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 
 	setup(t)
 	image := d2g.NamedDockerImage{
@@ -966,7 +962,7 @@ func TestD2GChainOfTrustNamedDockerImage(t *testing.T) {
 
 	expected := DockerWorkerPartialChainOfTrustCert{
 		Environment: PartialEnvironment{
-			ImageHash:         "sha256:9db1327bff0f7565c2e658371ec726bc2475fa30fce7366f6b1579894fd621d6",
+			ImageHash:         "sha256:d1c5c701d837b59386563dc702932d200adc41f8bd99a1de451e6fcf378dbfa5",
 			ImageArtifactHash: "",
 			Region:            "test-worker-group",
 		},
@@ -985,14 +981,13 @@ func TestD2GChainOfTrustNamedDockerImage(t *testing.T) {
 }
 
 func TestD2GChainOfTrustDockerImageName(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 
 	setup(t)
 	image := d2g.DockerImageName("taskcluster/taskcluster-proxy:v81.0.2")
 
 	expected := DockerWorkerPartialChainOfTrustCert{
 		Environment: PartialEnvironment{
-			ImageHash:         "sha256:9db1327bff0f7565c2e658371ec726bc2475fa30fce7366f6b1579894fd621d6",
+			ImageHash:         "sha256:d1c5c701d837b59386563dc702932d200adc41f8bd99a1de451e6fcf378dbfa5",
 			ImageArtifactHash: "",
 			Region:            "test-worker-group",
 		},
@@ -1011,7 +1006,6 @@ func TestD2GChainOfTrustDockerImageName(t *testing.T) {
 }
 
 func TestD2GChainOfTrustDockerImageArtifact(t *testing.T) {
-	skipInDockerIfNoDocker(t)
 
 	setup(t)
 	taskID := CreateArtifactFromFile(t, "docker-images/taskcluster-proxy-v81.0.2.tar.gz", "public/taskcluster-proxy.tar.gz")
@@ -1024,8 +1018,8 @@ func TestD2GChainOfTrustDockerImageArtifact(t *testing.T) {
 
 	expected := DockerWorkerPartialChainOfTrustCert{
 		Environment: PartialEnvironment{
-			ImageHash:         "sha256:ac3db45b6b91d9e03e28015d293fee6a8142ea19d3b70c9903a4ca1dc072b7b0",
-			ImageArtifactHash: "sha256:ed47090e5110b8ffb2d0aa3ed27be29cc9e1149aad4fd7769884224ee56506dc",
+			ImageHash:         "sha256:d1c5c701d837b59386563dc702932d200adc41f8bd99a1de451e6fcf378dbfa5",
+			ImageArtifactHash: "sha256:050ba86afcb29779a0df1963df6d1e85eb9feff2c4c2a31b6c559686168be076",
 			Region:            "test-worker-group",
 		},
 		Task: PartialTask{
@@ -1060,109 +1054,6 @@ func TestD2GChainOfTrustIndexedDockerImage(t *testing.T) {
 	expected := DockerWorkerPartialChainOfTrustCert{}
 
 	D2GChainOfTrustHelper(t, &image, []string{}, expected)
-}
-
-// TestD2GDockerImageArtifactCaching verifies the full caching lifecycle for
-// d2g docker image artifacts:
-//
-// Run 1 (cold): downloads the artifact to the file cache, pipes it to docker
-// load via stdin (no file copy to task directory), and caches the loaded image.
-//
-// Run 2 (warm): the file cache is hit (no re-download), the d2g image cache
-// is hit (no docker load), and no file is copied to the task directory.
-func TestD2GDockerImageArtifactCaching(t *testing.T) {
-	skipInDockerIfNoDocker(t)
-	setup(t)
-	taskID := CreateArtifactFromFile(t, "docker-images/taskcluster-proxy-v81.0.2.tar.gz", "public/taskcluster-proxy.tar.gz")
-
-	image := d2g.DockerImageArtifact{
-		Path:   "public/taskcluster-proxy.tar.gz",
-		TaskID: taskID,
-		Type:   "task-image",
-	}
-	imageBytes, err := json.Marshal(image)
-	if err != nil {
-		t.Fatalf("Error marshaling JSON: %v", err)
-	}
-
-	switch fmt.Sprintf("%s:%s", engine, runtime.GOOS) {
-	case "multiuser:linux":
-		// Run 1: cold caches — should download artifact + docker load via stdin
-		payload1 := dockerworker.DockerWorkerPayload{
-			Command:    []string{"taskcluster-proxy", "--version"},
-			Image:      json.RawMessage(imageBytes),
-			MaxRunTime: 30,
-		}
-		defaults.SetDefaults(&payload1)
-		td1 := testTask(t)
-		td1.Dependencies = []string{taskID}
-
-		resultTaskID1 := submitAndAssert(t, td1, payload1, "completed", "completed")
-		ExpectedArtifacts{
-			"public/logs/live_backing.log": {
-				ContentType:     "text/plain; charset=utf-8",
-				ContentEncoding: "gzip",
-				Expires:         td1.Expires,
-			},
-			"public/logs/live.log": {
-				Extracts: []string{
-					// mounts feature downloaded the artifact and used the handler
-					fmt.Sprintf("[mounts] Downloading task %s artifact public/taskcluster-proxy.tar.gz to", taskID),
-					"[mounts] File mount \"dockerimage\" handled by registered handler",
-					// d2g feature loaded the image (cache miss)
-					"[d2g] Loading docker image",
-					"[d2g] Loaded docker image",
-					"=== Task Finished ===",
-					"Exit Code: 0",
-				},
-				ContentType:     "text/plain; charset=utf-8",
-				ContentEncoding: "gzip",
-				Expires:         td1.Expires,
-			},
-		}.Validate(t, resultTaskID1, 0)
-
-		// Run 2: warm caches — should skip download and skip docker load
-		payload2 := dockerworker.DockerWorkerPayload{
-			Command:    []string{"taskcluster-proxy", "--version"},
-			Image:      json.RawMessage(imageBytes),
-			MaxRunTime: 30,
-		}
-		defaults.SetDefaults(&payload2)
-		td2 := testTask(t)
-		td2.Dependencies = []string{taskID}
-
-		resultTaskID2 := submitAndAssert(t, td2, payload2, "completed", "completed")
-		ExpectedArtifacts{
-			"public/logs/live_backing.log": {
-				ContentType:     "text/plain; charset=utf-8",
-				ContentEncoding: "gzip",
-				Expires:         td2.Expires,
-			},
-			"public/logs/live.log": {
-				Extracts: []string{
-					// mounts feature still used the handler (file cache hit, no re-download)
-					"[mounts] File mount \"dockerimage\" handled by registered handler",
-					// d2g feature used the cached image (no docker load)
-					"[d2g] Using cached docker image",
-					"=== Task Finished ===",
-					"Exit Code: 0",
-				},
-				ContentType:     "text/plain; charset=utf-8",
-				ContentEncoding: "gzip",
-				Expires:         td2.Expires,
-			},
-		}.Validate(t, resultTaskID2, 0)
-	default:
-		payload := dockerworker.DockerWorkerPayload{
-			Command:    []string{"taskcluster-proxy", "--version"},
-			Image:      json.RawMessage(imageBytes),
-			MaxRunTime: 30,
-		}
-		defaults.SetDefaults(&payload)
-		td := testTask(t)
-		td.Dependencies = []string{taskID}
-		_ = submitAndAssert(t, td, payload, "exception", "malformed-payload")
-	}
 }
 
 // Helper method to submit a Docker Worker Chain of Trust task, and compare the

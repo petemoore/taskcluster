@@ -76,20 +76,13 @@ export class FakeGoogle extends FakeCloud {
     };
   }
 
+  /**
+   * Make an API error in the shape the google apis return
+   */
   makeError(message, code) {
     const err = new Error(message);
     err.code = code;
-    err.status = code;
-    err.response = {
-      data: {
-        error: {
-          code,
-          message,
-          errors: [{ message, code }],
-        },
-      },
-    };
-    err.errors = err.response.data.error.errors;
+    err.errors = [{ message }];
     return err;
   }
 }

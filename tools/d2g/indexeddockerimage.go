@@ -8,7 +8,7 @@ import (
 
 	"slices"
 
-	"github.com/taskcluster/taskcluster/v100/tools/d2g/genericworker"
+	"github.com/taskcluster/taskcluster/v86/tools/d2g/genericworker"
 )
 
 func (idi *IndexedDockerImage) FileMounts() ([]genericworker.FileMount, error) {
@@ -39,8 +39,14 @@ func (idi *IndexedDockerImage) FileMounts() ([]genericworker.FileMount, error) {
 	return []genericworker.FileMount{fm}, nil
 }
 
+func (idi *IndexedDockerImage) ImageLoader() ImageLoader {
+	return &FileImageLoader{
+		Image: idi,
+	}
+}
+
 func (idi *IndexedDockerImage) String() string {
-	return "__D2G_IMAGE_ID__"
+	return `"${D2G_IMAGE_ID}"`
 }
 
 func fileExtension(path string) string {

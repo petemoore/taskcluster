@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import jsone from 'json-e';
-import { consume } from '@taskcluster/lib-pulse';
+import { consume } from 'taskcluster-lib-pulse';
 import libUrls from 'taskcluster-lib-urls';
 
 /** Handler listening for tasks that carries notifications */
@@ -76,10 +76,6 @@ class Handler {
 
     if ((decider === 'any' || decider === 'resolved') && ['completed', 'failed', 'exception'].includes(state)) {
       return true;
-    }
-
-    if (decider === 'defined') {
-      return state === 'unscheduled';
     }
 
     return decider === state;

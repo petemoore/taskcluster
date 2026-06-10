@@ -1,5 +1,5 @@
 import assert from 'assert';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 import Strategy from '../src/login/strategies/mozilla-auth0.js';
 import sinon from 'sinon';
 import PersonAPI from '../src/login/clients/PersonAPI.js';
@@ -139,7 +139,7 @@ suite(testing.suiteName(), () => {
     strategy.fetchAccessToken = () => {
       return {
         accessToken: 'fakeToken',
-        expires: Date.now() + 60 * 1000,
+        expires: new Date().getTime() + 60 * 1000,
       };
     };
   });
@@ -201,7 +201,7 @@ suite(testing.suiteName(), () => {
       let calls = 0;
       sinon.stub(strategy, 'fetchAccessToken').callsFake(() => {
         calls++;
-        return { accessToken: `a_${calls}`, expires: Date.now() + 24 * 60 * 60 * 1000 };
+        return { accessToken: `a_${calls}`, expires: new Date().getTime() + 24 * 60 * 60 * 1000 };
       });
 
       await strategy.userFromIdentity('mozilla-auth0/ad|Mozilla-LDAP|tcperson');
@@ -213,7 +213,7 @@ suite(testing.suiteName(), () => {
       let calls = 0;
       sinon.stub(strategy, 'fetchAccessToken').callsFake(() => {
         calls++;
-        return { accessToken: `b_${calls}`, expires: Date.now() + 9 * 60 * 1000 };
+        return { accessToken: `b_${calls}`, expires: new Date().getTime() + 9 * 60 * 1000 };
       });
 
       await strategy.userFromIdentity('mozilla-auth0/ad|Mozilla-LDAP|tcperson');

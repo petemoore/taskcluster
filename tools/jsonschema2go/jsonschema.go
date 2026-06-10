@@ -100,7 +100,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/taskcluster/taskcluster/v100/tools/jsonschema2go/text"
+	"github.com/taskcluster/taskcluster/v86/tools/jsonschema2go/text"
 	"sigs.k8s.io/yaml"
 )
 
@@ -342,28 +342,22 @@ func (jsonSubSchema *JsonSubSchema) typeDefinition(disableNested bool, enableDef
 		metadata += "// Maximum:    " + strconv.Itoa(*maximum) + "\n"
 	}
 	if allOf := jsonSubSchema.AllOf; allOf != nil {
-		var b strings.Builder
-		b.WriteString("// All of:\n")
+		metadata += "// All of:\n"
 		for _, o := range allOf.Items {
-			b.WriteString("//   * " + o.getTypeName() + "\n")
+			metadata += "//   * " + o.getTypeName() + "\n"
 		}
-		metadata += b.String()
 	}
 	if anyOf := jsonSubSchema.AnyOf; anyOf != nil {
-		var b strings.Builder
-		b.WriteString("// Any of:\n")
+		metadata += "// Any of:\n"
 		for _, o := range anyOf.Items {
-			b.WriteString("//   * " + o.getTypeName() + "\n")
+			metadata += "//   * " + o.getTypeName() + "\n"
 		}
-		metadata += b.String()
 	}
 	if oneOf := jsonSubSchema.OneOf; oneOf != nil {
-		var b strings.Builder
-		b.WriteString("// One of:\n")
+		metadata += "// One of:\n"
 		for _, o := range oneOf.Items {
-			b.WriteString("//   * " + o.getTypeName() + "\n")
+			metadata += "//   * " + o.getTypeName() + "\n"
 		}
-		metadata += b.String()
 	}
 	// Here we check if metadata was specified, and only create new
 	// paragraph (`//\n`) if something was.
@@ -456,7 +450,7 @@ func (jsonSubSchema *JsonSubSchema) typeDefinition(disableNested bool, enableDef
 			if *f == "date-time" {
 				typ = "tcclient.Time"
 				typeCategory = "struct"
-				extraPackages["tcclient \"github.com/taskcluster/taskcluster/v100/clients/client-go\""] = true
+				extraPackages["tcclient \"github.com/taskcluster/taskcluster/v86/clients/client-go\""] = true
 			}
 		}
 	}
@@ -488,11 +482,11 @@ func (jsonSubSchema *JsonSubSchema) typeDefinition(disableNested bool, enableDef
 }
 
 func (p Properties) String() string {
-	var result strings.Builder
+	result := ""
 	for _, i := range p.SortedPropertyNames {
-		result.WriteString("Property '" + i + "' =\n" + text.Indent(p.Properties[i].String(), "  "))
+		result += "Property '" + i + "' =\n" + text.Indent(p.Properties[i].String(), "  ")
 	}
-	return result.String()
+	return result
 }
 
 func (p *Properties) prepare(job *Job) error {
@@ -602,11 +596,11 @@ func (aP AdditionalProperties) String() string {
 }
 
 func (items Items) String() string {
-	var result strings.Builder
+	result := ""
 	for i, j := range items.Items {
-		result.WriteString(fmt.Sprintf("Item '%v' =\n", i) + text.Indent(j.String(), "  "))
+		result += fmt.Sprintf("Item '%v' =\n", i) + text.Indent(j.String(), "  ")
 	}
-	return result.String()
+	return result
 }
 
 func (items *Items) prepare(job *Job) error {
@@ -820,7 +814,7 @@ func (items *Items) MergeIn(subSchema *JsonSubSchema, skipFields StringSet) {
 	// loop through all struct fields of Jsonsubschema
 	for i := range p.NumField() {
 		// don't copy fields that are blacklisted, or that aren't pointers
-		if skipFields[p.Type().Field(i).Name] || p.Field(i).Kind() != reflect.Pointer {
+		if skipFields[p.Type().Field(i).Name] || p.Field(i).Kind() != reflect.Ptr {
 			continue
 		}
 		// loop through all items (e.g. the list of oneOf schemas)
@@ -955,8 +949,7 @@ func (job *Job) cacheJsonSchema(url string) (*JsonSubSchema, error) {
 func generateGoTypes(disableNested bool, enableDefaults bool, schemaSet *SchemaSet) (string, StringSet, StringSet) {
 	extraPackages := make(StringSet)
 	rawMessageTypes := make(StringSet)
-	var content strings.Builder
-	content.WriteString("type (") // intentionally no \n here since each type starts with one already
+	content := "type (" // intentionally no \n here since each type starts with one already
 	// Loop through all json schemas that were found referenced inside the API json schemas...
 	typeDefinitions := make(map[string]string)
 	typeNames := make([]string, 0, len(schemaSet.used))
@@ -969,9 +962,9 @@ func generateGoTypes(disableNested bool, enableDefaults bool, schemaSet *SchemaS
 	}
 	sort.Strings(typeNames)
 	for _, t := range typeNames {
-		content.WriteString(typeDefinitions[t] + "\n")
+		content += typeDefinitions[t] + "\n"
 	}
-	return content.String() + ")\n\n", extraPackages, rawMessageTypes
+	return content + ")\n\n", extraPackages, rawMessageTypes
 }
 
 func (job *Job) Execute() (*Result, error) {
@@ -1027,13 +1020,12 @@ func (job *Job) Execute() (*Result, error) {
 package ` + job.Package + `
 
 `
-	var extraPackagesBuilder strings.Builder
+	extraPackagesContent := ""
 	for j, k := range extraPackages {
 		if k {
-			extraPackagesBuilder.WriteString(text.Indent(""+j+"\n", "\t"))
+			extraPackagesContent += text.Indent(""+j+"\n", "\t")
 		}
 	}
-	extraPackagesContent := extraPackagesBuilder.String()
 
 	if extraPackagesContent != "" {
 		content += `import (
@@ -1064,9 +1056,9 @@ func jsonRawMessageImplementors(rawMessageTypes StringSet) string {
 		i++
 	}
 	sort.Strings(sortedRawMessageTypes)
-	var content strings.Builder
+	content := ""
 	for _, goType := range sortedRawMessageTypes {
-		content.WriteString(`
+		content += `
 
 	// MarshalJSON calls json.RawMessage method of the same name. Required since
 	// ` + goType + ` is of type json.RawMessage...
@@ -1082,9 +1074,9 @@ func jsonRawMessageImplementors(rawMessageTypes StringSet) string {
 		}
 		*m = append((*m)[0:0], data...)
 		return nil
-	}`)
+	}`
 	}
-	return content.String()
+	return content
 }
 
 func (s *Properties) AsStruct(disableNested bool, enableDefaults bool, extraPackages StringSet, rawMessageTypes StringSet) (typ string) {

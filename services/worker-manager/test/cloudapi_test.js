@@ -1,6 +1,6 @@
 import sinon from 'sinon';
 import { strict as assert } from 'assert';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 import helper from './helper.js';
 import { CloudAPI } from '../src/providers/cloudapi.js';
 
@@ -90,7 +90,7 @@ suite(testing.suiteName(), function() {
   });
 
   test('operations timing out', async function() {
-    const cloudWithTimeout = await initCloudApi({ timeout: 1 });
+    const cloudWithTimeout = await initCloudApi({ timeout: 1, throwOnTimeout: true });
     const remote = sinon.stub();
     remote.onCall(0).resolves(sleep(5));
 

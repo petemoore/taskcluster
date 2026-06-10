@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import assert from 'assert';
 import slugid from 'slugid';
-import taskcluster from '@taskcluster/client';
+import taskcluster from 'taskcluster-client';
 import builder from '../src/api.js';
 import loadMain from '../src/main.js';
 import {
@@ -16,7 +16,7 @@ import {
 } from '@aws-sdk/client-s3';
 import { mockClient } from 'aws-sdk-client-mock';
 import nock from 'nock';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 import { globalAgent } from 'http';
 
 export const load = testing.stickyLoader(loadMain);
@@ -29,7 +29,7 @@ suiteSetup(async function() {
   load.inject('process', 'test');
 });
 
-testing.withMonitor(helper, { withPrometheus: true });
+testing.withMonitor(helper);
 
 // set up the testing secrets
 export const secrets = new testing.Secrets({
@@ -314,11 +314,11 @@ export const withServer = (mock, skipping) => {
       };
       // if called as scopes('none'), don't pass credentials at all
       if (scopes && scopes[0] !== 'none') {
-        options.credentials = {
+        options['credentials'] = {
           clientId: 'test-client',
           accessToken: 'none',
         };
-        options.authorizedScopes = scopes.length > 0 ? scopes : undefined;
+        options['authorizedScopes'] = scopes.length > 0 ? scopes : undefined;
       }
       helper.queue = new helper.Queue(options);
     };
@@ -444,7 +444,6 @@ export const resetTables = (mock, skipping) => {
       'tasks',
       'task_groups',
       'task_dependencies',
-      'queue_pending_tasks',
       'queue_workers',
       'task_queues',
     ] });
