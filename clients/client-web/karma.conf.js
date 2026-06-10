@@ -37,10 +37,14 @@ module.exports = config => {
               options: {
                 presets: [
                   ['@babel/preset-env', {
-                    // No targets specified: babel transforms all modern syntax
-                    // (including optional chaining ?. and nullish coalescing ??)
-                    // to ES5-compatible code that webpack 4's acorn parser can handle.
-                    modules: 'commonjs',
+                    // Target IE 11 to ensure optional chaining (?.) and nullish
+                    // coalescing (??) are transformed to syntax that webpack 4's
+                    // acorn parser can handle.
+                    // modules: false lets webpack 4 handle ESM import/export
+                    // natively, avoiding CJS/ESM interop issues that would break
+                    // named exports like `stringify`.
+                    targets: { ie: 11 },
+                    modules: false,
                   }],
                 ],
               },
