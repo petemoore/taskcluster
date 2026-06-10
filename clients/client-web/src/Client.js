@@ -1,7 +1,13 @@
 import { withRootUrl } from 'taskcluster-lib-urls';
-import { stringify } from 'query-string';
 import hawk from 'hawk';
 import fetch from './fetch';
+
+// Native replacement for query-string's stringify; filters out null/undefined values.
+// query-string v8+ is ESM-only and incompatible with this webpack 4 / Babel pipeline.
+const stringify = (obj) =>
+  new URLSearchParams(
+    Object.entries(obj).filter(([, v]) => v !== undefined && v !== null),
+  ).toString();
 
 export default class Client {
   constructor(options = {}) {
