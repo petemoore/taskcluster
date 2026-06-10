@@ -1,12 +1,12 @@
 import DataLoader from 'dataloader';
-import substringFilter from '../utils/searchFilter.js';
+import sift from '../utils/sift.js';
 import ConnectionLoader from '../ConnectionLoader.js';
 
 export default ({ auth }, isAuthed, rootUrl, monitor, strategies, req, cfg, requestId) => {
   const clients = new ConnectionLoader(
-    async ({ searchTerm, options, clientOptions }) => {
+    async ({ filter, options, clientOptions }) => {
       const raw = await auth.listClients({ ...clientOptions, ...options });
-      const clients = substringFilter(searchTerm, 'clientId', raw.clients);
+      const clients = sift(filter, raw.clients);
 
       return {
         ...raw,

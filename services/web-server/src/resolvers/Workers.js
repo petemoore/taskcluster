@@ -38,6 +38,7 @@ export default {
         isQuarantined,
         workerState,
         connection,
+        filter,
       },
       { loaders },
     ) {
@@ -47,6 +48,7 @@ export default {
         isQuarantined,
         workerState,
         connection,
+        filter,
       });
     },
   },
