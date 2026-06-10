@@ -52,6 +52,7 @@ builder_var_files:
 script_directories:
   - ubuntu-bionic
   - worker-runner-linux
+  - docker-worker-linux
 ```
 
 ### Verifying the files
