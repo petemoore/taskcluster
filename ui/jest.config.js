@@ -10,6 +10,7 @@ module.exports = {
     "\\.(css|less|sass|scss)$": "<rootDir>/__jest__/styleMock.js",
   },
   bail: true,
+  forceExit: true,
   collectCoverageFrom: ["src/**/*.{mjs,jsx,js}"],
   testEnvironment: "jsdom",
   testRegex: null,
