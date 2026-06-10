@@ -1,3 +1,4 @@
+const webpack = require("webpack");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
@@ -24,7 +25,7 @@ if (process.env.GENERATE_ENV_JS) {
 }
 
 module.exports = (_, { mode }) => ({
-  devtool: mode === "production" ? false : "cheap-module-eval-source-map",
+  devtool: mode === "production" ? false : "eval-cheap-module-source-map",
   target: "web",
   context: __dirname,
   watchOptions: {
@@ -34,17 +35,12 @@ module.exports = (_, { mode }) => ({
   output: {
     path: `${__dirname}/build`,
     publicPath: "/",
-    filename: "assets/[name].[hash:8].js",
+    filename: "assets/[name].[contenthash:8].js",
   },
   stats: {
     children: false,
     entrypoints: false,
     modules: false,
-  },
-  node: {
-    Buffer: true,
-    fs: "empty",
-    tls: "empty",
   },
   resolve: {
     alias: {
@@ -59,6 +55,11 @@ module.exports = (_, { mode }) => ({
       ".js",
       ".json",
     ],
+    fallback: {
+      fs: false,
+      tls: false,
+      buffer: require.resolve("buffer/"),
+    },
   },
   optimization: {
     minimize: true,
@@ -114,9 +115,6 @@ module.exports = (_, { mode }) => ({
         use: [
           {
             loader: "html-loader",
-            options: {
-              attrs: ["img:src", "link:href"],
-            },
           },
         ],
       },
@@ -306,56 +304,49 @@ module.exports = (_, { mode }) => ({
     ],
   },
   plugins: [
+    new webpack.ProvidePlugin({
+      Buffer: ["buffer", "buffer"],
+    }),
     new HtmlWebpackPlugin({
       template: "./src/index.html",
-      templateContent: false,
       filename: "docs.html",
       publicPath: "auto",
       hash: false,
       inject: "body",
       scriptLoading: "blocking",
-      compile: true,
       favicon: false,
       minify: "auto",
       cache: true,
       showErrors: true,
       chunks: ["docs"],
       excludeChunks: [],
-      chunksSortMode: "auto",
       meta: { viewport: "width=device-width, initial-scale=1" },
       base: false,
       title: "Webpack App",
       xhtml: false,
-      appMountId: "root",
-      lang: "en",
     }),
     new HtmlWebpackPlugin({
       template: "./src/index.html",
-      templateContent: false,
       filename: "index.html",
       publicPath: "auto",
       hash: false,
       inject: "body",
       scriptLoading: "blocking",
-      compile: true,
       favicon: false,
       minify: "auto",
       cache: true,
       showErrors: true,
       chunks: ["index"],
       excludeChunks: [],
-      chunksSortMode: "auto",
       meta: { viewport: "width=device-width, initial-scale=1" },
       base: false,
       title: "Webpack App",
       xhtml: false,
-      appMountId: "root",
-      lang: "en",
     }),
     new MiniCssExtractPlugin({
-      filename: "assets/[name].[hash:8].css",
+      filename: "assets/[name].[contenthash:8].css",
       ignoreOrder: false,
-      chunkFilename: "assets/[name].[hash:8].css",
+      chunkFilename: "assets/[name].[contenthash:8].css",
     }),
     new CleanWebpackPlugin({
       dangerouslyAllowCleanPatternsOutsideProject: false,
@@ -369,7 +360,7 @@ module.exports = (_, { mode }) => ({
       initialClean: false,
       outputPath: "",
     }),
-    new CopyPlugin([{ context: "src/static", from: "**/*", to: "static" }]),
+    new CopyPlugin({ patterns: [{ context: "src/static", from: "**/*", to: "static" }] }),
   ],
   entry: {
     index: [`${__dirname}/src/index.jsx`],
