@@ -33,6 +33,7 @@ export default {
         taskId: parent.taskId,
         runId: parent.runId,
         connection: args.connection,
+        filter: args.filter,
       });
     },
   },
