@@ -30,11 +30,11 @@ No transpilation should be used: write JS that can be interpreted directly by th
 
 ## Implementation
 
-### @taskcluster/lib-loader
+### taskcluster-lib-loader
 
-The main entry-point for the service should be a file called `main.js`, which should use [@taskcluster/lib-loader](../../libraries/loader) for loading components.
+The main entry-point for the service should be a file called `main.js`, which should use [taskcluster-lib-loader](../../libraries/loader) for loading components.
 
-### @taskcluster/lib-api
+### taskcluster-lib-api
 
 The API definition should be in a file called `api.js`:
 
@@ -91,7 +91,7 @@ api.declare({
 
 Do not use `res.status(..)` to return error messages.
 Instead, use `res.reportError(code, message, details)`.
-The `@taskcluster/lib-api` library provides most of the codes you will need, specifically `InvalidInput`, `ResourceNotFound`, and `ResourceConflict`.
+The `taskcluster-lib-api` library provides most of the codes you will need, specifically `InvalidInput`, `ResourceNotFound`, and `ResourceConflict`.
 
 Prefer to use these built-in codes.
 If you have a case where you must return a different HTTP code, or clients need to be able to distinguish the errors programmatically, add a new error code:
@@ -117,10 +117,10 @@ res.reportError('SomethingReallyBad',
 
 Be friendly and document the errors in the API's `description` property, as they are not automatically documented.
 
-### @taskcluster/lib-monitor
+### taskcluster-lib-monitor
 
 *Do not use* `taskcluster-lib-stats` or `raven`.
-Instead, use `@taskcluster/lib-monitor` as described in its documentation.
+Instead, use `taskcluster-lib-monitor` as described in its documentation.
 
 ### taskcluster-web-server
 
@@ -196,7 +196,7 @@ the `extend type Query|Mutation|Subscription` blocks. Refer to the docs on
 +}
 +
  extend type Query {
-   listDenylistAddresses(searchTerm: String, connection: PageConnection): NotificationAddressConnection
+   listDenylistAddresses(filter: JSON, connection: PageConnection): NotificationAddressConnection
 +  # "!" means graphql will enforce that a widgetId is provided, otherwise it won't go through to the resolver.
 +  widgets(widgetId: ID!): Widget
  }
@@ -235,8 +235,8 @@ index 77a966ca4..87e05414e 100644
 +++ b/services/web-server/src/resolvers/Notify.js
 @@ -6,10 +6,17 @@ module.exports = {
    Query: {
-     listDenylistAddresses(parent, { connection, searchTerm }, { loaders }) {
-       return loaders.listDenylistAddresses.load({ connection, searchTerm });
+     listDenylistAddresses(parent, { connection, filter }, { loaders }) {
+       return loaders.listDenylistAddresses.load({ connection, filter });
      },
 +    widgets(parent, { widget }, { loaders }) {
 +      return loaders.widget.load(widget);
@@ -249,7 +249,7 @@ index 23655e845..8e0d4d69b 100644
 --- a/services/web-server/src/loaders/notify.js
 +++ b/services/web-server/src/loaders/notify.js
 @@ -16,8 +16,20 @@ module.exports = ({ notify }, isAuthed, rootUrl, monitor, strategies, req, cfg,
-       items: addresses,
+       items: sift(filter, addresses),
      };
    });
 +  const widget = new DataLoader(widgetIds =>

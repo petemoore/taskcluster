@@ -1,7 +1,7 @@
 import assert from 'assert';
 import TopoSort from 'topo-sort';
 import debugFactory from 'debug';
-const debug = debugFactory('@taskcluster/lib-loader');
+const debug = debugFactory('taskcluster-lib-loader');
 
 /**
  * Validate component definition
@@ -18,7 +18,7 @@ function validateComponent(def, name) {
   }
   // If requires is defined, then we check that it's an array of strings
   if (def.requires) {
-    if (!Array.isArray(def.requires)) {
+    if (!(def.requires instanceof Array)) {
       throw new Error(e + ' if present, requires must be array');
     }
     // Check that all entries in def.requires are strings
@@ -34,7 +34,7 @@ function validateComponent(def, name) {
  */
 function loader(componentDirectory, virtualComponents = {}) {
   assert(typeof componentDirectory === 'object');
-  if (Array.isArray(virtualComponents)) {
+  if (virtualComponents instanceof Array) {
     virtualComponents = virtualComponents.reduce((acc, k) => {
       acc[k] = null;
       return acc;

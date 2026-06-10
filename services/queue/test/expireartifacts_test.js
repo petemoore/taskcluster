@@ -1,10 +1,10 @@
 import debugFactory from 'debug';
 const debug = debugFactory('test:expireTasks');
 import slugid from 'slugid';
-import taskcluster from '@taskcluster/client';
+import taskcluster from 'taskcluster-client';
 import assume from 'assume';
 import helper from './helper.js';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 import { ListObjectsCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 
 helper.secrets.mockSuite(testing.suiteName(), ['aws'], function (mock, skipping) {
@@ -35,7 +35,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function (mock, skipping)
       }
 
       for (let i = 0; i < MAX_ARTIFACTS; i++) {
-        await helper.db.fns.create_queue_artifact_2(
+        await helper.db.fns.create_queue_artifact(
           taskId,
           i,
           `name-${i}`,
@@ -47,7 +47,6 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function (mock, skipping)
           },
           false,
           yesterday,
-          null,
         );
 
         // create mock s3 object
@@ -65,7 +64,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function (mock, skipping)
       }));
       assume(objects.Contents.length).equals(MAX_ARTIFACTS);
 
-      let rows = await helper.db.fns.get_expired_artifacts_for_deletion_2({
+      let rows = await helper.db.fns.get_expired_artifacts_for_deletion({
         expires_in: today,
         page_size_in: 1000,
       });
@@ -74,7 +73,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function (mock, skipping)
       debug('### Expire artifacts');
       await helper.runExpiration('expire-artifacts');
 
-      rows = await helper.db.fns.get_expired_artifacts_for_deletion_2({
+      rows = await helper.db.fns.get_expired_artifacts_for_deletion({
         expires_in: today,
         page_size_in: 1000,
       });
@@ -104,7 +103,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function (mock, skipping)
     const maxUploads = 1;
 
     for (let i = 0; i < MAX_ARTIFACTS; i++) {
-      await helper.db.fns.create_queue_artifact_2(
+      await helper.db.fns.create_queue_artifact(
         taskId,
         i,
         `name-${i}`,
@@ -116,7 +115,6 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function (mock, skipping)
         },
         false,
         yesterday,
-        null,
       );
     }
     // don't "upload" all files, just one to make them all fail during deletion
@@ -133,7 +131,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function (mock, skipping)
     }));
     assume(objects.Contents.length).equals(maxUploads);
 
-    let rows = await helper.db.fns.get_expired_artifacts_for_deletion_2({
+    let rows = await helper.db.fns.get_expired_artifacts_for_deletion({
       expires_in: today,
       page_size_in: 1000,
     });
@@ -142,7 +140,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function (mock, skipping)
     debug('### Expire artifacts');
     await helper.runExpiration('expire-artifacts');
 
-    rows = await helper.db.fns.get_expired_artifacts_for_deletion_2({
+    rows = await helper.db.fns.get_expired_artifacts_for_deletion({
       expires_in: today,
       page_size_in: 1000,
     });
@@ -162,7 +160,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function (mock, skipping)
     const taskId = slugid.nice();
 
     for (let i = 0; i < MAX_ARTIFACTS; i++) {
-      await helper.db.fns.create_queue_artifact_2(
+      await helper.db.fns.create_queue_artifact(
         taskId,
         i,
         `name-${i}`,
@@ -174,11 +172,10 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function (mock, skipping)
         },
         false,
         yesterday,
-        null,
       );
     }
 
-    let rows = await helper.db.fns.get_expired_artifacts_for_deletion_2({
+    let rows = await helper.db.fns.get_expired_artifacts_for_deletion({
       expires_in: today,
       page_size_in: 1000,
     });
@@ -187,7 +184,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function (mock, skipping)
     debug('### Expire artifacts');
     await helper.runExpiration('expire-artifacts');
 
-    rows = await helper.db.fns.get_expired_artifacts_for_deletion_2({
+    rows = await helper.db.fns.get_expired_artifacts_for_deletion({
       expires_in: today,
       page_size_in: 1000,
     });
@@ -230,7 +227,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function (mock, skipping)
     const artifactsToRemove = [];
 
     for (let i = 0; i < MAX_ARTIFACTS; i++) {
-      await helper.db.fns.create_queue_artifact_2(
+      await helper.db.fns.create_queue_artifact(
         taskId,
         i,
         `name-${i}`,
@@ -242,7 +239,6 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function (mock, skipping)
         },
         false,
         yesterday,
-        null,
       );
       artifactsToRemove.push({ task_id: taskId, run_id: i, name: `name-${i}` });
     }
@@ -260,7 +256,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function (mock, skipping)
     }));
     assume(objects.Contents.length).equals(1);
 
-    let rows = await helper.db.fns.get_expired_artifacts_for_deletion_2({
+    let rows = await helper.db.fns.get_expired_artifacts_for_deletion({
       expires_in: today,
       page_size_in: 1000,
     });
@@ -273,7 +269,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function (mock, skipping)
     assume(errors[0].Fields.message).matches(/InvalidArgument/);
     monitor.manager.reset();
 
-    rows = await helper.db.fns.get_expired_artifacts_for_deletion_2({
+    rows = await helper.db.fns.get_expired_artifacts_for_deletion({
       expires_in: today,
       page_size_in: 1000,
     });
@@ -303,7 +299,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function (mock, skipping)
     helper.load.cfg('aws.useBulkDelete', false);
 
     for (let i = 0; i < MAX_ARTIFACTS; i++) {
-      await helper.db.fns.create_queue_artifact_2(
+      await helper.db.fns.create_queue_artifact(
         taskId,
         i,
         `name-${i}`,
@@ -315,7 +311,6 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function (mock, skipping)
         },
         false,
         yesterday,
-        null,
       );
     }
     // only upload one file
@@ -332,7 +327,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function (mock, skipping)
     }));
     assume(objects.Contents.length).equals(1); // we only upload one file
 
-    let rows = await helper.db.fns.get_expired_artifacts_for_deletion_2({
+    let rows = await helper.db.fns.get_expired_artifacts_for_deletion({
       expires_in: today,
       page_size_in: 1000,
     });
@@ -345,7 +340,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function (mock, skipping)
     assume(result.Fields.errorsCount).equals(4);
     monitor.manager.reset();
 
-    rows = await helper.db.fns.get_expired_artifacts_for_deletion_2({
+    rows = await helper.db.fns.get_expired_artifacts_for_deletion({
       expires_in: today,
       page_size_in: 1000,
     });

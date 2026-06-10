@@ -2,11 +2,10 @@ package artifacts
 
 import (
 	"fmt"
-	"log"
 
-	"github.com/taskcluster/taskcluster/v100/clients/client-go/tcqueue"
-	"github.com/taskcluster/taskcluster/v100/internal/mocktc/tc"
-	"github.com/taskcluster/taskcluster/v100/workers/generic-worker/gwconfig"
+	"github.com/taskcluster/taskcluster/v86/clients/client-go/tcqueue"
+	"github.com/taskcluster/taskcluster/v86/internal/mocktc/tc"
+	"github.com/taskcluster/taskcluster/v86/workers/generic-worker/gwconfig"
 )
 
 type ErrorArtifact struct {
@@ -17,11 +16,11 @@ type ErrorArtifact struct {
 }
 
 func (errArtifact *ErrorArtifact) ProcessResponse(response any, logger Logger, serviceFactory tc.ServiceFactory, config *gwconfig.Config) error {
-	printLog := logger.Errorf
+	log := logger.Errorf
 	if errArtifact.Optional {
-		printLog = log.Printf
+		log = logger.Infof
 	}
-	printLog("Uploading error artifact %v from file %v with message %q, reason %q and expiry %v", errArtifact.Name, errArtifact.Path, errArtifact.Message, errArtifact.Reason, errArtifact.Expires)
+	log("Uploading error artifact %v from file %v with message %q, reason %q and expiry %v", errArtifact.Name, errArtifact.Path, errArtifact.Message, errArtifact.Reason, errArtifact.Expires)
 	// TODO: process error response
 	return nil
 }

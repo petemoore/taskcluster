@@ -6,7 +6,7 @@ This service is the central process coordinating execution of tasks in the Taskc
 
 No special configuration is required for development.
 
-Run `yarn workspace @taskcluster/queue test` to run the tests.
+Run `yarn workspace taskcluster-queue test` to run the tests.
 Some of the tests will be skipped without additional credentials, but it is fine to make a pull request as long as no tests fail.
 
 To run _all_ tests, you will need appropriate Taskcluster credentials.
@@ -31,8 +31,6 @@ Queue service is using internal queues to manage task lifecycle. Those are:
 
 Interactions with those queues are handled in [`QueueService`](./src/queueservice.js).
 
-Pending-queue rows are inserted atomically inside the DB functions that transition a run to `pending` ([`schedule_task`](../../db/versions/0124.yml), [`rerun_task`](../../db/versions/0124.yml), [`resolve_task`](../../db/versions/0124.yml), [`check_task_claim`](../../db/versions/0124.yml)) via the helper [`queue_pending_tasks_add_for_task`](../../db/versions/0124.yml). The `tasks.runs` update and the `queue_pending_tasks` insert commit together, so a failure of the Pulse `taskPending` publish that follows cannot leave a task pending in `tasks.runs` but missing from the workers' claimable queue.
-
 ### Create task
 
 When task is created it can either be scheduled right away (no unmet dependencies) or it can stay unscheduled.
@@ -47,8 +45,8 @@ sequenceDiagram
   client->>+queue: createTask()
   note over queue,deadlineQueue: track deadline resolution for task
   queue->>deadlineQueue: QueueService.putDeadlineMessage()
-  note over queue,pendingQueue: if task can be scheduled already,<br> schedule_task() DB fn atomically<br> updates tasks.runs AND inserts<br> into queue_pending_tasks
-  queue->>pendingQueue: schedule_task() (atomic DB write)
+  note over queue,pendingQueue: if task can be scheduled already,<br> put it into pending queue
+  queue->>pendingQueue: QueueService.putPendingMessage()
 
   queue->>-client: task status response
 ```
@@ -80,8 +78,7 @@ sequenceDiagram
   claimResolver-->>claimResolver: ClaimResolver checks if task can be rescheduled
 
   alt task can be rerun
-    note over claimResolver,pendingQueue: check_task_claim() DB fn atomically<br> appends a retry pending run AND inserts<br> into queue_pending_tasks
-    claimResolver->>pendingQueue: check_task_claim() (atomic DB write)
+    claimResolver->>pendingQueue: QueueService.putPendingMessage()
   else task cannot be rerun
     claimResolver->>dependencyTracker: DependencyTracker.resolveTask()
   end

@@ -2,12 +2,12 @@ import { strict as assert } from 'assert';
 import slugid from 'slugid';
 import _ from 'lodash';
 const { cloneDeep, range } = _;
-import tc from '@taskcluster/client';
+import tc from 'taskcluster-client';
 const { fromNow } = tc;
 import helper from '../helper.js';
-import testing from '@taskcluster/lib-testing';
-import { INVALID_PARAMETER_VALUE, UNIQUE_VIOLATION } from '@taskcluster/lib-postgres';
-import taskcluster from '@taskcluster/client';
+import testing from 'taskcluster-lib-testing';
+import { INVALID_PARAMETER_VALUE, UNIQUE_VIOLATION } from 'taskcluster-lib-postgres';
+import taskcluster from 'taskcluster-client';
 
 suite(testing.suiteName(), function() {
   helper.withDbForProcs({ serviceName: 'queue' });
@@ -17,7 +17,7 @@ suite(testing.suiteName(), function() {
   const deadline = taskcluster.fromNow('1 hour');
   const expires = taskcluster.fromNow('2 hours');
   const create = async (db, options = {}) => {
-    await db.deprecatedFns.create_task_projid(
+    await db.fns.create_task_projid(
       options.taskId || taskId,
       options.taskQueueId || 'prov/wt',
       'sched',
@@ -97,7 +97,7 @@ suite(testing.suiteName(), function() {
       );
     });
 
-    // TODO: This requires support from the @taskcluster/lib-postgres library
+    // TODO: This requires support from the taskcluster-lib-postgres library
     // helper.dbTest('adding pending task notifies channel', async function (db) {
     //   const notifications = [];
 
@@ -304,32 +304,6 @@ suite(testing.suiteName(), function() {
       const res4 = await db.fns.get_claimed_tasks_by_task_queue_id('task/queue', 2, created, 'taskId0');
       assert.equal(res4.length, 2);
     });
-
-    helper.dbTest('listing claimed tasks by worker', async function (db) {
-      // empty result when no tasks claimed
-      const res = await db.fns.get_claimed_tasks_by_worker('task/queue', 'wg1', 'w1');
-      assert.deepEqual(res, []);
-
-      // add claims for worker w1
-      await db.fns.queue_claimed_task_put('task1', 0, fromNow('-20 seconds'), 'task/queue', 'wg1', 'w1');
-      await db.fns.queue_claimed_task_put('task2', 0, fromNow('-20 seconds'), 'task/queue', 'wg1', 'w1');
-      // add claim for different worker w2
-      await db.fns.queue_claimed_task_put('task3', 0, fromNow('-20 seconds'), 'task/queue', 'wg1', 'w2');
-
-      const res2 = await db.fns.get_claimed_tasks_by_worker('task/queue', 'wg1', 'w1');
-      assert.equal(res2.length, 2);
-      const taskIds = res2.map(r => r.task_id).sort();
-      assert.deepEqual(taskIds, ['task1', 'task2']);
-
-      // different worker should only see its own
-      const res3 = await db.fns.get_claimed_tasks_by_worker('task/queue', 'wg1', 'w2');
-      assert.equal(res3.length, 1);
-      assert.equal(res3[0].task_id, 'task3');
-
-      // different task_queue_id returns nothing
-      const res4 = await db.fns.get_claimed_tasks_by_worker('other/queue', 'wg1', 'w1');
-      assert.deepEqual(res4, []);
-    });
   });
 
   suite('tests for resolved tasks', function() {
@@ -386,6 +360,7 @@ suite(testing.suiteName(), function() {
     helper.dbTest('getting tasks from the deadline queue', async function (db) {
       await db.fns.queue_task_deadline_put('tg1', 't1', 's1', fromNow('-20 seconds'), fromNow('-20 seconds'));
       await db.fns.queue_task_deadline_put('tg2', 't2', 's2', fromNow('-20 seconds'), fromNow('-20 seconds'));
+      await db.fns.queue_task_deadline_put('tg2', 't2', 's2', fromNow('120 seconds'), fromNow('120 seconds'));
       const result = await db.fns.queue_task_deadline_get(fromNow('10 seconds'), 2);
       assert.deepEqual(result.map(({ task_id }) => task_id), ['t1', 't2']);
 
@@ -416,7 +391,6 @@ suite(testing.suiteName(), function() {
         await client.query('truncate tasks');
         await client.query('truncate task_groups');
         await client.query('truncate task_dependencies');
-        await client.query('truncate queue_pending_tasks');
       });
     });
 
@@ -880,23 +854,6 @@ suite(testing.suiteName(), function() {
         const task = fixRuns(await db.fns.get_task_projid(taskId));
         assert.deepEqual(task[0].runs, res[0].runs);
       });
-
-      helper.dbTest('also inserts queue_pending_tasks row', async function(db) {
-        await create(db);
-        await db.fns.schedule_task(taskId, 'scheduled');
-
-        const rows = await helper.withDbClient(async client => {
-          const { rows } = await client.query(
-            'select task_queue_id, priority, run_id from queue_pending_tasks where task_id = $1',
-            [taskId],
-          );
-          return rows;
-        });
-        assert.equal(rows.length, 1, 'schedule_task must atomically insert into queue_pending_tasks');
-        assert.equal(rows[0].task_queue_id, 'prov/wt');
-        assert.equal(rows[0].priority, 5);
-        assert.equal(rows[0].run_id, 0);
-      });
     });
 
     suite('rerun_task', function() {
@@ -963,24 +920,6 @@ suite(testing.suiteName(), function() {
         }]);
         const task = fixRuns(await db.fns.get_task_projid(taskId));
         assert.deepEqual(task[0].runs, res[0].runs);
-      });
-
-      helper.dbTest('also inserts queue_pending_tasks row for the new run', async function(db) {
-        await create(db);
-        await setTaskRuns(db, [{ state: 'exception', reasonCreated: 'scheduled', reasonResolved: 'failed' }]);
-        await db.fns.rerun_task(taskId);
-
-        const rows = await helper.withDbClient(async client => {
-          const { rows } = await client.query(
-            'select task_queue_id, priority, run_id from queue_pending_tasks where task_id = $1',
-            [taskId],
-          );
-          return rows;
-        });
-        assert.equal(rows.length, 1, 'rerun_task must atomically insert into queue_pending_tasks');
-        assert.equal(rows[0].task_queue_id, 'prov/wt');
-        assert.equal(rows[0].priority, 5);
-        assert.equal(rows[0].run_id, 1);
       });
     });
 
@@ -1326,55 +1265,6 @@ suite(testing.suiteName(), function() {
         assert.deepEqual(task[0].runs, res[0].runs);
         assert.deepEqual(task[0].taken_until, res[0].taken_until);
       });
-
-      helper.dbTest('resolve with retry inserts queue_pending_tasks row for the retry run', async function(db) {
-        await create(db);
-        await setTaskRuns(db, [{ state: 'running' }]);
-        await db.fns.resolve_task(taskId, 0, 'exception', 'worker-shutdown', 'retry');
-
-        const rows = await helper.withDbClient(async client => {
-          const { rows } = await client.query(
-            'select run_id from queue_pending_tasks where task_id = $1',
-            [taskId],
-          );
-          return rows;
-        });
-        assert.equal(rows.length, 1, 'resolve_task with retry must enqueue the retry run');
-        assert.equal(rows[0].run_id, 1);
-      });
-
-      helper.dbTest('resolve without retry does not insert queue_pending_tasks row', async function(db) {
-        await create(db);
-        await setTaskRuns(db, [{ state: 'running' }]);
-        await db.fns.resolve_task(taskId, 0, 'exception', 'worker-shutdown', null);
-
-        const count = await helper.withDbClient(async client => {
-          const { rows } = await client.query(
-            'select count(*)::int as c from queue_pending_tasks where task_id = $1',
-            [taskId],
-          );
-          return rows[0].c;
-        });
-        assert.equal(count, 0);
-      });
-
-      helper.dbTest('resolve with retry_reason but retries_left=0 does not insert', async function(db) {
-        await create(db);
-        await setTaskRuns(db, [{ state: 'running' }]);
-        await helper.withDbClient(async client => {
-          await client.query('update tasks set retries_left = 0 where task_id = $1', [taskId]);
-        });
-        await db.fns.resolve_task(taskId, 0, 'exception', 'worker-shutdown', 'retry');
-
-        const count = await helper.withDbClient(async client => {
-          const { rows } = await client.query(
-            'select count(*)::int as c from queue_pending_tasks where task_id = $1',
-            [taskId],
-          );
-          return rows[0].c;
-        });
-        assert.equal(count, 0);
-      });
     });
 
     suite('check_task_claim', function() {
@@ -1500,47 +1390,6 @@ suite(testing.suiteName(), function() {
         const task = fixRuns(await db.fns.get_task_projid(taskId));
         assert.deepEqual(task[0].runs, res[0].runs);
         assert.deepEqual(task[0].taken_until, res[0].taken_until);
-      });
-
-      helper.dbTest('claim-expired with retry inserts queue_pending_tasks row', async function(db) {
-        await create(db);
-        const takenUntil = new Date(Date.now() + 60_000);
-        await setTaskRuns(db, [{ state: 'running', takenUntil: takenUntil.toISOString() }]);
-        await helper.withDbClient(async client => {
-          await client.query('update tasks set taken_until = $1 where task_id = $2', [takenUntil, taskId]);
-        });
-
-        await db.fns.check_task_claim(taskId, 0, takenUntil);
-
-        const rows = await helper.withDbClient(async client => {
-          const { rows } = await client.query(
-            'select run_id from queue_pending_tasks where task_id = $1',
-            [taskId],
-          );
-          return rows;
-        });
-        assert.equal(rows.length, 1, 'check_task_claim must enqueue the retry run');
-        assert.equal(rows[0].run_id, 1);
-      });
-
-      helper.dbTest('claim-expired with retries_left=0 does not insert', async function(db) {
-        await create(db);
-        const takenUntil = new Date(Date.now() + 60_000);
-        await setTaskRuns(db, [{ state: 'running', takenUntil: takenUntil.toISOString() }]);
-        await helper.withDbClient(async client => {
-          await client.query('update tasks set taken_until = $1, retries_left = 0 where task_id = $2', [takenUntil, taskId]);
-        });
-
-        await db.fns.check_task_claim(taskId, 0, takenUntil);
-
-        const count = await helper.withDbClient(async client => {
-          const { rows } = await client.query(
-            'select count(*)::int as c from queue_pending_tasks where task_id = $1',
-            [taskId],
-          );
-          return rows[0].c;
-        });
-        assert.equal(count, 0);
       });
     });
 
@@ -2493,150 +2342,6 @@ suite(testing.suiteName(), function() {
         fromNow('1 hour'),
       );
       await expectStats({ worker_count: 2, quarantined_count: 1, pending_count: 1, claimed_count: 1 });
-    });
-  });
-
-  suite('priority change helpers', function() {
-    setup('reset tables', async function() {
-      await helper.withDbClient(async client => {
-        await client.query('truncate queue_pending_tasks');
-        await client.query('truncate tasks');
-        await client.query('truncate task_groups');
-        await client.query('truncate task_dependencies');
-      });
-    });
-
-    helper.dbTest('queue_change_task_priority updates pending rows', async function(db) {
-      const id = slugid.v4();
-      await create(db, { taskId: id });
-      await db.fns.queue_pending_tasks_add('prov/wt', 5, id, 0, 'hint-a', fromNow('10 minutes'));
-
-      const result = await db.fns.queue_change_task_priority(id, 'very-high');
-      assert.equal(result.length, 1);
-      assert.equal(result[0].priority, 'very-high');
-      assert.equal(result[0].old_priority, 'high');
-
-      await helper.withDbClient(async client => {
-        const { rows } = await client.query('select priority from queue_pending_tasks where task_id = $1', [id]);
-        assert.equal(rows.length, 1);
-        assert.equal(rows[0].priority, 6);
-      });
-    });
-
-    helper.dbTest('queue_change_task_priority skips resolved or expired tasks', async function(db) {
-      const id = slugid.v4();
-      await create(db, { taskId: id });
-      await db.fns.queue_pending_tasks_add('prov/wt', 5, id, 0, 'hint-b', fromNow('10 minutes'));
-
-      await helper.withDbClient(async client => {
-        await client.query('update tasks set ever_resolved = true where task_id = $1', [id]);
-      });
-
-      const resolvedAttempt = await db.fns.queue_change_task_priority(id, 'low');
-      assert.equal(resolvedAttempt.length, 0);
-
-      await helper.withDbClient(async client => {
-        await client.query('update tasks set ever_resolved = false, deadline = now() - interval \'5 minutes\' where task_id = $1', [id]);
-      });
-
-      const expiredAttempt = await db.fns.queue_change_task_priority(id, 'medium');
-      assert.equal(expiredAttempt.length, 0);
-
-      await helper.withDbClient(async client => {
-        const { rows } = await client.query('select priority from queue_pending_tasks where task_id = $1', [id]);
-        assert.equal(rows.length, 1);
-        assert.equal(rows[0].priority, 5);
-      });
-    });
-
-    helper.dbTest('queue_change_task_group_priority batches updates', async function(db) {
-      const groupId = slugid.v4();
-      const taskIds = [];
-      for (let i = 0; i < 150; i++) {
-        const id = slugid.v4();
-        taskIds.push(id);
-        await create(db, { taskId: id, taskGroupId: groupId });
-        await db.fns.queue_pending_tasks_add('prov/wt', 5, id, 0, `hint-${i}`, fromNow('30 minutes'));
-      }
-
-      const result = await db.fns.queue_change_task_group_priority(groupId, 'very-low', 150);
-      assert.equal(result.length, 150);
-      result.forEach(row => {
-        assert.equal(row.priority, 'very-low');
-        assert.equal(row.old_priority, 'high');
-      });
-
-      await helper.withDbClient(async client => {
-        const { rows } = await client.query(
-          'select task_id, priority from queue_pending_tasks where task_id = any($1::text[])',
-          [taskIds],
-        );
-        assert.equal(rows.length, 150);
-        rows.forEach(row => assert.equal(row.priority, 2));
-      });
-    });
-
-    helper.dbTest('queue_change_task_priority records previous value on subsequent updates', async function(db) {
-      const id = slugid.v4();
-      await create(db, { taskId: id });
-
-      const first = await db.fns.queue_change_task_priority(id, 'highest');
-      assert.equal(first.length, 1);
-      assert.equal(first[0].old_priority, 'high');
-
-      const second = await db.fns.queue_change_task_priority(id, 'medium');
-      assert.equal(second.length, 1);
-      assert.equal(second[0].old_priority, 'highest');
-    });
-  });
-
-  suite('queue_pending_tasks_add_for_task', function() {
-    setup('reset tables', async function() {
-      await helper.withDbClient(async client => {
-        await client.query('truncate queue_pending_tasks');
-        await client.query('truncate tasks');
-        await client.query('truncate task_groups');
-        await client.query('truncate task_dependencies');
-      });
-    });
-
-    helper.dbTest('inserts a queue_pending_tasks row matching task metadata', async function(db) {
-      await create(db);
-      await setTaskRuns(db, [{ state: 'pending', reasonCreated: 'scheduled', scheduled: new Date().toISOString() }]);
-
-      await db.fns.queue_pending_tasks_add_for_task('prov/wt', 'high', deadline, taskId, 0);
-
-      const rows = await helper.withDbClient(async client => {
-        const { rows } = await client.query(
-          'select task_queue_id, priority, task_id, run_id, hint_id, expires from queue_pending_tasks where task_id = $1 and run_id = $2',
-          [taskId, 0],
-        );
-        return rows;
-      });
-      assert.equal(rows.length, 1);
-      assert.equal(rows[0].task_queue_id, 'prov/wt');
-      assert.equal(rows[0].priority, 5);
-      assert.equal(rows[0].task_id, taskId);
-      assert.equal(rows[0].run_id, 0);
-      assert.ok(rows[0].hint_id);
-      assert.ok(rows[0].expires instanceof Date);
-    });
-
-    helper.dbTest('is idempotent on repeated calls (ON CONFLICT DO UPDATE)', async function(db) {
-      await create(db);
-      await setTaskRuns(db, [{ state: 'pending', reasonCreated: 'scheduled', scheduled: new Date().toISOString() }]);
-
-      await db.fns.queue_pending_tasks_add_for_task('prov/wt', 'high', deadline, taskId, 0);
-      await db.fns.queue_pending_tasks_add_for_task('prov/wt', 'high', deadline, taskId, 0);
-
-      const count = await helper.withDbClient(async client => {
-        const { rows } = await client.query(
-          'select count(*)::int as c from queue_pending_tasks where task_id = $1 and run_id = $2',
-          [taskId, 0],
-        );
-        return rows[0].c;
-      });
-      assert.equal(count, 1);
     });
   });
 });

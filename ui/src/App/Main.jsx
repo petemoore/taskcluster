@@ -6,12 +6,10 @@ import { withStyles } from '@material-ui/core/styles';
 import RouteWithProps from '../components/RouteWithProps';
 import ErrorPanel from '../components/ErrorPanel';
 import StatusBanner from '../components/StatusBanner';
-import Snackbar from '../components/Snackbar';
 import { route } from '../utils/prop-types';
 import { withAuth } from '../utils/Auth';
 import isThirdPartyLogin from '../utils/isThirdPartyLogin';
 import isLoggedInQuery from './isLoggedIn.graphql';
-import { AUTH_STARTED } from '../utils/constants';
 
 @withApollo
 @withStyles(theme => ({
@@ -55,21 +53,11 @@ import { AUTH_STARTED } from '../utils/constants';
 export default class Main extends Component {
   static propTypes = {
     error: object,
-    subscriptionError: object,
     routes: arrayOf(route).isRequired,
   };
 
   static defaultProps = {
     error: null,
-    subscriptionError: null,
-  };
-
-  state = {
-    subscriptionWarningDismissed: false,
-  };
-
-  handleSubscriptionWarningClose = () => {
-    this.setState({ subscriptionWarningDismissed: true });
   };
 
   // Called on user change because of <App key={auth.user} ... />
@@ -92,7 +80,6 @@ export default class Main extends Component {
       !sessionStorage.getItem(THIRD_PARTY_DID_AUTO_LOGIN_KEY)
     ) {
       sessionStorage.setItem(THIRD_PARTY_DID_AUTO_LOGIN_KEY, 'true');
-      localStorage.setItem(AUTH_STARTED, window.env.UI_LOGIN_STRATEGY_NAMES);
       window.open(`/login/${window.env.UI_LOGIN_STRATEGY_NAMES}`);
 
       return;
@@ -126,21 +113,11 @@ export default class Main extends Component {
   }
 
   render() {
-    const { error, routes, subscriptionError } = this.props;
-    const { subscriptionWarningDismissed } = this.state;
+    const { error, routes } = this.props;
 
     return (
       <Fragment>
         <StatusBanner message={window.env.BANNER_MESSAGE} />
-        {subscriptionError && !subscriptionWarningDismissed && (
-          <Snackbar
-            autoHideDuration={null}
-            onClose={this.handleSubscriptionWarningClose}
-            message="Live updates are not available because you are missing the web:read-pulse scope. Task information on this page may be out of date. Try signing in or refreshing the page."
-            variant="warning"
-            open
-          />
-        )}
         <ErrorPanel fixed error={error} />
         <BrowserRouter>
           <Switch>

@@ -3,23 +3,19 @@ import debugFactory from 'debug';
 const debug = debugFactory('app:main');
 import assert from 'assert';
 import { ApolloServer } from '@apollo/server';
-import { expressMiddleware } from '@as-integrations/express4';
-import compression from 'compression';
+import { expressMiddleware } from '@apollo/server/express4';
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
-import depthLimit from './validation/guardedDepthLimit.js';
-import { NoFragmentCyclesRule } from 'graphql/validation/rules/NoFragmentCyclesRule.js';
+import depthLimit from 'graphql-depth-limit';
 import { createComplexityLimitRule } from 'graphql-validation-complexity';
 import queryLimit from 'graphql-query-count-limit';
-import loader from '@taskcluster/lib-loader';
-import config from '@taskcluster/lib-config';
-import libReferences from '@taskcluster/lib-references';
-import SchemaSet from '@taskcluster/lib-validate';
-import builder from './api.js';
+import loader from 'taskcluster-lib-loader';
+import config from 'taskcluster-lib-config';
+import libReferences from 'taskcluster-lib-references';
 import { createServer } from 'http';
-import { Client, pulseCredentials } from '@taskcluster/lib-pulse';
-import taskcluster from '@taskcluster/client';
-import tcdb from '@taskcluster/db';
-import { MonitorManager } from '@taskcluster/lib-monitor';
+import { Client, pulseCredentials } from 'taskcluster-lib-pulse';
+import taskcluster from 'taskcluster-client';
+import tcdb from 'taskcluster-db';
+import { MonitorManager } from 'taskcluster-lib-monitor';
 import createApp from './servers/createApp.js';
 import formatError from './servers/formatError.js';
 import clients from './clients.js';
@@ -123,35 +119,17 @@ const load = loader(
         }),
     },
 
-    schemaset: {
-      requires: ['cfg'],
-      setup: ({ cfg }) => new SchemaSet({
-        serviceName: 'web-server',
-      }),
-    },
-
-    api: {
-      requires: ['cfg', 'clients', 'schemaset', 'monitor'],
-      setup: ({ cfg, clients, schemaset, monitor }) => builder.build({
-        rootUrl: cfg.taskcluster.rootUrl,
-        context: { clients, rootUrl: cfg.taskcluster.rootUrl },
-        schemaset,
-        monitor: monitor.childMonitor('api'),
-      }),
-    },
-
     generateReferences: {
-      requires: ['cfg', 'schemaset'],
-      setup: async ({ cfg, schemaset }) => libReferences.fromService({
-        schemaset,
-        references: [builder.reference(), MonitorManager.reference('web-server'), MonitorManager.metricsReference('web-server')],
+      requires: ['cfg'],
+      setup: async ({ cfg }) => libReferences.fromService({
+        references: [MonitorManager.reference('web-server'), MonitorManager.metricsReference('web-server')],
       }).then(ref => ref.generateReferences()),
     },
 
     app: {
-      requires: ['cfg', 'strategies', 'auth', 'monitor', 'db', 'clients', 'api'],
-      setup: ({ cfg, strategies, auth, monitor, db, clients, api }) =>
-        createApp({ cfg, strategies, auth, monitor, db, clients, rootUrl: cfg.taskcluster.rootUrl, api }),
+      requires: ['cfg', 'strategies', 'auth', 'monitor', 'db'],
+      setup: ({ cfg, strategies, auth, monitor, db }) =>
+        createApp({ cfg, strategies, auth, monitor, db }),
     },
 
     authFactory: {
@@ -171,6 +149,7 @@ const load = loader(
         const server = new ApolloServer({
           schema,
           formatError,
+          status400ForVariableCoercionErrors: true, //https://www.apollographql.com/docs/apollo-server/migration#appropriate-400-status-codes
           plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
           csrfPrevention: true,
           introspection: true,
@@ -178,19 +157,16 @@ const load = loader(
             maxTokens: 100000,
           },
           validationRules: [
-            NoFragmentCyclesRule,
             queryLimit(1000),
             depthLimit(10),
             createComplexityLimitRule(4500),
           ],
         });
         await server.start();
-        monitor.exposeMetrics('default');
 
         // https://www.apollographql.com/docs/apollo-server/migration
         app.use(
           '/graphql',
-          compression(),
           expressMiddleware(server, {
             context,
           }),

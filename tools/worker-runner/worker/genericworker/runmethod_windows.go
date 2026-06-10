@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/Microsoft/go-winio"
-	"github.com/taskcluster/taskcluster/v100/tools/worker-runner/run"
-	"github.com/taskcluster/taskcluster/v100/tools/workerproto"
+	"github.com/taskcluster/taskcluster/v86/tools/worker-runner/run"
+	"github.com/taskcluster/taskcluster/v86/tools/workerproto"
 	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/mgr"
 )
@@ -43,37 +43,29 @@ func (m *serviceRunMethod) start(w *genericworker, state *run.State) (workerprot
 		return nil, fmt.Errorf("error starting service %s: %s", m.serviceName, err)
 	}
 
-	// Use two separate unidirectional pipes to eliminate duplex deadlocks
-	inputChan := make(chan io.Reader, 1)  // server reads from this (client->server)
-	outputChan := make(chan io.Writer, 1) // server writes to this (server->client)
+	// connect the transport to the named
+	inputReader, inputWriter := io.Pipe()
+	outputReader, outputWriter := io.Pipe()
+	transp := workerproto.NewPipeTransport(inputReader, outputWriter)
 
-	err = m.connectPipeToProtocol(w.wicfg.ProtocolPipe, inputChan, outputChan)
+	err = m.connectPipeToProtocol(w.wicfg.ProtocolPipe, inputWriter, outputReader)
 	if err != nil {
 		return nil, err
 	}
-
-	// Wait for both connections to be established
-	inputConn := <-inputChan
-	outputConn := <-outputChan
-	transp := workerproto.NewPipeTransport(inputConn, outputConn)
 
 	return transp, nil
 }
 
 // Connect the configured named pipe to the worker-runner workerproto.  This opens
 // the named pipe and listens for a single connection, which it considers to be
-// from the worker, and does not accept any further connections.  Aside from
+// from the worker, and does not acccept any further connections.  Aside from
 // careful configuration of the security descriptor, this provides an
 // additional layer of assurance that this pipe is not used to manipulate the
 // worker or worker-runner.
-func (m *serviceRunMethod) connectPipeToProtocol(protocolPipe string, inputChan chan io.Reader, outputChan chan io.Writer) error {
+func (m *serviceRunMethod) connectPipeToProtocol(protocolPipe string, inputWriter io.WriteCloser, outputReader io.Reader) error {
 	if protocolPipe == "" {
 		protocolPipe = `\\.\pipe\generic-worker`
 	}
-
-	// Create two separate pipe names for unidirectional communication
-	inputPipeName := protocolPipe + "-input"   // client->server
-	outputPipeName := protocolPipe + "-output" // server->client
 
 	// Construct a security-descriptor that allows all access to the current
 	// user and to "Local System" (shorthand SY)
@@ -88,49 +80,32 @@ func (m *serviceRunMethod) connectPipeToProtocol(protocolPipe string, inputChan 
 		// (A;;GA;;;<sid>) -- GENERIC_ALL access for current user
 		// (A;;GA;;;SY) -- GENERIC_ALL access for "Local System"
 		SecurityDescriptor: fmt.Sprintf("D:P(A;;GA;;;%s)(A;;GA;;;SY)", cu.Uid),
-		InputBufferSize:    65536, // 64KiB
-		OutputBufferSize:   65536, // 64KiB
 	}
-
-	// Create input pipe listener (client->server)
-	inputListener, err := winio.ListenPipe(inputPipeName, &c)
+	listener, err := winio.ListenPipe(protocolPipe, &c)
 	if err != nil {
-		return fmt.Errorf("error setting up input protocolPipe: %s", err)
+		return fmt.Errorf("error setting up protocolPipe: %s", err)
 	}
 
-	// Create output pipe listener (server->client)
-	outputListener, err := winio.ListenPipe(outputPipeName, &c)
-	if err != nil {
-		inputListener.Close()
-		return fmt.Errorf("error setting up output protocolPipe: %s", err)
-	}
-
-	// Accept input connection (client->server)
 	go func() {
-		conn, err := inputListener.Accept()
+		conn, err := listener.Accept()
 		if err != nil {
-			log.Printf("Error accepting connection on input protocolPipe: %s", err)
-			inputListener.Close()
+			// since this occurs asynchronously, there's not much we can do
+			// here other than log about it
+			log.Printf("Error accepting connection on protocolPipe: %s", err)
+			listener.Close()
 			return
 		}
 
-		log.Printf("Worker connected on input protocolPipe")
-		inputListener.Close()
-		inputChan <- conn
-	}()
+		log.Printf("Worker connecteed on protocolPipe")
+		listener.Close()
 
-	// Accept output connection (server->client)
-	go func() {
-		conn, err := outputListener.Accept()
-		if err != nil {
-			log.Printf("Error accepting connection on output protocolPipe: %s", err)
-			outputListener.Close()
-			return
-		}
-
-		log.Printf("Worker connected on output protocolPipe")
-		outputListener.Close()
-		outputChan <- conn
+		// copy bidirectionally between this connection and the protocol transport, and do not
+		// accept any further connections.  When the pipe is closed, we close the inputWriter.
+		go io.Copy(conn, outputReader)
+		go func() {
+			io.Copy(inputWriter, conn)
+			inputWriter.Close()
+		}()
 	}()
 
 	return nil
@@ -150,9 +125,6 @@ func (m *serviceRunMethod) wait() error {
 
 		if err != nil {
 			return fmt.Errorf("error querying service %s status: %s", m.serviceName, err)
-		}
-		if status.ServiceSpecificExitCode == 67 {
-			return fmt.Errorf("%s requested immediate reboot", m.serviceName)
 		}
 		if status.State != svc.StartPending && status.State != svc.Running {
 			break

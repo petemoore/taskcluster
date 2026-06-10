@@ -1,6 +1,6 @@
 import subject from '../src/watchdog.js';
 import assume from 'assume';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 
 suite(testing.suiteName(), function() {
   let events;
@@ -13,7 +13,7 @@ suite(testing.suiteName(), function() {
 
   const listen = w => {
     events = [];
-    w.on('expired', () => events.push(['expired', Date.now()]));
+    w.on('expired', () => events.push(['expired', +new Date()]));
   };
 
   test('should emit expired event', runWithFakeTime(async function() {

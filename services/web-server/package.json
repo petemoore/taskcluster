@@ -1,6 +1,6 @@
 {
-  "name": "@taskcluster/web-server",
-  "version": "100.3.0",
+  "name": "taskcluster-web-server",
+  "version": "86.0.0",
   "private": true,
   "exports": "./src/main.js",
   "type": "module",
@@ -15,9 +15,9 @@
   },
   "devDependencies": {
     "c8": "^8.0.1",
-    "cross-env": "^10.1.0",
+    "cross-env": "^7.0.3",
     "eslint": "^8.57.0",
-    "eslint-formatter-codeframe": "^7.32.2",
+    "eslint-formatter-codeframe": "^7.32.1",
     "mocha": "^10.8.2"
   }
 }

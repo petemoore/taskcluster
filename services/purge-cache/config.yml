@@ -8,7 +8,6 @@ defaults:
   monitoring:
     level: !env:optional LEVEL
     errorConfig: !env:json:secret:optional ERROR_CONFIG
-    prometheusConfig: !env:json:optional PROMETHEUS_CONFIG
 
   server:
     # Port to listen for requests on

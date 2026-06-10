@@ -1,37 +1,33 @@
 package gwconfig
 
-import (
-	"testing"
-
-	"github.com/taskcluster/taskcluster/v100/tools/d2g"
-)
+import "testing"
 
 type PublicPlatformConfig struct {
-	D2GConfig                 d2g.Config `json:"d2gConfig"`
-	DisableNativePayloads     bool       `json:"disableNativePayloads"`
-	EnableLoopbackAudio       bool       `json:"enableLoopbackAudio"`
-	EnableLoopbackVideo       bool       `json:"enableLoopbackVideo"`
-	LoopbackAudioDeviceNumber uint8      `json:"loopbackAudioDeviceNumber"`
-	LoopbackVideoDeviceNumber uint8      `json:"loopbackVideoDeviceNumber"`
+	D2GConfig                 map[string]any `json:"d2gConfig"`
+	DisableNativePayloads     bool           `json:"disableNativePayloads"`
+	EnableLoopbackAudio       bool           `json:"enableLoopbackAudio"`
+	EnableLoopbackVideo       bool           `json:"enableLoopbackVideo"`
+	LoopbackAudioDeviceNumber uint8          `json:"loopbackAudioDeviceNumber"`
+	LoopbackVideoDeviceNumber uint8          `json:"loopbackVideoDeviceNumber"`
 }
 
 func DefaultPublicPlatformConfig() *PublicPlatformConfig {
 	return &PublicPlatformConfig{
-		D2GConfig: d2g.Config{
-			EnableD2G:             false,
-			AllowChainOfTrust:     true,
-			AllowDisableSeccomp:   true,
-			AllowGPUs:             false,
-			AllowHostSharedMemory: true,
-			AllowInteractive:      true,
-			AllowKVM:              true,
-			AllowLoopbackAudio:    true,
-			AllowLoopbackVideo:    true,
-			AllowPrivileged:       true,
-			AllowPtrace:           true,
-			AllowTaskclusterProxy: true,
-			GPUs:                  "all",
-			LogTranslation:        true,
+		D2GConfig: map[string]any{
+			"enableD2G":             false,
+			"allowChainOfTrust":     true,
+			"allowDisableSeccomp":   true,
+			"allowGPUs":             false,
+			"allowHostSharedMemory": true,
+			"allowInteractive":      true,
+			"allowKVM":              true,
+			"allowLoopbackAudio":    true,
+			"allowLoopbackVideo":    true,
+			"allowPrivileged":       true,
+			"allowPtrace":           true,
+			"allowTaskclusterProxy": true,
+			"gpus":                  "all",
+			"logTranslation":        true,
 		},
 		DisableNativePayloads:     false,
 		EnableLoopbackAudio:       true,
@@ -42,14 +38,14 @@ func DefaultPublicPlatformConfig() *PublicPlatformConfig {
 }
 
 func (c *PublicPlatformConfig) D2GEnabled() bool {
-	return c.D2GConfig.EnableD2G
+	return c.D2GConfig["enableD2G"].(bool)
 }
 
 // Helper method used to enable D2G
 // during testing.
 func (c *PublicPlatformConfig) EnableD2G(t *testing.T) {
 	t.Helper()
-	c.D2GConfig.EnableD2G = true
+	c.D2GConfig["enableD2G"] = true
 }
 
 func (c *PublicPlatformConfig) NativePayloadsDisabled() bool {
