@@ -5,11 +5,14 @@ it('is third-party login', () => {
 
   const assignMock = jest.fn();
 
-  delete window.location;
-  window.location = {
-    assign: assignMock,
-    search: '?client_id=foo&response_type=bar&scope=baz&redirect_uri=qux',
-  };
+  Object.defineProperty(window, 'location', {
+    value: {
+      assign: assignMock,
+      search: '?client_id=foo&response_type=bar&scope=baz&redirect_uri=qux',
+    },
+    writable: true,
+    configurable: true,
+  });
 
   expect(isThirdPartyLogin()).toBe(true);
 });
