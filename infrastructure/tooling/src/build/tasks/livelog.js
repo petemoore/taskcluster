@@ -1,6 +1,6 @@
-import fs from 'node:fs';
+import fs from 'fs';
 import glob from 'glob';
-import path from 'node:path';
+import path from 'path';
 import { ensureTask, execCommand, dockerPush, REPO_ROOT } from '../../utils/index.js';
 
 export default ({ tasks, cmdOptions, credentials, baseDir, logsDir }) => {

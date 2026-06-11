@@ -1,11 +1,11 @@
 import SchemaSet from '@taskcluster/lib-validate';
 import { App } from '@taskcluster/lib-app';
 import { APIBuilder } from '../src/index.js';
-import assert from 'node:assert';
+import assert from 'assert';
 import request from 'superagent';
 import slugid from 'slugid';
 import sinon from 'sinon';
-import path from 'node:path';
+import path from 'path';
 import { monitor } from './helper.js';
 import testing from '@taskcluster/lib-testing';
 
@@ -194,7 +194,7 @@ suite(testing.suiteName(), function() {
       res.status(200).json(this.foo());
     });
 
-    let fooFake;
+    let fooFake = undefined;
     const api = await builder.build({
       rootUrl,
       monitor,

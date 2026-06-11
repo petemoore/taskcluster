@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import QueueService from './queueservice.js';
 import Iterate from '@taskcluster/lib-iterate';
 import { Task } from './data.js';

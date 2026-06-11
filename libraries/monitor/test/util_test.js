@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import { cleanupDescription } from '../src/util.js';
 import testing from '@taskcluster/lib-testing';
 

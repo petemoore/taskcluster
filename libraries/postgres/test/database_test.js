@@ -11,9 +11,9 @@ import {
   UNDEFINED_FUNCTION,
 } from '../src/index.js';
 
-import path from 'node:path';
-import { strict as assert } from 'node:assert';
-import fs from 'node:fs';
+import path from 'path';
+import { strict as assert } from 'assert';
+import fs from 'fs';
 
 const monitor = helper.monitor;
 const __dirnname = new URL('.', import.meta.url).pathname;
@@ -320,7 +320,7 @@ helper.dbSuite(path.basename(__filename), function() {
         service2: { tables: { foo: 'write' } },
       });
       await assert.rejects(() => Database._checkPermissions({ db, schema, usernamePrefix: 'test' }),
-        /test_service2 has unexpected role badrole/);
+        new RegExp(`test_service2 has unexpected role badrole`));
     });
   });
 

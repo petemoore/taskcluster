@@ -1,6 +1,6 @@
 import Access from '../src/Access.js';
-import path from 'node:path';
-import { strict as assert } from 'node:assert';
+import path from 'path';
+import { strict as assert } from 'assert';
 
 const __filename = new URL('', import.meta.url).pathname;
 

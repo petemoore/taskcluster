@@ -1,6 +1,6 @@
 import Schema from '../src/Schema.js';
-import path from 'node:path';
-import { strict as assert } from 'node:assert';
+import path from 'path';
+import { strict as assert } from 'assert';
 
 const __dirname = new URL('.', import.meta.url).pathname;
 const __filename = new URL('', import.meta.url).pathname;
@@ -36,7 +36,7 @@ suite(path.basename(__filename), function() {
       assert(ver1.migrationScript.startsWith('begin'));
 
       const ver2 = sch.getVersion(2);
-      assert(ver2.methods.list_secrets.body.startsWith('begin'));
+      assert(ver2.methods['list_secrets'].body.startsWith('begin'));
     });
 
     test('disallow duplicate method names', function () {

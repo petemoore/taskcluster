@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import assume from 'assume';
 import taskcluster from '@taskcluster/client';
 import sinon from 'sinon';

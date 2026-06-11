@@ -1,11 +1,11 @@
-import assert from 'node:assert';
-import stream from 'node:stream';
+import assert from 'assert';
+import stream from 'stream';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import MonitorManager from '../src/monitormanager.js';
 import testing from '@taskcluster/lib-testing';
-import fs from 'node:fs';
-import path from 'node:path';
+import fs from 'fs';
+import path from 'path';
 
 const __dirname = new URL('.', import.meta.url).pathname;
 

@@ -1,8 +1,8 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import helper from '../helper/index.js';
 import testing from '@taskcluster/lib-testing';
 import request from 'superagent';
-import crypto from 'node:crypto';
+import crypto from 'crypto';
 import taskcluster from '@taskcluster/client';
 
 helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {

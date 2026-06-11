@@ -2,7 +2,7 @@ import _ from 'lodash';
 import taskcluster from '@taskcluster/client';
 import debugFactory from 'debug';
 const debug = debugFactory('app:sentry');
-import assert from 'node:assert';
+import assert from 'assert';
 import got from 'got';
 
 class SentryApiClient {

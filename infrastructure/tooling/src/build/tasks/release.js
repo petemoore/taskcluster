@@ -1,7 +1,7 @@
 import { Octokit } from '@octokit/rest';
-import fs from 'node:fs';
-import util from 'node:util';
-import path from 'node:path';
+import fs from 'fs';
+import util from 'util';
+import path from 'path';
 
 import {
   ensureTask,
@@ -79,7 +79,7 @@ export default ({ tasks, cmdOptions, credentials, baseDir, logsDir }) => {
         tag_name: `v${requirements['release-version']}`,
         name: `v${requirements['release-version']}`,
         body: await requirements['changelog-text'],
-        draft: !!cmdOptions.staging,
+        draft: cmdOptions.staging ? true : false,
         prerelease: false,
       });
       const { upload_url } = release.data;
