@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import helper from './helper.js';
 import nock from 'nock';
 import testing from '@taskcluster/lib-testing';

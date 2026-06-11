@@ -1,11 +1,11 @@
 import { ApiError } from '../src/providers/provider.js';
 import _ from 'lodash';
-import assert from 'node:assert';
+import assert from 'assert';
 import helper from './helper.js';
 import { AwsProvider } from '../src/providers/aws.js';
 import testing from '@taskcluster/lib-testing';
-import fs from 'node:fs';
-import path from 'node:path';
+import fs from 'fs';
+import path from 'path';
 import taskcluster from '@taskcluster/client';
 import { WorkerPool, Worker, WorkerPoolStats } from '../src/data.js';
 import { FakeEC2 } from './fakes/index.js';
@@ -435,8 +435,8 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
       };
 
       const resp = await provider.registerWorker({ worker: runningWorker, workerPool, workerIdentityProof });
-      assert(resp.expires - Date.now() + 10000 > 96 * 3600 * 1000);
-      assert(resp.expires - Date.now() - 10000 < 96 * 3600 * 1000);
+      assert(resp.expires - new Date() + 10000 > 96 * 3600 * 1000);
+      assert(resp.expires - new Date() - 10000 < 96 * 3600 * 1000);
       assert.equal(resp.workerConfig.someConfig, 'someConfigValue');
       helper.assertPulseMessage('worker-running', m => m.payload.workerId === runningWorker.workerId);
       helper.assertPulseMessage('worker-running', m => m.payload.launchConfigId === runningWorker.launchConfigId);
@@ -469,8 +469,8 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
       };
 
       const resp = await provider.registerWorker({ worker: runningWorker, workerPool, workerIdentityProof });
-      assert(resp.expires - Date.now() + 10000 > 10 * 3600 * 1000);
-      assert(resp.expires - Date.now() - 10000 < 10 * 3600 * 1000);
+      assert(resp.expires - new Date() + 10000 > 10 * 3600 * 1000);
+      assert(resp.expires - new Date() - 10000 < 10 * 3600 * 1000);
       assert.equal(resp.workerConfig.someKey, 'someValue');
       helper.assertPulseMessage('worker-running', m => m.payload.workerId === runningWorker.workerId);
       helper.assertPulseMessage('worker-running', m => m.payload.launchConfigId === runningWorker.launchConfigId);

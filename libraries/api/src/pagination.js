@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import Hashids from 'hashids';
 import { ErrorReply } from './error-reply.js';
 

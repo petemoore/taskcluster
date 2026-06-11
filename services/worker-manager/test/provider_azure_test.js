@@ -1,17 +1,17 @@
 import _ from 'lodash';
 import taskcluster from '@taskcluster/client';
 import sinon from 'sinon';
-import assert from 'node:assert';
+import assert from 'assert';
 import helper from './helper.js';
 import { FakeAzure, FakeHttpHeaders } from './fakes/index.js';
 import { AzureProvider, isAllowedAiaLocation } from '../src/providers/azure/index.js';
 import { dnToString, getAuthorityAccessInfo, getCertFingerprint, cloneCaStore } from '../src/providers/azure/utils.js';
 import testing from '@taskcluster/lib-testing';
 import forge from 'node-forge';
-import fs from 'node:fs';
-import http from 'node:http';
+import fs from 'fs';
+import http from 'http';
 import got from 'got';
-import path from 'node:path';
+import path from 'path';
 import { WorkerPool, Worker, WorkerPoolStats } from '../src/data.js';
 import Debug from 'debug';
 import { loadCertificates } from '../src/providers/azure/azure-ca-certs/index.js';
@@ -472,7 +472,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
       assert.equal(providerData.tags['worker-group'], 'westus');
       assert.equal(providerData.tags['worker-pool-id'], workerPoolId);
       assert.equal(providerData.tags['root-url'], helper.rootUrl);
-      assert.equal(providerData.tags.owner, 'whatever@example.com');
+      assert.equal(providerData.tags['owner'], 'whatever@example.com');
 
       const customData = JSON.parse(Buffer.from(providerData.vm.config.osProfile.customData, 'base64'));
       assert.equal(customData.workerPoolId, workerPoolId);
@@ -488,7 +488,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
       const worker = await provisionWorkerPool({
         tags: { mytag: 'myvalue' },
       });
-      assert.equal(worker.providerData.tags.mytag, 'myvalue');
+      assert.equal(worker.providerData.tags['mytag'], 'myvalue');
       helper.assertPulseMessage('worker-requested', m => m.payload.workerId === worker.workerId);
     });
 
@@ -1461,7 +1461,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
       assert.equal(vmParams.tags['worker-group'], 'westus');
       assert.equal(vmParams.tags['worker-pool-id'], workerPoolId);
       assert.equal(vmParams.tags['root-url'], helper.rootUrl);
-      assert.equal(vmParams.tags.owner, 'whatever@example.com');
+      assert.equal(vmParams.tags['owner'], 'whatever@example.com');
 
       debug('sixth call');
       await provider.provisionResources({ worker, monitor });
@@ -2972,8 +2972,8 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
           const workerIdentityProof = { document: azureSignatures[0].document };
           const res = await provider.registerWorker({ workerPool, worker, workerIdentityProof });
           // allow +- 10 seconds since time passes while the test executes
-          assert(res.expires - Date.now() + 10000 > 96 * 3600 * 1000, res.expires);
-          assert(res.expires - Date.now() - 10000 < 96 * 3600 * 1000, res.expires);
+          assert(res.expires - new Date() + 10000 > 96 * 3600 * 1000, res.expires);
+          assert(res.expires - new Date() - 10000 < 96 * 3600 * 1000, res.expires);
           assert.equal(res.workerConfig.someKey, 'someValue');
         });
 
@@ -2996,8 +2996,8 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
           const workerIdentityProof = { document: azureSignatures[0].document };
           const res = await provider.registerWorker({ workerPool, worker, workerIdentityProof });
           // allow +- 10 seconds since time passes while the test executes
-          assert(res.expires - Date.now() + 10000 > 10 * 3600 * 1000, res.expires);
-          assert(res.expires - Date.now() - 10000 < 10 * 3600 * 1000, res.expires);
+          assert(res.expires - new Date() + 10000 > 10 * 3600 * 1000, res.expires);
+          assert(res.expires - new Date() - 10000 < 10 * 3600 * 1000, res.expires);
           assert.equal(res.workerConfig.someKey, 'someValue');
           helper.assertPulseMessage('worker-running', m => m.payload.workerId === worker.workerId);
           helper.assertPulseMessage('worker-running', m => m.payload.launchConfigId === worker.launchConfigId);
@@ -3021,8 +3021,8 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
 
           const res = await provider.registerWorker({ workerPool, worker, workerIdentityProof });
           // allow +- 10 seconds since time passes while the test executes
-          assert(res.expires - Date.now() + 10000 > 96 * 3600 * 1000, res.expires);
-          assert(res.expires - Date.now() - 10000 < 96 * 3600 * 1000, res.expires);
+          assert(res.expires - new Date() + 10000 > 96 * 3600 * 1000, res.expires);
+          assert(res.expires - new Date() - 10000 < 96 * 3600 * 1000, res.expires);
           assert.equal(res.workerConfig.someKey, 'someValue');
 
           let log0 = monitor.manager.messages[0];

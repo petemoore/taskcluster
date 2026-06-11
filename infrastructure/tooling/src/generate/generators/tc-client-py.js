@@ -1,4 +1,4 @@
-import path from 'node:path';
+import path from 'path';
 import { writeRepoFile, REPO_ROOT, execCommand } from '../../utils/index.js';
 import mkdirp from 'mkdirp';
 import { rimraf } from 'rimraf';
@@ -211,7 +211,7 @@ export const tasks = [{
   requires: ['apis'],
   provides: ['target-taskcluster-client-py'],
   run: async (requirements, utils) => {
-    const apis = requirements.apis;
+    const apis = requirements['apis'];
     const moduleDir = path.join(REPO_ROOT, 'clients', 'client-py', 'taskcluster', 'generated');
 
     // clean up the clients directory to eliminate any "leftovers"

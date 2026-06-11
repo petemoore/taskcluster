@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import helper from './helper.js';
 import assume from 'assume';
 import taskcluster from '@taskcluster/client';
