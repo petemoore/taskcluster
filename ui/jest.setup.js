@@ -15,4 +15,4 @@ window.env = Object.assign({}, window.env, {
 
 
 // Set up fake timer
-jest.useFakeTimers('modern').setSystemTime(new Date('2022-02-17 13:00:00').getTime());
+jest.useFakeTimers().setSystemTime(new Date('2022-02-17 13:00:00').getTime());

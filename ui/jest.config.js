@@ -11,13 +11,17 @@ module.exports = {
   },
   bail: true,
   collectCoverageFrom: ["src/**/*.{mjs,jsx,js}"],
+  // V8 coverage uses Node's built-in instrumentation instead of babel
+  // transforms, which is significantly faster with jest 30.
+  coverageProvider: "v8",
+  // Ensure jest exits even when open handles (timers, network, etc.) remain
+  // after all tests complete, preventing the CI task from timing out.
+  forceExit: true,
   testEnvironment: "jsdom",
-  testRegex: null,
   verbose: false,
   transform: {
     "\\.(mjs|jsx|js)$": "<rootDir>/__jest__/transformer.js",
-    "^.+\\.(js|jsx)$": "babel-jest",
-    "\\.graphql$": "jest-transform-graphql",
+    "\\.graphql$": "<rootDir>/__jest__/graphqlTransformer.js",
   },
   testMatch: [
     "<rootDir>/src/**/*.test.(js|jsx)",
@@ -25,6 +29,6 @@ module.exports = {
   ],
   setupFilesAfterEnv: ["./jest.setup.js"],
   transformIgnorePatterns: [
-    "node_modules/(?!is-absolute-url|@taskcluster/client-web)",
+    "node_modules/(?!is-absolute-url|@taskcluster/client-web|dexie)",
   ],
 };
