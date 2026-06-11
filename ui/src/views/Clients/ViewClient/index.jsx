@@ -223,8 +223,11 @@ export default class ViewClient extends Component {
         loading: false,
       });
 
-      // CLI login
-      if (callbackUrl) {
+      // CLI login — callbackUrl was already validated by isAllowedCallback at
+      // the start of this function.  Re-check here inline so static analysis
+      // tools can see the guard at the point of use and confirm that only
+      // localhost URLs are ever passed to window.location.replace.
+      if (callbackUrl && this.isAllowedCallback(callbackUrl)) {
         window.location.replace(
           `${callbackUrl}?clientId=${clientId}&accessToken=${result.data.createClient.accessToken}`
         );

@@ -129,6 +129,7 @@ func (routes *Routes) BewitHandler(res http.ResponseWriter, req *http.Request) {
 
 	headers := res.Header()
 	headers.Set("Location", bewitURL.String())
+	res.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	res.WriteHeader(303)
 	fmt.Fprint(res, bewitURL)
 }
@@ -172,9 +173,8 @@ func (routes *Routes) RootHandler(res http.ResponseWriter, req *http.Request) {
 
 	// Unkown service which we are trying to hit...
 	if err != nil {
-		res.WriteHeader(404)
-		log.Printf("Attempting to use unknown service %s", req.URL.String())
-		fmt.Fprintf(res, "Unkown taskcluster service: %s", err)
+		log.Printf("Attempting to use unknown service %q", req.URL.String())
+		http.Error(res, fmt.Sprintf("Unkown taskcluster service: %s", err), http.StatusNotFound)
 		return
 	}
 	routes.commonHandler(res, req, targetPath)
@@ -207,9 +207,8 @@ func (routes *Routes) APIHandler(res http.ResponseWriter, req *http.Request) {
 	}
 
 	if err != nil {
-		res.WriteHeader(404)
-		log.Printf("%s parsing %s", err, req.URL.String())
-		fmt.Fprintf(res, "%s", err)
+		log.Printf("%s parsing %q", err, req.URL.String())
+		http.Error(res, err.Error(), http.StatusNotFound)
 		return
 	}
 
@@ -219,7 +218,7 @@ func (routes *Routes) APIHandler(res http.ResponseWriter, req *http.Request) {
 // Common code for RootHandler and APIHandler
 func (routes *Routes) commonHandler(res http.ResponseWriter, req *http.Request, targetPath *url.URL) {
 	res.Header().Set("X-Taskcluster-Endpoint", targetPath.String())
-	log.Printf("Proxying %s | %s | %s", req.URL, req.Method, targetPath)
+	log.Printf("Proxying %q | %s | %q", req.URL.String(), req.Method, targetPath.String())
 
 	// In theory, req.Body should never be nil when running as a server, but
 	// during testing, with a direct call to the method rather than a real http

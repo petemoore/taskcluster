@@ -18,6 +18,44 @@ import { traceMiddleware } from '@taskcluster/lib-app';
 
 const __dirname = new URL('.', import.meta.url).pathname;
 
+/**
+ * Simple in-memory sliding-window rate limiter for auth/login endpoints.
+ * No external dependencies required. Limits each client IP to maxRequests
+ * within windowMs milliseconds to mitigate brute-force attacks.
+ */
+function makeRateLimiter({ windowMs = 15 * 60 * 1000, maxRequests = 100 } = {}) {
+  const buckets = new Map();
+  // Periodically clean up old buckets to prevent unbounded memory growth.
+  const cleanup = setInterval(() => {
+    const cutoff = Date.now() - windowMs;
+    for (const [ip, timestamps] of buckets) {
+      const recent = timestamps.filter(t => t > cutoff);
+      if (recent.length === 0) {
+        buckets.delete(ip);
+      } else {
+        buckets.set(ip, recent);
+      }
+    }
+  }, windowMs);
+  // Allow the cleanup interval to be garbage-collected if the server shuts down.
+  if (cleanup.unref) {
+    cleanup.unref();
+  }
+  return function rateLimitMiddleware(req, res, next) {
+    const ip = req.ip || req.socket.remoteAddress || 'unknown';
+    const now = Date.now();
+    const cutoff = now - windowMs;
+    const timestamps = (buckets.get(ip) || []).filter(t => t > cutoff);
+    if (timestamps.length >= maxRequests) {
+      res.setHeader('Retry-After', Math.ceil(windowMs / 1000));
+      return res.status(429).json({ error: 'Too Many Requests' });
+    }
+    timestamps.push(now);
+    buckets.set(ip, timestamps);
+    return next();
+  };
+}
+
 export default async ({ cfg, strategies, auth, monitor, db, clients, rootUrl, api }) => {
   const app = express();
 
@@ -140,16 +178,19 @@ export default async ({ cfg, strategies, auth, monitor, db, clients, rootUrl, ap
     getCredentials,
   } = oauth2(cfg, db, strategies, auth, monitor);
 
+  // Rate-limit OAuth2/login endpoints to mitigate brute-force and enumeration.
+  const loginRateLimit = makeRateLimiter({ windowMs: 15 * 60 * 1000, maxRequests: 100 });
+
   // 1. Render a dialog asking the user to grant access
-  app.get('/login/oauth/authorize', cors(corsOptions), authorization);
+  app.get('/login/oauth/authorize', cors(corsOptions), loginRateLimit, authorization);
   // 2. Process the dialog submission (skipped if redirectUri is whitelisted)
-  app.post('/login/oauth/authorize/decision', cors(corsOptions), decision);
+  app.post('/login/oauth/authorize/decision', cors(corsOptions), loginRateLimit, decision);
   // 3. Exchange code for an OAuth2 token
   app.options('/login/oauth/token', cors(thirdPartyCorsOptions));
-  app.post('/login/oauth/token', cors(thirdPartyCorsOptions), token);
+  app.post('/login/oauth/token', cors(thirdPartyCorsOptions), loginRateLimit, token);
   // 4. Get Taskcluster credentials
   app.options('/login/oauth/credentials', cors(thirdPartyCorsOptions));
-  app.get('/login/oauth/credentials', cors(thirdPartyCorsOptions), oauth2AccessToken(), getCredentials);
+  app.get('/login/oauth/credentials', cors(thirdPartyCorsOptions), loginRateLimit, oauth2AccessToken(), getCredentials);
 
   // Mount lib-api routes (profiler endpoints, Dockerflow health checks)
   if (api) {

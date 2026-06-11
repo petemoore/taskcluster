@@ -60,7 +60,7 @@ func startLogServe(stream *stream.Stream, getAddr string) {
 
 	routes := http.NewServeMux()
 	routes.HandleFunc("/log/", func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("output %s %s", r.Method, r.URL.String())
+		log.Printf("output %q %q", r.Method, r.URL.String())
 
 		// Authenticate the request with accessToken, this is good enough because
 		// live logs are short-lived, we do this by slicing away '/log/' from the
@@ -221,7 +221,7 @@ func serve(putAddr, getAddr string) {
 	// publicly but via links in the docker container... In the future we can
 	// handle something fancier.
 	routes.HandleFunc("/log", func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("input %s %s", r.Method, r.URL.String())
+		log.Printf("input %q %q", r.Method, r.URL.String())
 
 		if r.Method != "PUT" {
 			log.Print("input not put")

@@ -79,8 +79,9 @@ const req = executor.request(options, res => {
 });
 
 req.on('error', error => {
+  // Sanitize the error message to prevent log injection (newlines replaced)
   // eslint-disable-next-line no-console
-  console.error(error);
+  console.error('Query server request error:', String(error).replace(/[\r\n]/g, ' '));
 });
 req.write(data);
 req.end();

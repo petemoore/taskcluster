@@ -74,7 +74,7 @@ func New(conf Config) (http.Handler, error) {
 
 // ServeHTTP implements http.Handler so that the proxy may be used as a handler in a Mux or http.Server
 func (p *proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	p.logf("", r.RemoteAddr, "Host=%s Path=%s", r.Host, r.URL.Path)
+	p.logf("", r.RemoteAddr, "Host=%q Path=%q", r.Host, r.URL.Path)
 
 	// Dockerflow
 	if r.URL.Path == "/__lbheartbeat__" || r.URL.Path == "/__heartbeat__" {
@@ -241,8 +241,8 @@ func (p *proxy) register(w http.ResponseWriter, r *http.Request, id, tokenString
 // serveRequest serves tunnel endpoints to viewers
 func (p *proxy) serveRequest(w http.ResponseWriter, r *http.Request, id string, path string) {
 	// log new request arrival
-	p.logf(id, r.RemoteAddr, "request: host=%s path=%s", r.Host, path)
-	p.logf(id, r.RemoteAddr, "request: URL: %v", r.URL)
+	p.logf(id, r.RemoteAddr, "request: host=%q path=%q", r.Host, path)
+	p.logf(id, r.RemoteAddr, "request: URL: %q", r.URL.String())
 
 	session, ok := p.getWorkerSession(id)
 
@@ -402,17 +402,24 @@ func (p *proxy) validateJWT(id string, tokenString string) error {
 
 // proxy logging utilities
 
+// sanitizeLogValue removes newline characters from a string to prevent log
+// injection attacks where a user-controlled value could forge additional log
+// entries by embedding newlines.
+func sanitizeLogValue(s string) string {
+	return strings.NewReplacer("\n", "\\n", "\r", "\\r").Replace(s)
+}
+
 // NOTE: cannot use logrus methods
 func (p *proxy) logf(id string, remoteAddr string, format string, v ...any) {
 	p.logger.WithFields(logrus.Fields{
-		"tunnel-id":   id,
-		"remote-addr": remoteAddr,
+		"tunnel-id":   sanitizeLogValue(id),
+		"remote-addr": sanitizeLogValue(remoteAddr),
 	}).Printf(format, v...)
 }
 
 func (p *proxy) logerrorf(id string, remoteAddr string, format string, v ...any) {
 	p.logger.WithFields(logrus.Fields{
-		"tunnel-id":   id,
-		"remote-addr": remoteAddr,
+		"tunnel-id":   sanitizeLogValue(id),
+		"remote-addr": sanitizeLogValue(remoteAddr),
 	}).Errorf(format, v...)
 }

@@ -1044,7 +1044,7 @@ func PrepareTaskEnvironment() (reboot bool) {
 	if err != nil {
 		panic(err)
 	}
-	log.Printf("Created dir: %v", logDir)
+	log.Printf("Created dir: %q", logDir)
 	return false
 }
 

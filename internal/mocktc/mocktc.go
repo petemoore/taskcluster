@@ -54,21 +54,21 @@ func JSON(w http.ResponseWriter, resp any, err error) {
 }
 
 func ReportError(w http.ResponseWriter, err error) {
+	var statusCode int
 	switch e := err.(type) {
 	case *tcclient.APICallException:
 		switch f := e.RootCause.(type) {
 		case httpbackoff.BadHttpResponseCode:
-			w.WriteHeader(f.HttpResponseCode)
+			statusCode = f.HttpResponseCode
 		default:
-			w.WriteHeader(400)
+			statusCode = 400
 		}
 	default:
-		w.WriteHeader(400)
+		statusCode = 400
 	}
-	_, err = w.Write([]byte(err.Error()))
-	if err != nil {
-		panic(err)
-	}
+	// http.Error sets Content-Type: text/plain to prevent XSS when error
+	// messages contain user-controlled data.
+	http.Error(w, err.Error(), statusCode)
 }
 
 func NoBody(w http.ResponseWriter, err error) {

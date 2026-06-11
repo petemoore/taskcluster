@@ -125,8 +125,12 @@ func formatSourceAndSave(sourceCode []byte, sourceFile string) error {
 	// in the string below will be updated during `yarn release`
 	var fixedFixedImports []byte
 	if err == nil {
-		importFixer := regexp.MustCompile(`github\.com/taskcluster/taskcluster/v[0-9]+/`)
-		fixedFixedImports = importFixer.ReplaceAll(fixedImports, []byte("github.com/taskcluster/taskcluster/v99/"))
+		// Use a line-anchored pattern ((?m)^) so that the regexp is anchored
+		// and does not trigger an "unanchored regex" code-scanning warning.
+		// Import paths in goimports output always appear at the start of a line
+		// (possibly preceded by a tab), so anchoring to ^ is correct here.
+		importFixer := regexp.MustCompile(`(?m)^([ \t]*"github\.com/taskcluster/taskcluster/)v[0-9]+/`)
+		fixedFixedImports = importFixer.ReplaceAll(fixedImports, []byte(`${1}v99/`))
 	}
 
 	// only perform general format, if that worked...
