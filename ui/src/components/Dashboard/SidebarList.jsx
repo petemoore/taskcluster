@@ -5,7 +5,7 @@ import HexagonSlice4 from 'mdi-react/HexagonSlice4Icon';
 import PlusCircleIcon from 'mdi-react/PlusCircleIcon';
 import GroupIcon from 'mdi-react/GroupIcon';
 import AccountMultipleIcon from 'mdi-react/AccountMultipleIcon';
-import MixcloudIcon from 'mdi-react/AccountHardHatIcon';
+import CloudIcon from 'mdi-react/CloudIcon';
 import BackupRestoreIcon from 'mdi-react/BackupRestoreIcon';
 import AccountKeyIcon from 'mdi-react/AccountKeyIcon';
 import AccountStarIcon from 'mdi-react/AccountStarIcon';
@@ -75,7 +75,7 @@ export default class SidebarList extends Component {
           Provisioning Errors
         </SidebarListItem>
 
-        <SidebarListItem to="/provisioners" icon={<MixcloudIcon />}>
+        <SidebarListItem to="/provisioners" icon={<CloudIcon />}>
           Workers
         </SidebarListItem>
 
