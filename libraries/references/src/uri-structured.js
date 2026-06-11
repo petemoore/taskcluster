@@ -28,17 +28,22 @@ export const readUriStructured = async ({ directory }) => {
   while (queue.length) {
     const filename = queue.shift();
     const fqfilename = path.join(directory, filename);
-    if ((await fs.lstat(fqfilename)).isDirectory()) {
-      const entries = await fs.readdir(fqfilename);
-      for (let dentry of entries) {
-        queue.push(path.join(filename, dentry));
-      }
-    } else {
+    // Use try/catch instead of lstat+isDirectory to avoid a TOCTOU race condition
+    // between the stat check and the subsequent read operation.
+    try {
       const content = await fs.readFile(fqfilename);
       files.push({
         filename,
         content: JSON.parse(content),
       });
+    } catch (err) {
+      if (err.code !== 'EISDIR') {
+        throw err;
+      }
+      const entries = await fs.readdir(fqfilename);
+      for (let dentry of entries) {
+        queue.push(path.join(filename, dentry));
+      }
     }
   }
 

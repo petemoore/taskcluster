@@ -49,17 +49,22 @@ const loadSchemas = async (serviceDirectory, schemas) => {
   const queue = [schemasDir];
   while (queue.length) {
     const filename = queue.shift();
-    if ((await fs.lstat(filename)).isDirectory()) {
-      const dentries = await fs.readdir(filename);
-      for (let dentry of dentries) {
-        queue.push(path.join(filename, dentry));
-      }
-    } else {
+    // Use try/catch instead of lstat+isDirectory to avoid a TOCTOU race condition
+    // between the stat check and the subsequent read operation.
+    try {
       const data = await fs.readFile(filename);
       schemas.push({
         filename,
         content: JSON.parse(data),
       });
+    } catch (err) {
+      if (err.code !== 'EISDIR') {
+        throw err;
+      }
+      const dentries = await fs.readdir(filename);
+      for (let dentry of dentries) {
+        queue.push(path.join(filename, dentry));
+      }
     }
   }
 };
