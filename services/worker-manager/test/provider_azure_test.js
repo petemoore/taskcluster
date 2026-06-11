@@ -191,8 +191,16 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
       },
     });
 
-    // So that checked-in certs are still valid
+    // Mock _now() so that the test fixture's already-expired message timestamp
+    // (expiresOn: 2025-11-19) appears not yet expired.
     provider._now = () => taskcluster.fromNow('-10 years');
+    // Mock _validityCheckDate() to a fixed date within the test fixture's
+    // certificate validity window (2025-10-25 – 2026-04-23) so that
+    // forge.pki.verifyCertificateChain passes regardless of the real system
+    // clock or the _now() override.  The "expired message" test overrides
+    // _now() without touching _validityCheckDate(), so cert validation still
+    // passes while the message-expiry assertion correctly fires.
+    provider._validityCheckDate = () => new Date('2025-11-01');
 
     await helper.db.fns.delete_worker_pool(workerPoolId);
 

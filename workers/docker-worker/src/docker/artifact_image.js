@@ -264,9 +264,17 @@ class ArtifactImage {
     await pipe(fs.createReadStream(tarballPath), extractStream);
 
     // See https://github.com/moby/moby/tree/master/image/spec for details
-    if (fs.existsSync(manifestPath)) {
+    // Use try/catch instead of existsSync to avoid TOCTOU race conditions
+    let manifestContent = null;
+    try {
+      manifestContent = fs.readFileSync(manifestPath);
+    } catch (err) {
+      if (err.code !== 'ENOENT') { throw err; }
+    }
+
+    if (manifestContent !== null) {
       // Support >= v1.1
-      let manifest = JSON.parse(fs.readFileSync(manifestPath));
+      let manifest = JSON.parse(manifestContent);
       if (manifest.length > 1) {
         throw new Error('Image tarballs must only contain one image');
       }
@@ -274,13 +282,23 @@ class ArtifactImage {
       manifest[0]['RepoTags'] = [`${imageName}:latest`];
       fs.writeFileSync(manifestPath, JSON.stringify(manifest));
 
-      if (fs.existsSync(repositoriesPath)) {
+      try {
         fs.unlinkSync(repositoriesPath);
+      } catch (err) {
+        if (err.code !== 'ENOENT') { throw err; }
       }
-    } else if (fs.existsSync(repositoriesPath)) {
+    } else {
       // Support == v1.0
-      let repositories = fs.readFileSync(repositoriesPath);
-      let repoInfo = JSON.parse(repositories);
+      let repositoriesContent;
+      try {
+        repositoriesContent = fs.readFileSync(repositoriesPath);
+      } catch (err) {
+        if (err.code === 'ENOENT') {
+          throw new Error('Unknown docker archive format');
+        }
+        throw err;
+      }
+      let repoInfo = JSON.parse(repositoriesContent);
 
       let keys = Object.keys(repoInfo);
       if (keys.length > 1) {
@@ -299,8 +317,6 @@ class ArtifactImage {
 
       newRepoInfo = JSON.stringify(newRepoInfo);
       fs.writeFileSync(path.join(extractedPath, 'repositories'), newRepoInfo);
-    } else {
-      throw new Error('Unknown docker archive format');
     }
 
     let pack = tarfs.pack(path.join(dir, filename));

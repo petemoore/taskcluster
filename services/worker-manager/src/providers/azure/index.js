@@ -896,6 +896,13 @@ export class AzureProvider extends Provider {
     return new Date();
   }
 
+  // Returns the date to use for certificate validity checks in registerWorker.
+  // Separated from _now() so tests can fix it to a date within the test
+  // fixture's certificate validity window independently of mocking _now().
+  _validityCheckDate() {
+    return this._now();
+  }
+
   async registerWorker({ worker, workerPool, workerIdentityProof }) {
     const { document } = workerIdentityProof;
     const monitor = this.workerMonitor({ worker });
@@ -1080,6 +1087,7 @@ export class AzureProvider extends Provider {
       forge.pki.verifyCertificateChain(
         cloneCaStore(this.caStore),
         [crt],
+        { validityCheckDate: this._validityCheckDate() },
       );
     } catch (err) {
       this.monitor.log.registrationErrorWarning({

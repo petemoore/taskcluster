@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"html"
 	"io"
 	"log"
 	"net/http"
@@ -127,10 +128,10 @@ func (routes *Routes) BewitHandler(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	headers := res.Header()
-	headers.Set("Location", bewitURL.String())
-	res.WriteHeader(303)
-	fmt.Fprint(res, bewitURL)
+	res.Header().Set("Location", bewitURL.String())
+	res.WriteHeader(http.StatusSeeOther)
+	// Write an HTML body with an escaped URL to prevent reflected-XSS
+	fmt.Fprintf(res, "<a href=\"%s\">See Other</a>.\n\n", html.EscapeString(bewitURL.String()))
 }
 
 // CredentialsHandler is the HTTP Handler for serving the /credentials endpoint

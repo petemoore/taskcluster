@@ -42,11 +42,17 @@ export class Schema {
 
       const filename = path.join(directory, 'versions', dentry);
 
-      if (fs.lstatSync(filename).isDirectory() || !/\.ya?ml/.test(filename)) {
+      if (!/\.ya?ml/.test(filename)) {
         return;
       }
 
-      const content = yaml.load(fs.readFileSync(filename, 'utf8'));
+      let content;
+      try {
+        content = yaml.load(fs.readFileSync(filename, 'utf8'));
+      } catch (err) {
+        if (err.code === 'EISDIR') { return; }
+        throw err;
+      }
       const version = Version.fromYamlFileContent(content, filename);
       if (versions[version.version - 1]) {
         throw new Error(`duplicate version number ${version.version} in ${filename}`);

@@ -49,8 +49,8 @@ const loadSchemas = async (serviceDirectory, schemas) => {
   const queue = [schemasDir];
   while (queue.length) {
     const filename = queue.shift();
-    if ((await fs.lstat(filename)).isDirectory()) {
-      const dentries = await fs.readdir(filename);
+    const dentries = await fs.readdir(filename).catch(() => null);
+    if (dentries !== null) {
       for (let dentry of dentries) {
         queue.push(path.join(filename, dentry));
       }
@@ -78,9 +78,10 @@ const load = async ({ directory }) => {
     }
 
     const filename = path.join(directory, dentry);
-    if (!(await fs.lstat(filename)).isDirectory()) {
+    // Verify filename is a directory by attempting readdir (avoids TOCTOU race)
+    await fs.readdir(filename).catch(() => {
       throw new Error(`${filename} is not a directory`);
-    }
+    });
 
     await loadReferences(filename, references);
     await loadSchemas(filename, schemas);

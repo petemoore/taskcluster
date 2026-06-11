@@ -342,22 +342,25 @@ func (jsonSubSchema *JsonSubSchema) typeDefinition(disableNested bool, enableDef
 		metadata += "// Maximum:    " + strconv.Itoa(*maximum) + "\n"
 	}
 	if allOf := jsonSubSchema.AllOf; allOf != nil {
-		metadata += "// All of:\n"
+		var sb strings.Builder
 		for _, o := range allOf.Items {
-			metadata += "//   * " + o.getTypeName() + "\n"
+			sb.WriteString("//   * " + o.getTypeName() + "\n")
 		}
+		metadata += "// All of:\n" + sb.String()
 	}
 	if anyOf := jsonSubSchema.AnyOf; anyOf != nil {
-		metadata += "// Any of:\n"
+		var sb strings.Builder
 		for _, o := range anyOf.Items {
-			metadata += "//   * " + o.getTypeName() + "\n"
+			sb.WriteString("//   * " + o.getTypeName() + "\n")
 		}
+		metadata += "// Any of:\n" + sb.String()
 	}
 	if oneOf := jsonSubSchema.OneOf; oneOf != nil {
-		metadata += "// One of:\n"
+		var sb strings.Builder
 		for _, o := range oneOf.Items {
-			metadata += "//   * " + o.getTypeName() + "\n"
+			sb.WriteString("//   * " + o.getTypeName() + "\n")
 		}
+		metadata += "// One of:\n" + sb.String()
 	}
 	// Here we check if metadata was specified, and only create new
 	// paragraph (`//\n`) if something was.
@@ -1021,12 +1024,13 @@ func (job *Job) Execute() (*Result, error) {
 package ` + job.Package + `
 
 `
-	extraPackagesContent := ""
+	var extraPackagesBuilder strings.Builder
 	for j, k := range extraPackages {
 		if k {
-			extraPackagesContent += text.Indent(""+j+"\n", "\t")
+			extraPackagesBuilder.WriteString(text.Indent(""+j+"\n", "\t"))
 		}
 	}
+	extraPackagesContent := extraPackagesBuilder.String()
 
 	if extraPackagesContent != "" {
 		content += `import (
