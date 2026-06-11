@@ -57,7 +57,12 @@ if (isMainThread) {
       packageName = packageName.split('/').slice(0, 2).join('/');
     }
 
-    if (builtinModules.includes(packageName)) {
+    // Strip the 'node:' protocol prefix (e.g. 'node:path' -> 'path') before
+    // checking against builtinModules, since the node: scheme was introduced
+    // in Node.js 12+ as an explicit way to import built-ins but the
+    // builtin-modules package only lists the bare names.
+    const bareModuleName = packageName.startsWith('node:') ? packageName.slice(5) : packageName;
+    if (builtinModules.includes(bareModuleName)) {
       return;
     }
 

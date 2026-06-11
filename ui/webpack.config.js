@@ -24,29 +24,61 @@ if (process.env.GENERATE_ENV_JS) {
 }
 
 module.exports = (_, { mode }) => ({
-  devtool: mode === "production" ? false : "cheap-module-eval-source-map",
+  devtool: mode === "production" ? false : "eval-cheap-module-source-map",
   target: "web",
   context: __dirname,
   watchOptions: {
-    ignored: (p) => !p.startsWith(__dirname),
+    // webpack 5 no longer accepts a function for watchOptions.ignored;
+    // use a RegExp to avoid watching node_modules (the original function
+    // ignored everything outside the project directory, which effectively
+    // meant ignoring node_modules).
+    ignored: /node_modules/,
   },
   externals: { bindings: "bindings" },
   output: {
     path: `${__dirname}/build`,
     publicPath: "/",
-    filename: "assets/[name].[hash:8].js",
+    filename: "assets/[name].[contenthash:8].js",
   },
   stats: {
     children: false,
     entrypoints: false,
     modules: false,
   },
-  node: {
-    Buffer: true,
-    fs: "empty",
-    tls: "empty",
-  },
   resolve: {
+    fallback: {
+      // webpack 5 no longer polyfills Node.js core modules automatically.
+      // Packages such as remark-mdx/node_modules/@babel/core import 'path'
+      // at module load time, so we must provide a browser-compatible shim.
+      // All other Node.js built-ins imported by deep dependencies are set
+      // to false (empty module) because they are not actually invoked in
+      // the browser code paths.
+      path: require.resolve("path-browserify"),
+      fs: false,
+      tls: false,
+      os: false,
+      url: false,
+      assert: false,
+      http: false,
+      https: false,
+      net: false,
+      module: false,
+      crypto: false,
+      stream: false,
+      util: false,
+      zlib: false,
+      constants: false,
+      domain: false,
+      events: false,
+      string_decoder: false,
+      tty: false,
+      vm: false,
+      punycode: false,
+      // querystring is used by docker-exec-websocket-client which calls
+      // querystring.stringify() at runtime, so provide the browser polyfill
+      // rather than an empty module.
+      querystring: require.resolve("querystring-es3"),
+    },
     alias: {
       "@taskcluster/ui": `${__dirname}/src`,
     },
@@ -114,9 +146,6 @@ module.exports = (_, { mode }) => ({
         use: [
           {
             loader: "html-loader",
-            options: {
-              attrs: ["img:src", "link:href"],
-            },
           },
         ],
       },
@@ -347,9 +376,9 @@ module.exports = (_, { mode }) => ({
       lang: "en",
     }),
     new MiniCssExtractPlugin({
-      filename: "assets/[name].[hash:8].css",
+      filename: "assets/[name].[contenthash:8].css",
       ignoreOrder: false,
-      chunkFilename: "assets/[name].[hash:8].css",
+      chunkFilename: "assets/[name].[contenthash:8].css",
     }),
     new CleanWebpackPlugin({
       dangerouslyAllowCleanPatternsOutsideProject: false,
@@ -363,7 +392,10 @@ module.exports = (_, { mode }) => ({
       initialClean: false,
       outputPath: "",
     }),
-    new CopyPlugin([{ context: "src/static", from: "**/*", to: "static" }]),
+    // noErrorOnMissing: src/static is only created at runtime (env.js is
+    // written there by generate-env-js when GENERATE_ENV_JS is set); the
+    // directory may not exist in a fresh checkout or production build.
+    new CopyPlugin({ patterns: [{ from: "src/static", to: "static", noErrorOnMissing: true }] }),
   ],
   entry: {
     index: [`${__dirname}/src/index.jsx`],
