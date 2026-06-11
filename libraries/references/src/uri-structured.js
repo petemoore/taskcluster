@@ -28,12 +28,15 @@ export const readUriStructured = async ({ directory }) => {
   while (queue.length) {
     const filename = queue.shift();
     const fqfilename = path.join(directory, filename);
-    if ((await fs.lstat(fqfilename)).isDirectory()) {
+    try {
       const entries = await fs.readdir(fqfilename);
       for (let dentry of entries) {
         queue.push(path.join(filename, dentry));
       }
-    } else {
+    } catch (e) {
+      if (e.code !== 'ENOTDIR') {
+        throw e;
+      }
       const content = await fs.readFile(fqfilename);
       files.push({
         filename,

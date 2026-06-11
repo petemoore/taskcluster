@@ -128,6 +128,9 @@ func (routes *Routes) BewitHandler(res http.ResponseWriter, req *http.Request) {
 	}
 
 	headers := res.Header()
+	// Set explicit text/plain content type so the reflected URL in the body
+	// cannot be interpreted as HTML by a browser (defense-in-depth).
+	headers.Set("Content-Type", "text/plain; charset=utf-8")
 	headers.Set("Location", bewitURL.String())
 	res.WriteHeader(303)
 	fmt.Fprint(res, bewitURL)

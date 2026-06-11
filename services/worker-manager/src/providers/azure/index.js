@@ -896,6 +896,12 @@ export class AzureProvider extends Provider {
     return new Date();
   }
 
+  // Separate method for certificate validity date checks so it can be mocked
+  // independently of _now() in tests.  In production both return the real clock.
+  _certValidityDate() {
+    return new Date();
+  }
+
   async registerWorker({ worker, workerPool, workerIdentityProof }) {
     const { document } = workerIdentityProof;
     const monitor = this.workerMonitor({ worker });
@@ -1080,6 +1086,7 @@ export class AzureProvider extends Provider {
       forge.pki.verifyCertificateChain(
         cloneCaStore(this.caStore),
         [crt],
+        { validityCheckDate: this._certValidityDate() },
       );
     } catch (err) {
       this.monitor.log.registrationErrorWarning({

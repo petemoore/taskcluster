@@ -223,8 +223,8 @@ export default class ViewClient extends Component {
         loading: false,
       });
 
-      // CLI login
-      if (callbackUrl) {
+      // CLI login — only redirect to validated localhost callback URLs
+      if (callbackUrl && this.isAllowedCallback(callbackUrl)) {
         window.location.replace(
           `${callbackUrl}?clientId=${clientId}&accessToken=${result.data.createClient.accessToken}`
         );

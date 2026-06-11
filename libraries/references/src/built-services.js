@@ -49,12 +49,15 @@ const loadSchemas = async (serviceDirectory, schemas) => {
   const queue = [schemasDir];
   while (queue.length) {
     const filename = queue.shift();
-    if ((await fs.lstat(filename)).isDirectory()) {
+    try {
       const dentries = await fs.readdir(filename);
       for (let dentry of dentries) {
         queue.push(path.join(filename, dentry));
       }
-    } else {
+    } catch (e) {
+      if (e.code !== 'ENOTDIR') {
+        throw e;
+      }
       const data = await fs.readFile(filename);
       schemas.push({
         filename,

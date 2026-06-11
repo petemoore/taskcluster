@@ -191,8 +191,14 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
       },
     });
 
-    // So that checked-in certs are still valid
+    // So that the checked-in IMDS message timestamp appears valid
+    // (the fixture's expiresOn is 2025-11-19, so '-10 years' puts _now() in 2016,
+    //  which is before expiresOn, so the message appears non-expired)
     provider._now = () => taskcluster.fromNow('-10 years');
+    // The fixture's metadata.azure.com signing cert is valid Oct 25 2025 – Apr 23 2026.
+    // Pin the cert-validity check to a date inside that window so tests remain
+    // independent of the real wall-clock time.
+    provider._certValidityDate = () => new Date('2025-12-01');
 
     await helper.db.fns.delete_worker_pool(workerPoolId);
 

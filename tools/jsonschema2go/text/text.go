@@ -98,10 +98,11 @@ func Indent(text, indent string) string {
 		}
 		return result.String()
 	}
-	result := ""
+	var sb strings.Builder
 	for j := range strings.SplitSeq(strings.TrimRight(text, "\n"), "\n") {
-		result += indent + j + "\n"
+		sb.WriteString(indent + j + "\n")
 	}
+	result := sb.String()
 	return result[:len(result)-1]
 }
 

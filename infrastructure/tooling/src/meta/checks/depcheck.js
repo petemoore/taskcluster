@@ -57,7 +57,9 @@ if (isMainThread) {
       packageName = packageName.split('/').slice(0, 2).join('/');
     }
 
-    if (builtinModules.includes(packageName)) {
+    // Handle Node.js built-in modules with the 'node:' protocol prefix (e.g. 'node:path')
+    const barePackageName = packageName.startsWith('node:') ? packageName.slice(5) : packageName;
+    if (builtinModules.includes(barePackageName)) {
       return;
     }
 
