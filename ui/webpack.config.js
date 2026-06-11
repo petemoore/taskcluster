@@ -1,3 +1,4 @@
+const webpack = require("webpack");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
@@ -43,20 +44,42 @@ module.exports = (_, { mode }) => ({
   },
   resolve: {
     fallback: {
-      // Modules that cannot run in a browser — set to false
+      // Modules that cannot meaningfully run in a browser — set to false
       fs: false,
       tls: false,
       net: false,
       module: false,
-      // Node.js core modules polyfilled for browser via explicit packages.
-      // Webpack 4 provided these automatically; webpack 5 requires explicit config.
-      // They are needed by @babel/core (bundled inside @mdx-js/runtime via remark-mdx)
-      // which is used at runtime for MDX transpilation in the browser.
-      buffer: false,
-      path: require.resolve("path-browserify"),
-      os: require.resolve("os-browserify/browser"),
-      constants: require.resolve("constants-browserify"),
+      child_process: false,
+      dgram: false,
+      cluster: false,
+      readline: false,
+      repl: false,
+      // Node.js core modules polyfilled for browser use.
+      // Webpack 4 provided all of these automatically via node-libs-browser;
+      // webpack 5 removed that behaviour and requires explicit configuration.
+      // These are needed by various dependencies (remark-mdx/@babel/core,
+      // docker-exec-websocket-client/ws, hawk, @taskcluster/client-web, etc.)
+      // that were designed for Node.js but are also bundled for the browser.
       assert: require.resolve("assert"),
+      buffer: require.resolve("buffer"),
+      constants: require.resolve("constants-browserify"),
+      crypto: require.resolve("crypto-browserify"),
+      domain: require.resolve("domain-browser"),
+      events: require.resolve("events"),
+      http: require.resolve("stream-http"),
+      https: require.resolve("https-browserify"),
+      os: require.resolve("os-browserify/browser"),
+      path: require.resolve("path-browserify"),
+      punycode: require.resolve("punycode"),
+      querystring: require.resolve("querystring-es3"),
+      stream: require.resolve("stream-browserify"),
+      string_decoder: require.resolve("string_decoder"),
+      sys: require.resolve("util"),
+      timers: require.resolve("timers-browserify"),
+      url: require.resolve("url"),
+      util: require.resolve("util"),
+      vm: require.resolve("vm-browserify"),
+      zlib: require.resolve("browserify-zlib"),
     },
     alias: {
       "@taskcluster/ui": `${__dirname}/src`,
@@ -376,6 +399,14 @@ module.exports = (_, { mode }) => ({
       currentAssets: [],
       initialClean: false,
       outputPath: "",
+    }),
+    // Webpack 4 automatically injected Buffer and process globals;
+    // webpack 5 requires explicit ProvidePlugin configuration.
+    // Buffer: needed by many packages for binary data handling.
+    // process: needed for process.env, process.nextTick, etc.
+    new webpack.ProvidePlugin({
+      Buffer: ["buffer", "Buffer"],
+      process: "process/browser",
     }),
     new CopyPlugin({
       patterns: [
