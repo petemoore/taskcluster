@@ -57,7 +57,12 @@ if (isMainThread) {
       packageName = packageName.split('/').slice(0, 2).join('/');
     }
 
-    if (builtinModules.includes(packageName)) {
+    // Node.js 14.18+ allows the `node:` protocol prefix (e.g. 'node:path').
+    // Strip it before checking against the builtins list.
+    const barePackageName = packageName.startsWith('node:')
+      ? packageName.slice('node:'.length)
+      : packageName;
+    if (builtinModules.includes(barePackageName)) {
       return;
     }
 

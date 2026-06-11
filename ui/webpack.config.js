@@ -128,9 +128,19 @@ module.exports = (_, { mode }) => ({
         use: [
           {
             loader: "html-loader",
-            // html-loader v5: the `attrs` option was replaced by `sources`
-            // (true by default); omitting options keeps the default behaviour
-            // which handles img:src and link:href automatically.
+            options: {
+              // html-loader v5: `attrs` was replaced by `sources`. The default
+              // sources:true processes MORE attributes than the old v0 default
+              // (including script:src), which causes webpack to try to bundle
+              // the runtime-served /static/env.js. Restrict to exactly what
+              // the old attrs:["img:src","link:href"] specified.
+              sources: {
+                list: [
+                  { tag: "img", attribute: "src", type: "src" },
+                  { tag: "link", attribute: "href", type: "src" },
+                ],
+              },
+            },
           },
         ],
       },
