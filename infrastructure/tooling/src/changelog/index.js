@@ -253,8 +253,26 @@ const check_pr = async (pr) => {
     repo: repoName,
     pull_number: pr,
   });
-  const files = await octokit.paginate(options,
-    response => response.data.map(({ filename }) => filename));
+  let files;
+  try {
+    files = await octokit.paginate(options,
+      response => response.data.map(({ filename }) => filename));
+  } catch (err) {
+    // Unauthenticated GitHub API calls are limited to 60 req/hour.  PRs with
+    // very large diffs (e.g. a dependabot commit that reverts many files) can
+    // exceed that budget before all pages are listed.  Treat a rate-limit
+    // response as a non-fatal condition: the changelog-structure check above
+    // already passed, so we skip the per-file check and emit a warning.
+    if (err.status === 403 && err.response && err.response.headers &&
+        err.response.headers['x-ratelimit-remaining'] === '0') {
+      console.log(chalk.bold.yellow(
+        `WARNING: GitHub API rate limit exceeded while listing PR ${pr} files; ` +
+        'skipping per-file changelog check. Use an authenticated token to avoid this.',
+      ));
+      return true;
+    }
+    throw err;
+  }
 
   // files that do not require a changelog entry if they are the only thing changed.  This
   // is similar to the list in .gitattributes., along with yarn and package.json
