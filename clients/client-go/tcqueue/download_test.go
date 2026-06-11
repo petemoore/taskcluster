@@ -41,8 +41,9 @@ func mockTcServices(t *testing.T) mock {
 	m := mock{}
 	m.router = mux.NewRouter().UseEncodedPath()
 	m.router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		w.WriteHeader(404)
-		_, _ = w.Write(fmt.Appendf(nil, "URL %v with method %v NOT FOUND\n", req.URL, req.Method))
+		// Use http.Error (which sets Content-Type: text/plain) so the URL is
+		// not reflected in an HTML context (go/reflected-xss).
+		http.Error(w, fmt.Sprintf("URL %q with method %q NOT FOUND", req.URL, req.Method), http.StatusNotFound)
 	})
 	m.srv = httptest.NewServer(m.router)
 

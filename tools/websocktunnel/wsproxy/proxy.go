@@ -74,7 +74,7 @@ func New(conf Config) (http.Handler, error) {
 
 // ServeHTTP implements http.Handler so that the proxy may be used as a handler in a Mux or http.Server
 func (p *proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	p.logf("", r.RemoteAddr, "Host=%s Path=%s", r.Host, r.URL.Path)
+	p.logf("", r.RemoteAddr, "Host=%q Path=%q", r.Host, r.URL.Path)
 
 	// Dockerflow
 	if r.URL.Path == "/__lbheartbeat__" || r.URL.Path == "/__heartbeat__" {
@@ -215,7 +215,7 @@ func (p *proxy) register(w http.ResponseWriter, r *http.Request, id, tokenString
 
 	url := p.urlPrefix + "/" + id
 	header.Set("x-websocktunnel-client-url", url)
-	p.logf(id, r.RemoteAddr, "sending url= %s", url)
+	p.logf(id, r.RemoteAddr, "sending url= %q", url)
 	conn, err := p.upgrader.Upgrade(w, r, header)
 	if err != nil {
 		p.logger.Print(err)
@@ -241,8 +241,8 @@ func (p *proxy) register(w http.ResponseWriter, r *http.Request, id, tokenString
 // serveRequest serves tunnel endpoints to viewers
 func (p *proxy) serveRequest(w http.ResponseWriter, r *http.Request, id string, path string) {
 	// log new request arrival
-	p.logf(id, r.RemoteAddr, "request: host=%s path=%s", r.Host, path)
-	p.logf(id, r.RemoteAddr, "request: URL: %v", r.URL)
+	p.logf(id, r.RemoteAddr, "request: host=%q path=%q", r.Host, path)
+	p.logf(id, r.RemoteAddr, "request: URL: %q", r.URL.String())
 
 	session, ok := p.getWorkerSession(id)
 
@@ -273,7 +273,7 @@ func (p *proxy) serveRequest(w http.ResponseWriter, r *http.Request, id string, 
 	p.logf(id, r.RemoteAddr, "attempting to open new stream")
 	reqStream, err := session.Open()
 	if err != nil {
-		p.logerrorf(id, r.RemoteAddr, "could not open stream: path=%s", path)
+		p.logerrorf(id, r.RemoteAddr, "could not open stream: path=%q", path)
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
@@ -281,7 +281,7 @@ func (p *proxy) serveRequest(w http.ResponseWriter, r *http.Request, id string, 
 	// rewrite path for tunnel and write request
 	err = r.Write(reqStream)
 	if err != nil {
-		p.logerrorf(id, r.RemoteAddr, "could not write request: path=%s", path)
+		p.logerrorf(id, r.RemoteAddr, "could not write request: path=%q", path)
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
@@ -290,7 +290,7 @@ func (p *proxy) serveRequest(w http.ResponseWriter, r *http.Request, id string, 
 	bufReader := bufio.NewReader(reqStream)
 	resp, err := http.ReadResponse(bufReader, r)
 	if err != nil {
-		p.logerrorf(id, r.RemoteAddr, "could not read response: path=%s", path)
+		p.logerrorf(id, r.RemoteAddr, "could not read response: path=%q", path)
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
@@ -402,17 +402,38 @@ func (p *proxy) validateJWT(id string, tokenString string) error {
 
 // proxy logging utilities
 
+// sanitizeLogValue removes newline and carriage-return characters from a
+// string to prevent log injection attacks where a user-controlled value could
+// forge additional log entries by embedding newlines.
+func sanitizeLogValue(s string) string {
+	return strings.NewReplacer("\n", "\\n", "\r", "\\r").Replace(s)
+}
+
+// sanitizeLogArgs sanitizes each string-typed element of a variadic argument
+// slice so that user-controlled data cannot inject newlines into log output.
+func sanitizeLogArgs(v []any) []any {
+	sanitized := make([]any, len(v))
+	for i, val := range v {
+		if s, ok := val.(string); ok {
+			sanitized[i] = sanitizeLogValue(s)
+		} else {
+			sanitized[i] = val
+		}
+	}
+	return sanitized
+}
+
 // NOTE: cannot use logrus methods
 func (p *proxy) logf(id string, remoteAddr string, format string, v ...any) {
 	p.logger.WithFields(logrus.Fields{
-		"tunnel-id":   id,
-		"remote-addr": remoteAddr,
-	}).Printf(format, v...)
+		"tunnel-id":   sanitizeLogValue(id),
+		"remote-addr": sanitizeLogValue(remoteAddr),
+	}).Printf(format, sanitizeLogArgs(v)...)
 }
 
 func (p *proxy) logerrorf(id string, remoteAddr string, format string, v ...any) {
 	p.logger.WithFields(logrus.Fields{
-		"tunnel-id":   id,
-		"remote-addr": remoteAddr,
-	}).Errorf(format, v...)
+		"tunnel-id":   sanitizeLogValue(id),
+		"remote-addr": sanitizeLogValue(remoteAddr),
+	}).Errorf(format, sanitizeLogArgs(v)...)
 }

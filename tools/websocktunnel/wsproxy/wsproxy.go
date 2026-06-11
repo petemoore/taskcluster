@@ -14,12 +14,13 @@ import (
 func (p *proxy) websocketProxy(w http.ResponseWriter, r *http.Request, session *wsmux.Session, tunnelID string, path string) error {
 	// at this point, we are sure that r is a http websocket upgrade request
 	// connClosure returns the wsmux stream to Dial
-	p.logf(tunnelID, r.RemoteAddr, "creating WS bridge: path=%s", r.URL.RequestURI())
+	// Use %q for user-supplied URL values to prevent log-injection (go/log-injection).
+	p.logf(tunnelID, r.RemoteAddr, "creating WS bridge: path=%q", r.URL.RequestURI())
 	stream, err := session.Open()
-	p.logf(tunnelID, r.RemoteAddr, "opened new stream for ws: path=%s", r.URL.RequestURI())
+	p.logf(tunnelID, r.RemoteAddr, "opened new stream for ws: path=%q", r.URL.RequestURI())
 
 	if err != nil {
-		p.logerrorf(tunnelID, r.RemoteAddr, "could not create stream: path=%s", r.URL.RequestURI())
+		p.logerrorf(tunnelID, r.RemoteAddr, "could not create stream: path=%q", r.URL.RequestURI())
 		return err
 	}
 	connClosure := func(network, addr string) (net.Conn, error) {
@@ -47,10 +48,10 @@ func (p *proxy) websocketProxy(w http.ResponseWriter, r *http.Request, session *
 	}
 
 	uri := "ws://" + r.Host + path
-	p.logf(tunnelID, r.RemoteAddr, "dialing ws on stream, url: %s", uri)
+	p.logf(tunnelID, r.RemoteAddr, "dialing ws on stream, url: %q", uri)
 	tunnelConn, _, err := dialer.Dial(uri, reqHeader)
 	if err != nil {
-		p.logerrorf(tunnelID, r.RemoteAddr, "could not dial tunnel: path=%s, error: %v", r.URL.RequestURI(), err)
+		p.logerrorf(tunnelID, r.RemoteAddr, "could not dial tunnel: path=%q, error: %v", r.URL.RequestURI(), err)
 		return err
 	}
 
@@ -62,7 +63,7 @@ func (p *proxy) websocketProxy(w http.ResponseWriter, r *http.Request, session *
 	}
 	viewerConn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		p.logerrorf(tunnelID, r.RemoteAddr, "could not upgrade client connection: path=%s, error: %v", r.URL.RequestURI(), err)
+		p.logerrorf(tunnelID, r.RemoteAddr, "could not upgrade client connection: path=%q, error: %v", r.URL.RequestURI(), err)
 		// close tunnel connection
 		_ = tunnelConn.Close()
 		return err

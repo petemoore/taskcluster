@@ -812,7 +812,7 @@ func (task *TaskRun) Log(prefix, message string) {
 			_, _ = task.logWriter.Write([]byte(prefix + line + "\n"))
 		}
 	} else {
-		log.Print("Unloggable task log message (no task log writer): " + message)
+		log.Printf("Unloggable task log message (no task log writer): %q", message)
 	}
 }
 
@@ -1044,7 +1044,7 @@ func PrepareTaskEnvironment() (reboot bool) {
 	if err != nil {
 		panic(err)
 	}
-	log.Printf("Created dir: %v", logDir)
+	log.Printf("Created dir: %q", logDir)
 	return false
 }
 

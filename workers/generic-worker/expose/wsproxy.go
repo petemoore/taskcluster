@@ -30,7 +30,7 @@ func (p *proxy) logf(format string, v ...any) {
 
 func (p *proxy) websocketProxy(w http.ResponseWriter, r *http.Request) error {
 	// at this point, we are sure that r is a http websocket upgrade request
-	p.logf("creating WS bridge: path=%s", r.URL.RequestURI())
+	p.logf("creating WS bridge: path=%q", r.URL.RequestURI())
 	dialer := &websocket.Dialer{
 		Subprotocols: websocket.Subprotocols(r),
 	}
@@ -55,7 +55,7 @@ func (p *proxy) websocketProxy(w http.ResponseWriter, r *http.Request) error {
 	p.logf("dialing ws at: %s", uri)
 	tunnelConn, resp, err := dialer.Dial(uri, reqHeader)
 	if err != nil {
-		p.logf("could not dial tunnel: path=%s, error: %v", r.URL.RequestURI(), err)
+		p.logf("could not dial tunnel: path=%q, error: %v", r.URL.RequestURI(), err)
 		return err
 	}
 	defer resp.Body.Close()
@@ -68,7 +68,7 @@ func (p *proxy) websocketProxy(w http.ResponseWriter, r *http.Request) error {
 	}
 	viewerConn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		p.logf("could not upgrade client connection: path=%s, error: %v", r.URL.RequestURI(), err)
+		p.logf("could not upgrade client connection: path=%q, error: %v", r.URL.RequestURI(), err)
 		// close tunnel connection
 		_ = tunnelConn.Close()
 		return err

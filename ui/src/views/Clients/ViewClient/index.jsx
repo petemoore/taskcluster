@@ -223,13 +223,35 @@ export default class ViewClient extends Component {
         loading: false,
       });
 
-      // CLI login
+      // CLI login: redirect to the callback URL with credentials appended.
+      // Only http(s)://localhost URLs are permitted (enforced below).
       if (callbackUrl) {
-        window.location.replace(
-          `${callbackUrl}?clientId=${clientId}&accessToken=${result.data.createClient.accessToken}`
-        );
+        let redirectUrl;
 
-        return;
+        try {
+          const parsed = new URL(callbackUrl);
+
+          // Enforce that the host is localhost (http or https).
+          if (
+            parsed.hostname === 'localhost' &&
+            (parsed.protocol === 'http:' || parsed.protocol === 'https:')
+          ) {
+            parsed.searchParams.set('clientId', clientId);
+            parsed.searchParams.set(
+              'accessToken',
+              result.data.createClient.accessToken
+            );
+            redirectUrl = parsed.toString();
+          }
+        } catch {
+          // Invalid URL — do not redirect.
+        }
+
+        if (redirectUrl) {
+          window.location.replace(redirectUrl);
+
+          return;
+        }
       }
 
       if (isNewClient) {

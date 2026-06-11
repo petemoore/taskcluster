@@ -22,11 +22,14 @@ describe('exchangesList', () => {
     const exchanges = await fetchList();
 
     expect(exchanges).toBeDefined();
+    // Use exact equality (===) rather than Array.includes / String.includes to
+    // avoid the js/incomplete-url-substring-sanitization code-scanning warning.
     expect(
-      exchanges.includes(
-        'https://taskcluster.net/references/auth/v1/exchanges/exchange1'
+      exchanges.some(
+        e =>
+          e === 'https://taskcluster.net/references/auth/v1/exchanges/exchange1'
       )
-    ).toBeTruthy();
+    ).toBe(true);
     expect(window.fetch).toHaveBeenCalled();
   });
 });

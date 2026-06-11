@@ -46,9 +46,6 @@ export const renumberVersions = async (fromVersion, toVersion, opts = {}) => {
   const renames = [];
   const fromVersionFile = filePath(`${fromVersion}.yml`);
   const toVersionFile = filePath(`${toVersion}.yml`);
-  if (fs.existsSync(toVersionFile)) {
-    throw new Error(`${toVersionFile} already exists`);
-  }
   renames.push([fromVersionFile, toVersionFile]);
 
   let versionContent = fs.readFileSync(fromVersionFile, 'utf8');
@@ -88,13 +85,22 @@ export const renumberVersions = async (fromVersion, toVersion, opts = {}) => {
 
   try {
     console.log(`update ${toVersionFile}`);
-    const fd = fs.openSync(toVersionFile, 'w');
-    fs.writeFileSync(fd, versionContent, 'utf8');
-    fs.closeSync(fd);
+    // Use 'wx' (exclusive write) flag so that the open fails atomically if
+    // the file already exists, eliminating the TOCTOU race that would exist
+    // between a prior existsSync check and this write.
+    const fd = fs.openSync(toVersionFile, 'wx');
+    try {
+      fs.writeFileSync(fd, versionContent, 'utf8');
+    } finally {
+      fs.closeSync(fd);
+    }
     if (options.runGit) {
       await run(['git', 'add', toVersionFile]);
     }
   } catch (err) {
+    if (err.code === 'EEXIST') {
+      throw new Error(`${toVersionFile} already exists`);
+    }
     throw new Error(`Cannot write file ${toVersionFile}: ${err}}`);
   }
 

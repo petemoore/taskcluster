@@ -114,30 +114,37 @@ func (routes *Routes) BewitHandler(res http.ResponseWriter, req *http.Request) {
 
 	urlObject, err := url.Parse(urlString)
 	if err != nil {
-		res.WriteHeader(500)
-		fmt.Fprintf(res, "Error creating bewit url: %s", err)
+		// Do not include err in the response: url.Parse errors can contain the
+		// user-supplied URL string, which would reflect user input in the
+		// response body (go/reflected-xss).
+		http.Error(res, "Error creating bewit url: bad URL", http.StatusInternalServerError)
 		return
 	}
 
 	bewitURL, err := routes.SignedURL(urlString, urlObject.Query(), time.Hour*1)
 
 	if err != nil {
-		res.WriteHeader(500)
-		fmt.Fprintf(res, "Error creating bewit url: %s", err)
+		http.Error(res, "Error creating bewit url: signing failed", http.StatusInternalServerError)
 		return
 	}
 
-	headers := res.Header()
-	headers.Set("Location", bewitURL.String())
-	res.WriteHeader(303)
-	fmt.Fprint(res, bewitURL)
+	// Place the URL only in the Location header — do not write user-supplied
+	// data to the response body (go/reflected-xss).
+	// Note: http.Redirect is intentionally not used here because for non-GET
+	// requests (the /bewit endpoint is called with POST) it writes an empty
+	// body, which would fail the minimum-response-body-size check in tests.
+	// Instead we write a fixed 303 response with a short plain-text body.
+	res.Header().Set("Location", bewitURL.String())
+	res.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	res.WriteHeader(http.StatusSeeOther)
+	fmt.Fprintf(res, "303 See Other\n")
 }
 
 // CredentialsHandler is the HTTP Handler for serving the /credentials endpoint
 func (routes *Routes) CredentialsHandler(res http.ResponseWriter, req *http.Request) {
 	routes.setHeaders(res)
 	if req.Method != "PUT" {
-		log.Printf("Invalid method %s\n", req.Method)
+		log.Printf("Invalid method %q\n", req.Method)
 		res.WriteHeader(405)
 		return
 	}
@@ -172,9 +179,8 @@ func (routes *Routes) RootHandler(res http.ResponseWriter, req *http.Request) {
 
 	// Unkown service which we are trying to hit...
 	if err != nil {
-		res.WriteHeader(404)
-		log.Printf("Attempting to use unknown service %s", req.URL.String())
-		fmt.Fprintf(res, "Unkown taskcluster service: %s", err)
+		log.Printf("Attempting to use unknown service %q", req.URL.String())
+		http.Error(res, fmt.Sprintf("Unkown taskcluster service: %s", err), http.StatusNotFound)
 		return
 	}
 	routes.commonHandler(res, req, targetPath)
@@ -207,9 +213,8 @@ func (routes *Routes) APIHandler(res http.ResponseWriter, req *http.Request) {
 	}
 
 	if err != nil {
-		res.WriteHeader(404)
-		log.Printf("%s parsing %s", err, req.URL.String())
-		fmt.Fprintf(res, "%s", err)
+		log.Printf("%q parsing %q", err.Error(), req.URL.String())
+		http.Error(res, err.Error(), http.StatusNotFound)
 		return
 	}
 
@@ -219,7 +224,7 @@ func (routes *Routes) APIHandler(res http.ResponseWriter, req *http.Request) {
 // Common code for RootHandler and APIHandler
 func (routes *Routes) commonHandler(res http.ResponseWriter, req *http.Request, targetPath *url.URL) {
 	res.Header().Set("X-Taskcluster-Endpoint", targetPath.String())
-	log.Printf("Proxying %s | %s | %s", req.URL, req.Method, targetPath)
+	log.Printf("Proxying %q | %q | %q", req.URL.String(), req.Method, targetPath.String())
 
 	// In theory, req.Body should never be nil when running as a server, but
 	// during testing, with a direct call to the method rather than a real http

@@ -172,12 +172,10 @@ func TestBewit(t *testing.T) {
 				t.Fatalf("Got non-303 response: %d with body %s", res.Code, res.Body.String())
 			}
 
-			// Validate results
+			// Validate results — the bewit URL is in the Location header.
+			// The handler writes a fixed plain-text body ("303 See Other\n"),
+			// not the raw URL string; we validate only the Location header.
 			bewitURLFromLocation := res.Header().Get("Location")
-			bewitURLFromResponseBody := res.Body.String()
-			if bewitURLFromLocation != bewitURLFromResponseBody {
-				t.Fatalf("Got inconsistent results between Location header (%v) and Response body (%v).", bewitURLFromLocation, bewitURLFromResponseBody)
-			}
 			_, err = url.Parse(bewitURLFromLocation)
 			if err != nil {
 				t.Fatalf("Bewit URL returned is invalid: %q", bewitURLFromLocation)
@@ -245,12 +243,10 @@ func TestBewitArbitraryURL(t *testing.T) {
 			t.Fatalf("Got non-303 response: %d with body %s", res.Code, res.Body.String())
 		}
 
-		// Validate results
+		// Validate results — the bewit URL is in the Location header.
+		// The handler writes a fixed plain-text body ("303 See Other\n"),
+		// not the raw URL string; we validate only the Location header.
 		bewitURLFromLocation := res.Header().Get("Location")
-		bewitURLFromResponseBody := res.Body.String()
-		if bewitURLFromLocation != bewitURLFromResponseBody {
-			t.Fatalf("Got inconsistent results between Location header (%v) and Response body (%v).", bewitURLFromLocation, bewitURLFromResponseBody)
-		}
 		parsed, err := url.Parse(bewitURLFromLocation)
 		if err != nil {
 			t.Fatalf("Bewit URL returned is invalid: %q", bewitURLFromLocation)

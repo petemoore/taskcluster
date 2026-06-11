@@ -55,6 +55,9 @@ func TestHttpRedirects(t *testing.T) {
 func TestNonCanonicalUrls(t *testing.T) {
 	// set up an upstream server that returns its path
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Set Content-Type: text/plain before writing the request URL so that
+		// the response is not interpreted as HTML (go/reflected-xss).
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(200)
 		fmt.Fprintf(w, "%s", r.URL)
 	}))

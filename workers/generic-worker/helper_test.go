@@ -462,8 +462,9 @@ func GWTest(t *testing.T) *Test {
 	r := mux.NewRouter().UseEncodedPath()
 
 	r.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		w.WriteHeader(404)
-		_, _ = w.Write(fmt.Appendf(nil, "URL %v with method %v NOT FOUND\n", req.URL, req.Method))
+		// Use http.Error to set Content-Type: text/plain and avoid XSS when
+		// request URL data is reflected in the response body.
+		http.Error(w, fmt.Sprintf("URL %q with method %q NOT FOUND", req.URL.String(), req.Method), http.StatusNotFound)
 	})
 
 	srv := &http.Server{

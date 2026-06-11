@@ -103,6 +103,9 @@ func TestBasicWSTExposeHTTP(t *testing.T) {
 	defer wstServer.close()
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Set Content-Type: text/plain before writing the request URL path so
+		// that the response is not interpreted as HTML (go/reflected-xss).
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		fmt.Fprintf(w, "Hello, world @ %s", r.URL.Path)
 	}))
 	defer ts.Close()

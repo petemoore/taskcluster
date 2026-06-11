@@ -232,6 +232,10 @@ func TestContentTypeHeader(t *testing.T) {
 	// This mock service just returns the value of the Content-Type request
 	// header in the response body so we can check what value it had.
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Set Content-Type: text/plain before echoing the request's Content-Type
+		// header value in the body so the response is not treated as HTML
+		// (go/reflected-xss).
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(200)
 		_, _ = w.Write([]byte(r.Header.Get("Content-Type")))
 	}))
