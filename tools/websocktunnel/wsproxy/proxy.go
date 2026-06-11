@@ -402,11 +402,25 @@ func (p *proxy) validateJWT(id string, tokenString string) error {
 
 // proxy logging utilities
 
-// sanitizeLogValue removes newline characters from a string to prevent log
-// injection attacks where a user-controlled value could forge additional log
-// entries by embedding newlines.
+// sanitizeLogValue removes newline and carriage-return characters from a
+// string to prevent log injection attacks where a user-controlled value could
+// forge additional log entries by embedding newlines.
 func sanitizeLogValue(s string) string {
 	return strings.NewReplacer("\n", "\\n", "\r", "\\r").Replace(s)
+}
+
+// sanitizeLogArgs sanitizes each string-typed element of a variadic argument
+// slice so that user-controlled data cannot inject newlines into log output.
+func sanitizeLogArgs(v []any) []any {
+	sanitized := make([]any, len(v))
+	for i, val := range v {
+		if s, ok := val.(string); ok {
+			sanitized[i] = sanitizeLogValue(s)
+		} else {
+			sanitized[i] = val
+		}
+	}
+	return sanitized
 }
 
 // NOTE: cannot use logrus methods
@@ -414,12 +428,12 @@ func (p *proxy) logf(id string, remoteAddr string, format string, v ...any) {
 	p.logger.WithFields(logrus.Fields{
 		"tunnel-id":   sanitizeLogValue(id),
 		"remote-addr": sanitizeLogValue(remoteAddr),
-	}).Printf(format, v...)
+	}).Printf(format, sanitizeLogArgs(v)...)
 }
 
 func (p *proxy) logerrorf(id string, remoteAddr string, format string, v ...any) {
 	p.logger.WithFields(logrus.Fields{
 		"tunnel-id":   sanitizeLogValue(id),
 		"remote-addr": sanitizeLogValue(remoteAddr),
-	}).Errorf(format, v...)
+	}).Errorf(format, sanitizeLogArgs(v)...)
 }

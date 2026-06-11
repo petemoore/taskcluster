@@ -223,16 +223,34 @@ export default class ViewClient extends Component {
         loading: false,
       });
 
-      // CLI login — callbackUrl was already validated by isAllowedCallback at
-      // the start of this function.  Re-check here inline so static analysis
-      // tools can see the guard at the point of use and confirm that only
-      // localhost URLs are ever passed to window.location.replace.
-      if (callbackUrl && this.isAllowedCallback(callbackUrl)) {
-        window.location.replace(
-          `${callbackUrl}?clientId=${clientId}&accessToken=${result.data.createClient.accessToken}`
-        );
+      // CLI login: build the redirect URL from validated components so that
+      // user-controlled input never reaches window.location directly.
+      if (callbackUrl) {
+        // Re-parse and validate the callback URL. Only localhost origins are
+        // permitted (already enforced by isAllowedCallback at function start).
+        let redirectUrl;
+        try {
+          const parsed = new URL(callbackUrl);
+          // Enforce that the host is localhost (http or https).
+          if (
+            parsed.hostname === 'localhost' &&
+            (parsed.protocol === 'http:' || parsed.protocol === 'https:')
+          ) {
+            parsed.searchParams.set('clientId', clientId);
+            parsed.searchParams.set(
+              'accessToken',
+              result.data.createClient.accessToken,
+            );
+            redirectUrl = parsed.toString();
+          }
+        } catch {
+          // Invalid URL — do not redirect.
+        }
 
-        return;
+        if (redirectUrl) {
+          window.location.replace(redirectUrl);
+          return;
+        }
       }
 
       if (isNewClient) {

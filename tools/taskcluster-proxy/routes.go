@@ -127,18 +127,17 @@ func (routes *Routes) BewitHandler(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	headers := res.Header()
-	headers.Set("Location", bewitURL.String())
-	res.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	res.WriteHeader(303)
-	fmt.Fprint(res, bewitURL)
+	// Use http.Redirect so that the URL is placed only in the Location header
+	// and the response body is generated from a fixed template (not user data),
+	// avoiding the go/reflected-xss code-scanning finding.
+	http.Redirect(res, req, bewitURL.String(), http.StatusSeeOther)
 }
 
 // CredentialsHandler is the HTTP Handler for serving the /credentials endpoint
 func (routes *Routes) CredentialsHandler(res http.ResponseWriter, req *http.Request) {
 	routes.setHeaders(res)
 	if req.Method != "PUT" {
-		log.Printf("Invalid method %s\n", req.Method)
+		log.Printf("Invalid method %q\n", req.Method)
 		res.WriteHeader(405)
 		return
 	}
