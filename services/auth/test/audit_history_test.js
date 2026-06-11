@@ -1,9 +1,9 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import helper from './helper.js';
 import slugid from 'slugid';
 import _ from 'lodash';
-import testing from '@taskcluster/lib-testing';
-import taskcluster from '@taskcluster/client';
+import testing from 'taskcluster-lib-testing';
+import taskcluster from 'taskcluster-client';
 
 helper.secrets.mockSuite('audit', ['gcp'], function(mock, skipping) {
   helper.withDb(mock, skipping);

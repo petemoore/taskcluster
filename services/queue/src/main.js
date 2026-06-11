@@ -1,7 +1,7 @@
 import '../../prelude.js';
 import debugFactory from 'debug';
 const debug = debugFactory('app:main');
-import taskcluster from '@taskcluster/client';
+import taskcluster from 'taskcluster-client';
 import builder from './api.js';
 import exchanges from './exchanges.js';
 import Bucket from './bucket.js';
@@ -9,23 +9,22 @@ import QueueService from './queueservice.js';
 import EC2RegionResolver from './ec2regionresolver.js';
 import DeadlineResolver from './deadlineresolver.js';
 import ClaimResolver from './claimresolver.js';
-import WorkerRemovedResolver from './workerremovedresolver.js';
 import DependencyTracker from './dependencytracker.js';
 import DependencyResolver from './dependencyresolver.js';
 import MetricsCollector from './metricscollector.js';
 import WorkClaimer from './workclaimer.js';
 import WorkerInfo from './workerinfo.js';
-import loader from '@taskcluster/lib-loader';
-import config from '@taskcluster/lib-config';
-import { MonitorManager } from '@taskcluster/lib-monitor';
-import SchemaSet from '@taskcluster/lib-validate';
-import libReferences from '@taskcluster/lib-references';
-import { App } from '@taskcluster/lib-app';
-import tcdb from '@taskcluster/db';
-import pulse from '@taskcluster/lib-pulse';
+import loader from 'taskcluster-lib-loader';
+import config from 'taskcluster-lib-config';
+import { MonitorManager } from 'taskcluster-lib-monitor';
+import SchemaSet from 'taskcluster-lib-validate';
+import libReferences from 'taskcluster-lib-references';
+import { App } from 'taskcluster-lib-app';
+import tcdb from 'taskcluster-db';
+import pulse from 'taskcluster-lib-pulse';
 import QuickLRU from 'quick-lru';
 import { artifactUtils } from './utils.js';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath } from 'url';
 
 // default claim timeout to 20 minutes (in seconds)
 const DEFAULT_CLAIM_TIMEOUT = 1200;
@@ -129,13 +128,6 @@ let load = loader({
     }),
   },
 
-  workerManagerEvents: {
-    requires: ['cfg'],
-    setup: ({ cfg }) => new taskcluster.WorkerManagerEvents({
-      rootUrl: cfg.taskcluster.rootUrl,
-    }),
-  },
-
   db: {
     requires: ["cfg", "process", "monitor"],
     setup: ({ cfg, process, monitor }) => tcdb.setup({
@@ -185,7 +177,7 @@ let load = loader({
   // Create dependencyTracker
   dependencyTracker: {
     requires: [
-      'publisher', 'monitor', 'db',
+      'publisher', 'queueService', 'monitor', 'db',
     ],
     setup: ({ monitor, ...ctx }) => new DependencyTracker({
       monitor: monitor.childMonitor('dependency-tracker'),
@@ -286,28 +278,6 @@ let load = loader({
         monitor: monitor.childMonitor('claim-resolver'),
       });
       await resolver.start();
-      monitor.exposeMetrics('resolvers');
-      return resolver;
-    },
-  },
-
-  // Create the worker-removed-resolver process
-  'worker-removed-resolver': {
-    requires: [
-      'cfg', 'db', 'publisher', 'monitor',
-      'dependencyTracker', 'pulseClient', 'workerManagerEvents',
-    ],
-    setup: async ({
-      db, publisher, dependencyTracker,
-      monitor, pulseClient, workerManagerEvents,
-    }) => {
-      let resolver = new WorkerRemovedResolver({
-        db, publisher, dependencyTracker,
-        pulseClient, workerManagerEvents,
-        monitor: monitor.childMonitor('worker-removed-resolver'),
-      });
-      await resolver.start();
-      monitor.exposeMetrics('resolvers');
       return resolver;
     },
   },
@@ -330,7 +300,6 @@ let load = loader({
         monitor: monitor.childMonitor('deadline-resolver'),
       });
       await resolver.start();
-      monitor.exposeMetrics('resolvers');
       return resolver;
     },
   },
@@ -449,7 +418,7 @@ let load = loader({
   'queue-metrics': {
     requires: ['cfg', 'db', 'monitor', 'queueService'],
     setup: async ({ cfg, db, monitor, queueService }, ownName) => {
-      /** @type {import('@taskcluster/lib-monitor').Monitor} */
+      /** @type {import('taskcluster-lib-monitor').Monitor} */
       const childMonitor = monitor.childMonitor('queue-metrics');
       const collector = new MetricsCollector({
         ownName,

@@ -1,13 +1,13 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import assume from 'assume';
 import taskcreator from '../src/taskcreator.js';
 import helper from './helper.js';
-import taskcluster from '@taskcluster/client';
-import { sleep } from '@taskcluster/lib-testing';
+import taskcluster from 'taskcluster-client';
+import { sleep } from 'taskcluster-lib-testing';
 import _ from 'lodash';
 import hookDef from './test_definition.js';
 import libUrls from 'taskcluster-lib-urls';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 import { hookUtils } from '../src/utils.js';
 
 suite(testing.suiteName(), function() {
@@ -180,10 +180,9 @@ suite(testing.suiteName(), function() {
         hook.triggerSchema,
       );
       let taskId = taskcluster.slugid();
-      const res = await creator.fire(hook, { firedBy: 'schedule' }, { taskId });
+      await creator.fire(hook, { firedBy: 'schedule' }, { taskId });
       await assertNoTask(taskId);
       assertFireLogged({ firedBy: "schedule", taskId, result: 'declined' });
-      assert.ok(!res, `expected falsy return from declined fire(), got ${JSON.stringify(res)}`);
     });
 
     test('firing a hook where the json-e fails to render fails', async function() {

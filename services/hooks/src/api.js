@@ -1,7 +1,7 @@
 import { CronExpressionParser as parser } from 'cron-parser';
-import taskcluster from '@taskcluster/client';
-import { APIBuilder, paginateResults } from '@taskcluster/lib-api';
-import { UNIQUE_VIOLATION } from '@taskcluster/lib-postgres';
+import taskcluster from 'taskcluster-client';
+import { APIBuilder, paginateResults } from 'taskcluster-lib-api';
+import { UNIQUE_VIOLATION } from 'taskcluster-lib-postgres';
 import nextDate from '../src/nextdate.js';
 import _ from 'lodash';
 import Ajv from 'ajv';
@@ -15,8 +15,6 @@ export const AUDIT_ENTRY_TYPE = Object.freeze({
     DELETED: 'deleted',
   },
 });
-
-const SLUGID_PATTERN = /^[A-Za-z0-9_-]{8}[Q-T][A-Za-z0-9_-][CGKOSWaeimquy26-][A-Za-z0-9_-]{10}[AQgw]$/;
 
 const builder = new APIBuilder({
   title: 'Hooks Service',
@@ -41,6 +39,7 @@ builder.declare({
   route: '/hooks',
   name: 'listHookGroups',
   scopes: 'hooks:list-hooks:',
+  idempotent: true,
   category: 'Hooks',
   output: 'list-hook-groups-response.yml',
   title: 'List hook groups',
@@ -49,9 +48,13 @@ builder.declare({
     'This endpoint will return a list of all hook groups with at least one hook.',
   ].join('\n'),
 }, async function(req, res) {
-  const hookGroups = await this.db.fns.get_hook_groups();
-  const groups = hookGroups.map(row => row.hook_group_id);
-  return res.reply({ groups });
+  const groups = new Set();
+  const hooks = (await this.db.fns.get_hooks(null, null, null, null)).map(hookUtils.fromDb);
+
+  hooks.forEach(hook => {
+    groups.add(hook.hookGroupId);
+  });
+  return res.reply({ groups: Array.from(groups) });
 });
 
 /** Get hooks in a given group **/
@@ -60,6 +63,7 @@ builder.declare({
   route: '/hooks/:hookGroupId',
   name: 'listHooks',
   scopes: 'hooks:list-hooks:<hookGroupId>',
+  idempotent: true,
   category: 'Hooks',
   output: 'list-hooks-response.yml',
   title: 'List hooks in a given group',
@@ -85,6 +89,7 @@ builder.declare({
   route: '/hooks/:hookGroupId/:hookId',
   name: 'hook',
   scopes: 'hooks:get:<hookGroupId>:<hookId>',
+  idempotent: true,
   output: 'hook-definition.yml',
   title: 'Get hook definition',
   category: 'Hooks',
@@ -183,6 +188,7 @@ builder.declare({
   method: 'put',
   route: '/hooks/:hookGroupId/:hookId',
   name: 'createHook',
+  idempotent: true,
   scopes: { AllOf:
     ['hooks:modify-hook:<hookGroupId>/<hookId>', 'assume:hook-id:<hookGroupId>/<hookId>'],
   },
@@ -313,6 +319,7 @@ builder.declare({
   method: 'post',
   route: '/hooks/:hookGroupId/:hookId',
   name: 'updateHook',
+  idempotent: true,
   scopes: { AllOf:
     ['hooks:modify-hook:<hookGroupId>/<hookId>', 'assume:hook-id:<hookGroupId>/<hookId>'],
   },
@@ -429,6 +436,7 @@ builder.declare({
   method: 'delete',
   route: '/hooks/:hookGroupId/:hookId',
   name: 'removeHook',
+  idempotent: true,
   scopes: 'hooks:modify-hook:<hookGroupId>/<hookId>',
   title: 'Delete a hook',
   stability: 'stable',
@@ -478,12 +486,9 @@ builder.declare({
   description: [
     'This endpoint will trigger the creation of a task from a hook definition.',
     '',
-    'The HTTP payload must match the hook\'s `triggerSchema`.  If it does, it is',
+    'The HTTP payload must match the hook\s `triggerSchema`.  If it does, it is',
     'provided as the `payload` property of the JSON-e context used to render the',
     'task template.',
-    '',
-    'Optionally, a `taskId` can be provided in the payload which the hook task',
-    'will use. It must be unique and follow the slugid format.',
   ].join('\n'),
 }, async function(req, res) {
   const hookGroupId = req.params.hookGroupId;
@@ -594,12 +599,9 @@ builder.declare({
   description: [
     'This endpoint triggers a defined hook with a valid token.',
     '',
-    'The HTTP payload must match the hook\'s `triggerSchema`.  If it does, it is',
+    'The HTTP payload must match the hook\s `triggerSchema`.  If it does, it is',
     'provided as the `payload` property of the JSON-e context used to render the',
     'task template.',
-    '',
-    'Optionally, a `taskId` can be provided in the payload which the hook task',
-    'will use. It must be unique and follow the slugid format.',
   ].join('\n'),
 }, async function(req, res) {
   const payload = req.body;
@@ -644,18 +646,8 @@ const triggerHookCommon = async function({ req, res, hook, payload, clientId, fi
     });
   }
 
-  const options = {};
-  if (payload.taskId) {
-    if (!SLUGID_PATTERN.test(payload.taskId)) {
-      return res.reportError('InputError', 'Invalid taskId format: {{taskId}}', {
-        taskId: payload.taskId,
-      });
-    }
-    options.taskId = payload.taskId;
-  }
-
   try {
-    resp = await this.taskcreator.fire(hook, context, options);
+    resp = await this.taskcreator.fire(hook, context);
     if (!resp) {
       // hook did not produce a response, so return an empty object
       return res.reply({});
@@ -715,6 +707,7 @@ builder.declare({
   route: '/hooks/:hookGroupId/:hookId/last-fires',
   name: 'listLastFires',
   scopes: 'hooks:list-last-fires:<hookGroupId>/<hookId>',
+  idempotent: true,
   output: 'list-lastFires-response.yml',
   title: 'Get information about recent hook fires',
   stability: 'stable',

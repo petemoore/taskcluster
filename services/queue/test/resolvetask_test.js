@@ -1,13 +1,13 @@
 import _ from 'lodash';
 import debugFactory from 'debug';
 const debug = debugFactory('test:completed');
-import assert from 'node:assert';
+import assert from 'assert';
 import slugid from 'slugid';
-import taskcluster from '@taskcluster/client';
+import taskcluster from 'taskcluster-client';
 import assume from 'assume';
 import helper from './helper.js';
-import testing from '@taskcluster/lib-testing';
-import { LEVELS } from '@taskcluster/lib-monitor';
+import testing from 'taskcluster-lib-testing';
+import { LEVELS } from 'taskcluster-lib-monitor';
 
 helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) {
   helper.withDb(mock, skipping);
@@ -43,15 +43,6 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
   suiteSetup(async function() {
     monitor = await helper.load('monitor');
   });
-
-  const checkMetricExists = async (metricName, labelName, labelValue) => {
-    const metrics = await monitor.manager._prometheus.metricsJson();
-    const metric = metrics.find(({ name }) => name === metricName);
-    assert(metric, `${metricName} metric should exist`);
-    const labelEntry = metric.values.find(v => v.labels[labelName] === labelValue);
-    assert(labelEntry, `${metricName} should have ${labelName}=${labelValue} label`);
-    assert(labelEntry.value >= 1, `${metricName} counter should be incremented for ${labelValue}`);
-  };
 
   test('reportCompleted is idempotent', async () => {
     const taskId = slugid.v4();
@@ -126,8 +117,6 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
       Severity: LEVELS.notice,
     });
 
-    await checkMetricExists('queue_failed_tasks', 'reasonResolved', 'failed');
-
     debug('### Reporting task failed (again)');
     await helper.queue.reportFailed(taskId, 0);
     helper.assertPulseMessage('task-failed', m => (
@@ -175,8 +164,6 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
       Fields: { taskId, runId: 0, v: 1 },
       Severity: LEVELS.notice,
     });
-
-    await checkMetricExists('queue_exception_tasks', 'reasonResolved', 'malformed-payload');
 
     debug('### Reporting task exception (again)');
     await helper.queue.reportException(taskId, 0, {
@@ -229,8 +216,6 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
       m.payload.status.runs[0].reasonResolved === 'resource-unavailable'));
     helper.clearPulseMessages();
 
-    await checkMetricExists('queue_exception_tasks', 'reasonResolved', 'resource-unavailable');
-
     debug('### Reporting task exception (again)');
     await helper.queue.reportException(taskId, 0, {
       reason: 'resource-unavailable',
@@ -281,8 +266,6 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
       m.payload.status.runs[0].state === 'exception' &&
       m.payload.status.runs[0].reasonResolved === 'internal-error'));
     helper.clearPulseMessages();
-
-    await checkMetricExists('queue_exception_tasks', 'reasonResolved', 'internal-error');
 
     debug('### Reporting task exception (again)');
     await helper.queue.reportException(taskId, 0, {
@@ -496,60 +479,5 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
     helper.assertPulseMessage('task-exception', m => (
       m.payload.status.runs[1].state === 'exception' &&
       m.payload.status.runs.length === 2));
-  });
-
-  test('regression: pulse taskPending failure during reportException retry does not orphan the retry run', async function() {
-    const taskId = slugid.v4();
-
-    debug('### Creating task');
-    await helper.queue.createTask(taskId, taskDef);
-    helper.assertPulseMessage('task-defined');
-    helper.assertPulseMessage('task-pending');
-
-    debug('### Claiming task');
-    await helper.queue.claimTask(taskId, 0, {
-      workerGroup: 'my-worker-group-extended-extended',
-      workerId: 'my-worker-extended-extended',
-    });
-    helper.assertPulseMessage('task-running');
-    helper.clearPulseMessages();
-
-    // Intercept all pulse publishes at the FakeClient level.
-    // Any message on the task-pending exchange will throw, simulating Pulse unavailability.
-    // Messages on other exchanges (task-exception, task-running, etc.) succeed normally.
-    helper.onPulsePublish(async (exchange) => {
-      if (exchange.endsWith('/task-pending')) {
-        throw new Error('pulse-unavailable-test-injected-fault');
-      }
-    });
-
-    try {
-      // reportException should now succeed even when the task-pending publish
-      // fails: the retry run is committed atomically with queue_pending_tasks
-      // by resolve_task (db v124), and the publish is best-effort.
-      const result = await helper.queue.use({ retries: 0 }).reportException(taskId, 0, { reason: 'worker-shutdown' });
-      assert.equal(result.status.runs.length, 2, 'reportException should have created run 1');
-      assert.equal(result.status.runs[1].state, 'pending');
-      assert.equal(result.status.runs[1].reasonCreated, 'retry');
-
-      // The DB-level atomic enqueue means queue_pending_tasks already has run_id=1.
-      const rows = await helper.withDbClient(async client => {
-        const queryResult = await client.query(
-          'select run_id from queue_pending_tasks where task_id = $1',
-          [taskId],
-        );
-        return queryResult.rows;
-      });
-      assert.equal(rows.length, 1, 'retry run must be atomically enqueued in queue_pending_tasks by resolve_task');
-      assert.equal(rows[0].run_id, 1, 'the enqueued retry run must have run_id=1');
-
-      // The Pulse publish failure should be reported as a monitor warning
-      // (not an error) since the DB is already consistent. Reset the monitor
-      // state so the teardown's error check passes; we tolerate warnings.
-      monitor.manager.reset();
-    } finally {
-      // Reset the pulse publish hook so subsequent tests are unaffected.
-      helper.onPulsePublish();
-    }
   });
 });

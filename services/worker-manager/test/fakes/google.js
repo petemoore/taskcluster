@@ -1,5 +1,5 @@
 import { FakeCloud } from './fake.js';
-import { strict as assert } from 'node:assert';
+import { strict as assert } from 'assert';
 import slugid from 'slugid';
 import google from '@googleapis/compute';
 import gcpIam from '@googleapis/iam';
@@ -76,20 +76,13 @@ export class FakeGoogle extends FakeCloud {
     };
   }
 
+  /**
+   * Make an API error in the shape the google apis return
+   */
   makeError(message, code) {
     const err = new Error(message);
     err.code = code;
-    err.status = code;
-    err.response = {
-      data: {
-        error: {
-          code,
-          message,
-          errors: [{ message, code }],
-        },
-      },
-    };
-    err.errors = err.response.data.error.errors;
+    err.errors = [{ message }];
     return err;
   }
 }

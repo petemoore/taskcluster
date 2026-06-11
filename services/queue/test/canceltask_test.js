@@ -1,12 +1,12 @@
 import _ from 'lodash';
-import { strict as assert } from 'node:assert';
+import { strict as assert } from 'assert';
 import debugFactory from 'debug';
 const debug = debugFactory('test:cancel');
 import slugid from 'slugid';
-import taskcluster from '@taskcluster/client';
+import taskcluster from 'taskcluster-client';
 import assume from 'assume';
 import helper from './helper.js';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 
 helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) {
   helper.withDb(mock, skipping);

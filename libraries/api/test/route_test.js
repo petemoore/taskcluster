@@ -1,10 +1,10 @@
 import request from 'superagent';
-import assert from 'node:assert';
+import assert from 'assert';
 import { APIBuilder } from '../src/index.js';
 import slugid from 'slugid';
 import helper from './helper.js';
 import libUrls from 'taskcluster-lib-urls';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 
 suite(testing.suiteName(), function() {
   const u = path => libUrls.api(helper.rootUrl, 'test', 'v1', path);

@@ -1,11 +1,11 @@
 import debugFactory from 'debug';
 const debug = debugFactory('app:deadline-resolver');
-import assert from 'node:assert';
+import assert from 'assert';
 import _ from 'lodash';
 import QueueService from './queueservice.js';
-import Iterate from '@taskcluster/lib-iterate';
+import Iterate from 'taskcluster-lib-iterate';
 import { Task } from './data.js';
-import { sleep, splitTaskQueueId } from './utils.js';
+import { sleep } from './utils.js';
 
 /**
  * Facade that handles resolution tasks by deadline, using the advisory messages
@@ -65,7 +65,7 @@ class DeadlineResolver {
     this.iterator = new Iterate({
       name: options.ownName,
       maxFailures: 10,
-      waitTime: 0,
+      waitTime: this.pollingDelay,
       monitor: this.monitor,
       maxIterationTime: 601 * 1000,
       handler: async () => {
@@ -109,9 +109,9 @@ class DeadlineResolver {
       }
     }));
 
-    // If we emptied the queue, back off
-    if (messages.length < this.count) {
-      await sleep(this.pollingDelay);
+    // If there were no messages, back off for a bit.
+    if (messages.length === 0) {
+      await sleep(2000);
     }
 
     this.monitor.log.queuePoll({
@@ -131,14 +131,7 @@ class DeadlineResolver {
       return remove();
     }
 
-    const updated = task.updateStatusWith(
-      await this.db.fns.cancel_task(taskId, 'deadline-exceeded'),
-    );
-
-    if (!updated) {
-      debug('No cancellation run created for taskId: %s; task was already resolved', taskId);
-      return remove();
-    }
+    task.updateStatusWith(await this.db.fns.cancel_task(taskId, 'deadline-exceeded'));
 
     // Check if the last run was resolved here (or possibly by a previous
     // attempt to process this message)
@@ -155,15 +148,8 @@ class DeadlineResolver {
       await this.publisher.taskException({
         status: task.status(),
         runId,
-        task: { tags: task.tags || {} },
       }, task.routes);
       this.monitor.log.taskException({ taskId, runId });
-
-      const metricLabels = splitTaskQueueId(task.taskQueueId);
-      this.monitor.metric.exceptionTasks(1, {
-        ...metricLabels,
-        reasonResolved: run.reasonResolved,
-      });
 
       // Task should no longer be available in the pending queue
       await this.queueService.removePendingMessage(taskId, runId);

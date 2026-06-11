@@ -1,10 +1,10 @@
-import assert from 'node:assert';
-import fs from 'node:fs';
+import assert from 'assert';
+import fs from 'fs';
 import { getCommonSchemas } from '../src/common-schemas.js';
 import { makeSerializable } from '../src/serializable.js';
 import mockFs from 'mock-fs';
 import References from '../src/index.js';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 
 suite(testing.suiteName(), function() {
   teardown(function() {
@@ -25,7 +25,7 @@ suite(testing.suiteName(), function() {
   });
 
   test('fromService', async function() {
-    // mock SchemaSet from @taskcluster/lib-validate
+    // mock SchemaSet from taskcluster-lib-validate
     const schemaset = {
       abstractSchemas() {
         return {

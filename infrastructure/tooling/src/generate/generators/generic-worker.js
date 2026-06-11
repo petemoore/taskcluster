@@ -1,4 +1,4 @@
-import path from 'node:path';
+import path from 'path';
 import glob from 'glob';
 import { REPO_ROOT, readRepoYAML, modifyRepoFile, writeRepoFile, execCommand } from '../../utils/index.js';
 import { rimraf } from 'rimraf';
@@ -81,17 +81,17 @@ tasks.push({
     gwHelp = gwHelp.replace(/\[default \(varies by platform\): .*\]/, '[default varies by platform]');
 
     const ticks = '```';
-    for (const file of [
+    [
       path.join('workers', 'generic-worker', 'README.md'),
       path.join('ui', 'docs', 'reference', 'workers', 'generic-worker', 'usage.mdx'),
-    ]) {
+    ].forEach(async file => {
       await modifyRepoFile(
         file,
         async content => content
           .replace(
             /(<!-- HELP BEGIN -->)(?:.|\n)*(<!-- HELP END -->)/m,
             `$1\n${ticks}\n${gwHelp.trimRight()}\n${ticks}\n$2`));
-    }
+    });
   },
 });
 
@@ -99,7 +99,7 @@ const schemaMdx = (title, $id) => `---
 title: ${title.replace(/^.* - /, 'Task Payload - ')}
 order: 1000
 ---
-import SchemaTable from '@taskcluster/ui/components/SchemaTable'
+import SchemaTable from 'taskcluster-ui/components/SchemaTable'
 
 <SchemaTable schema="${$id}" />
 `;

@@ -1,5 +1,5 @@
 import regexEscape from 'regex-escape';
-import { URL } from 'node:url';
+import { URL } from 'url';
 import libUrls from 'taskcluster-lib-urls';
 
 /**
@@ -10,16 +10,6 @@ const UNREFERENCED_SCHEMAS = [
   // schemas used in documentation
   { service: 'github', schema: 'v1/taskcluster-github-config.json#' },
   { service: 'github', schema: 'v1/taskcluster-github-config.v1.json#' },
-
-  // schemas for webhook endpoint (server-side only, not published to clients)
-  { service: 'github', schema: 'v1/github-webhook-event.json#' },
-  { service: 'github', schema: 'v1/webhook-pull-request-payload.json#' },
-  { service: 'github', schema: 'v1/webhook-push-payload.json#' },
-  { service: 'github', schema: 'v1/webhook-issue-comment-payload.json#' },
-  { service: 'github', schema: 'v1/webhook-release-payload.json#' },
-  { service: 'github', schema: 'v1/webhook-installation-payload.json#' },
-  { service: 'github', schema: 'v1/webhook-check-run-payload.json#' },
-  { service: 'github', schema: 'v1/webhook-ping-payload.json#' },
 
   // schemas for an unpublished, deprecated API methods
   { service: 'index', schema: 'v1/list-namespaces-request.json#' },
@@ -37,6 +27,7 @@ const UNREFERENCED_SCHEMAS = [
   { service: 'generic-worker', schema: 'insecure_posix.json#' },
   { service: 'generic-worker', schema: 'multiuser_windows.json#' },
   { service: 'generic-worker', schema: 'multiuser_posix.json#' },
+  { service: 'generic-worker', schema: 'docker_posix.json#' },
   { service: 'docker-worker', schema: 'v1/payload.json#' },
 ];
 

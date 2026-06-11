@@ -1,8 +1,8 @@
 import _ from 'lodash';
-import assert from 'node:assert';
+import assert from 'assert';
 import MockDate from 'mockdate';
 import RateLimit from '../src/ratelimit.js';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 
 suite(testing.suiteName(), function() {
   let rateLimit;

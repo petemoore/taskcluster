@@ -1,7 +1,7 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import passport from 'passport';
 import { Strategy } from 'passport-github';
-import taskcluster from '@taskcluster/client';
+import taskcluster from 'taskcluster-client';
 import User from '../User.js';
 import login from '../../utils/login.js';
 import WebServerError from '../../utils/WebServerError.js';
@@ -106,7 +106,7 @@ export default class Github {
 
   useStrategy(app, cfg) {
     const { credentials } = cfg.taskcluster;
-    const strategyCfg = cfg.login.strategies.github;
+    const strategyCfg = cfg.login.strategies['github'];
     const loginMiddleware = login(cfg.app.publicUrl);
 
     if (!strategyCfg.clientId || !strategyCfg.clientSecret) {

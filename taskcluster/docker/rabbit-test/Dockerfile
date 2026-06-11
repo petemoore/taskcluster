@@ -1,4 +1,4 @@
-FROM node:24.16.0-trixie-slim
+FROM node:22.16.0-bookworm
 
 VOLUME /builds/worker/checkouts
 
@@ -6,11 +6,9 @@ VOLUME /builds/worker/checkouts
 RUN mkdir -p /builds && \
     useradd -d /builds/worker -s /bin/bash -m worker && \
     mkdir /builds/worker/artifacts && \
-    chown -R worker:worker /builds/worker && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends \
-    ca-certificates \
-    git \
+    chown -R worker:worker /builds/worker
+
+RUN apt-get update && apt-get install -y \
     rabbitmq-server && \
     rm -rf /var/lib/apt/lists/*
 

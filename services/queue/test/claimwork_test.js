@@ -1,12 +1,12 @@
 import debugFactory from 'debug';
 const debug = debugFactory('test:claim-work');
-import assert from 'node:assert';
+import assert from 'assert';
 import slugid from 'slugid';
-import taskcluster from '@taskcluster/client';
+import taskcluster from 'taskcluster-client';
 import assume from 'assume';
 import helper from './helper.js';
-import testing from '@taskcluster/lib-testing';
-import { LEVELS } from '@taskcluster/lib-monitor';
+import testing from 'taskcluster-lib-testing';
+import { LEVELS } from 'taskcluster-lib-monitor';
 
 helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) {
   helper.withDb(mock, skipping);
@@ -53,7 +53,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
       tasks: 2,
     });
     assert(result.tasks.length === 0, 'Did not expect any claims');
-    assert(Date.now() - started >= 20 * 1000, 'Expected 20s sleep');
+    assert(new Date() - started >= 20 * 1000, 'Expected 20s sleep');
   });
 
   test('claimWork requires scopes', async () => {

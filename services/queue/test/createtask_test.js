@@ -1,13 +1,13 @@
 import debugFactory from 'debug';
 const debug = debugFactory('test:create');
-import assert from 'node:assert';
+import assert from 'assert';
 import slugid from 'slugid';
 import _ from 'lodash';
-import taskcluster from '@taskcluster/client';
+import taskcluster from 'taskcluster-client';
 import assume from 'assume';
 import helper from './helper.js';
-import testing from '@taskcluster/lib-testing';
-import { LEVELS } from '@taskcluster/lib-monitor';
+import testing from 'taskcluster-lib-testing';
+import { LEVELS } from 'taskcluster-lib-monitor';
 import { splitTaskQueueId } from '../src/utils.js';
 
 helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) {

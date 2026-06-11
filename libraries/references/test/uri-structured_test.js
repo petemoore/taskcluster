@@ -1,9 +1,9 @@
-import fs from 'node:fs/promises';
-import assert from 'node:assert';
+import fs from 'fs/promises';
+import assert from 'assert';
 import References from '../src/index.js';
 import { readUriStructured, writeUriStructured } from '../src/uri-structured.js';
 import mockFs from 'mock-fs';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 
 suite(testing.suiteName(), function() {
   teardown(function() {

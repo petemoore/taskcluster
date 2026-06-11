@@ -3,7 +3,7 @@
 //go:generate go run ../codegen/cmd/gen-services
 package apis
 
-import "github.com/taskcluster/taskcluster/v100/clients/client-shell/apis/definitions"
+import "github.com/taskcluster/taskcluster/v86/clients/client-shell/apis/definitions"
 
 var services = map[string]definitions.Service{
 	"Auth": definitions.Service{
@@ -401,7 +401,7 @@ var services = map[string]definitions.Service{
 			definitions.Entry{
 				Name:        "websocktunnelToken",
 				Title:       "Get a client token for the Websocktunnel service",
-				Description: "Get a temporary token suitable for use connecting to a\n[websocktunnel](https://github.com/taskcluster/taskcluster/tree/main/tools/websocktunnel) server.\n\nThe resulting token will only be accepted by servers with a matching audience\nvalue.  Reaching such a server is the caller's responsibility.  In general,\na server URL or set of URLs should be provided to the caller as configuration\nalong with the audience value.\n\nThe token is valid for a limited time (on the scale of hours). Callers should\nrefresh it before expiration.",
+				Description: "Get a temporary token suitable for use connecting to a\n[websocktunnel](https://github.com/taskcluster/taskcluster/tree/main/tools/websocktunnel) server.\n\nThe resulting token will only be accepted by servers with a matching audience\nvalue.  Reaching such a server is the callers responsibility.  In general,\na server URL or set of URLs should be provided to the caller as configuration\nalong with the audience value.\n\nThe token is valid for a limited time (on the scale of hours). Callers should\nrefresh it before expiration.",
 				Stability:   "stable",
 				Method:      "get",
 				Route:       "/websocktunnel/<wstAudience>/<wstClient>",
@@ -507,6 +507,17 @@ var services = map[string]definitions.Service{
 				Stability:   "stable",
 				Method:      "get",
 				Route:       "/__version__",
+				Args:        []string{},
+				Query:       []string{},
+				Input:       "",
+			},
+			definitions.Entry{
+				Name:        "githubWebHookConsumer",
+				Title:       "Consume GitHub WebHook",
+				Description: "Capture a GitHub event and publish it via pulse, if it's a push,\nrelease, check run or pull request.",
+				Stability:   "stable",
+				Method:      "post",
+				Route:       "/github",
 				Args:        []string{},
 				Query:       []string{},
 				Input:       "",
@@ -780,7 +791,7 @@ var services = map[string]definitions.Service{
 			definitions.Entry{
 				Name:        "triggerHook",
 				Title:       "Trigger a hook",
-				Description: "This endpoint will trigger the creation of a task from a hook definition.\n\nThe HTTP payload must match the hook's `triggerSchema`.  If it does, it is\nprovided as the `payload` property of the JSON-e context used to render the\ntask template.\n\nOptionally, a `taskId` can be provided in the payload which the hook task\nwill use. It must be unique and follow the slugid format.",
+				Description: "This endpoint will trigger the creation of a task from a hook definition.\n\nThe HTTP payload must match the hooks `triggerSchema`.  If it does, it is\nprovided as the `payload` property of the JSON-e context used to render the\ntask template.",
 				Stability:   "stable",
 				Method:      "post",
 				Route:       "/hooks/<hookGroupId>/<hookId>/trigger",
@@ -822,7 +833,7 @@ var services = map[string]definitions.Service{
 			definitions.Entry{
 				Name:        "triggerHookWithToken",
 				Title:       "Trigger a hook with a token",
-				Description: "This endpoint triggers a defined hook with a valid token.\n\nThe HTTP payload must match the hook's `triggerSchema`.  If it does, it is\nprovided as the `payload` property of the JSON-e context used to render the\ntask template.\n\nOptionally, a `taskId` can be provided in the payload which the hook task\nwill use. It must be unique and follow the slugid format.",
+				Description: "This endpoint triggers a defined hook with a valid token.\n\nThe HTTP payload must match the hooks `triggerSchema`.  If it does, it is\nprovided as the `payload` property of the JSON-e context used to render the\ntask template.",
 				Stability:   "stable",
 				Method:      "post",
 				Route:       "/hooks/<hookGroupId>/<hookId>/trigger/<token>",
@@ -1362,7 +1373,7 @@ var services = map[string]definitions.Service{
 		APIVersion:  "v1",
 		ServiceName: "queue",
 		Title:       "Queue Service",
-		Description: "The queue service is responsible for accepting tasks and tracking their state\nas they are executed by workers, in order to ensure they are eventually\nresolved.\n\n## Artifact Storage Types\n\n* **Object artifacts** contain arbitrary data, stored via the object service.\n* **Redirect artifacts**, will redirect the caller to URL when fetched\nwith a a 303 (See Other) response.  Clients will not apply any kind of\nauthentication to that URL.\n* **Link artifacts**, will be treated as if the caller requested the linked\nartifact on the same task.  Links may be chained, but cycles are forbidden.\nThe caller must have scopes for the linked artifact, or a 403 response will\nbe returned.\n* **Error artifacts**, only consists of meta-data which the queue will\nstore for you. These artifacts are only meant to indicate that you the\nworker or the task failed to generate a specific artifact, that you\nwould otherwise have uploaded. For example generic-worker will upload an\nerror artifact, if the file it was supposed to upload doesn't exists or\nturns out to be a directory. Clients requesting an error artifact will\nget a `424` (Failed Dependency) response. This is mainly designed to\nensure that dependent tasks can distinguish between artifacts that were\nsuppose to be generated and artifacts for which the name is misspelled.\n* **S3 artifacts** are used for static files which will be\nstored on S3. When creating an S3 artifact the queue will return a\npre-signed URL to which you can do a `PUT` request to upload your\nartifact. Note that `PUT` request **must** specify the `content-length`\nheader and **must** give the `content-type` header the same value as in\nthe request to `createArtifact`. S3 artifacts will be deprecated soon,\nand users should prefer object artifacts instead.\n\n## Artifact immutability\n\nGenerally speaking you cannot overwrite an artifact when created.\nBut if you repeat the request with the same properties the request will\nsucceed as the operation is idempotent.\nThis is useful if you need to refresh a signed URL while uploading.\nDo not abuse this to overwrite artifacts created by another entity!\nSuch as worker-host overwriting artifact created by worker-code.\n\nThe queue defines the following *immutability special cases*:\n\n* A `reference` artifact can replace an existing `reference` artifact.\n* A `link` artifact can replace an existing `reference` artifact.\n* Any artifact's `expires` can be extended (made later, but not earlier).",
+		Description: "The queue service is responsible for accepting tasks and tracking their state\nas they are executed by workers, in order to ensure they are eventually\nresolved.\n\n## Artifact Storage Types\n\n* **Object artifacts** contain arbitrary data, stored via the object service.\n* **Redirect artifacts**, will redirect the caller to URL when fetched\nwith a a 303 (See Other) response.  Clients will not apply any kind of\nauthentication to that URL.\n* **Link artifacts**, will be treated as if the caller requested the linked\nartifact on the same task.  Links may be chained, but cycles are forbidden.\nThe caller must have scopes for the linked artifact, or a 403 response will\nbe returned.\n* **Error artifacts**, only consists of meta-data which the queue will\nstore for you. These artifacts are only meant to indicate that you the\nworker or the task failed to generate a specific artifact, that you\nwould otherwise have uploaded. For example docker-worker will upload an\nerror artifact, if the file it was supposed to upload doesn't exists or\nturns out to be a directory. Clients requesting an error artifact will\nget a `424` (Failed Dependency) response. This is mainly designed to\nensure that dependent tasks can distinguish between artifacts that were\nsuppose to be generated and artifacts for which the name is misspelled.\n* **S3 artifacts** are used for static files which will be\nstored on S3. When creating an S3 artifact the queue will return a\npre-signed URL to which you can do a `PUT` request to upload your\nartifact. Note that `PUT` request **must** specify the `content-length`\nheader and **must** give the `content-type` header the same value as in\nthe request to `createArtifact`. S3 artifacts will be deprecated soon,\nand users should prefer object artifacts instead.\n\n## Artifact immutability\n\nGenerally speaking you cannot overwrite an artifact when created.\nBut if you repeat the request with the same properties the request will\nsucceed as the operation is idempotent.\nThis is useful if you need to refresh a signed URL while uploading.\nDo not abuse this to overwrite artifacts created by another entity!\nSuch as worker-host overwriting artifact created by worker-code.\n\nThe queue defines the following *immutability special cases*:\n\n* A `reference` artifact can replace an existing `reference` artifact.\n* A `link` artifact can replace an existing `reference` artifact.\n* Any artifact's `expires` can be extended (made later, but not earlier).",
 		Entries: []definitions.Entry{
 			definitions.Entry{
 				Name:        "ping",
@@ -1575,32 +1586,6 @@ var services = map[string]definitions.Service{
 				Input: "",
 			},
 			definitions.Entry{
-				Name:        "changeTaskPriority",
-				Title:       "Change Task Priority",
-				Description: "This method updates the priority of a single unresolved task.\n\n* Claimed or running tasks keep their current run priority until they are retried.\n* Emits `taskPriorityChanged` events so downstream tooling can observe manual overrides.",
-				Stability:   "experimental",
-				Method:      "post",
-				Route:       "/task/<taskId>/priority",
-				Args: []string{
-					"taskId",
-				},
-				Query: []string{},
-				Input: "v1/change-task-priority-request.json#",
-			},
-			definitions.Entry{
-				Name:        "changeTaskGroupPriority",
-				Title:       "Change Task Group Priority",
-				Description: "This method applies a new priority to unresolved tasks within a task group.\n\n* Updates run in bounded batches to avoid long locks.\n* Claimed or running tasks keep their current run priority until they are retried.\n* Emits `taskGroupPriorityChanged` summary event at the end.",
-				Stability:   "experimental",
-				Method:      "post",
-				Route:       "/task-group/<taskGroupId>/priority",
-				Args: []string{
-					"taskGroupId",
-				},
-				Query: []string{},
-				Input: "v1/change-task-priority-request.json#",
-			},
-			definitions.Entry{
 				Name:        "claimWork",
 				Title:       "Claim Work",
 				Description: "Claim pending task(s) for the given task queue.\n\nIf any work is available (even if fewer than the requested number of\ntasks, this will return immediately. Otherwise, it will block for tens of\nseconds waiting for work.  If no work appears, it will return an emtpy\nlist of tasks.  Callers should sleep a short while (to avoid denial of\nservice in an error condition) and call the endpoint again.  This is a\nsimple implementation of \"long polling\".",
@@ -1731,7 +1716,7 @@ var services = map[string]definitions.Service{
 			definitions.Entry{
 				Name:        "getLatestArtifact",
 				Title:       "Get Artifact Data from Latest Run",
-				Description: "Get artifact by `<name>` from the last run of a task.\n\n**Artifact Access**, in order to get an artifact you need the scope\n`queue:get-artifact:<name>`, where `<name>` is the name of the artifact.\nTo allow access to fetch artifacts with a client like `curl` or a web\nbrowser, without using Taskcluster credentials, include a scope in the\n`anonymous` role.  The convention is to include\n`queue:get-artifact:public/*`.\n\n**Response**: the HTTP response to this method is a 303 redirect to the\nURL from which the artifact can be downloaded.  The body of that response\ncontains the data described in the output schema, contianing the same URL.\nCallers are encouraged to use whichever method of gathering the URL is\nmost convenient.  Standard HTTP clients will follow the redirect, while\nAPI client libraries will return the JSON body.\n\nIn order to download an artifact the following must be done:\n\n1. Obtain queue url.  Building a signed url with a taskcluster client is\nrecommended\n1. Make a GET request which does not follow redirects\n1. In all cases, if specified, the\nx-taskcluster-location-{content,transfer}-{sha256,length} values must be\nvalidated to be equal to the Content-Length and Sha256 checksum of the\nfinal artifact downloaded. as well as any intermediate redirects\n1. If this response is a 500-series error, retry using an exponential\nbackoff.  No more than 5 retries should be attempted\n1. If this response is a 400-series error, treat it appropriately for\nyour context.  This might be an error in responding to this request or\nan Error storage type body.  This request should not be retried.\n1. If this response is a 200-series response, the response body is the artifact.\nIf the x-taskcluster-location-{content,transfer}-{sha256,length} and\nx-taskcluster-location-content-encoding are specified, they should match\nthis response body\n1. If the response type is a 300-series redirect, the artifact will be at the\nlocation specified by the `Location` header.  There are multiple artifact storage\ntypes which use a 300-series redirect.\n1. For all redirects followed, the user must verify that the content-sha256, content-length,\ntransfer-sha256, transfer-length and content-encoding match every further request.  The final\nartifact must also be validated against the values specified in the original queue response\n1. Caching of requests with an x-taskcluster-artifact-storage-type value of `reference`\nmust not occur\n\n**Headers**\nThe following important headers are set on the response to this method:\n\n* location: the url of the artifact if a redirect is to be performed\n* x-taskcluster-artifact-storage-type: the storage type.  Example: s3\n\n**Remark**, this end-point is slightly slower than\n`queue.getArtifact`, so consider that if you already know the `runId` of\nthe latest run. Otherwise, just use the most convenient API end-point.",
+				Description: "Get artifact by `<name>` from the last run of a task.\n\n**Artifact Access**, in order to get an artifact you need the scope\n`queue:get-artifact:<name>`, where `<name>` is the name of the artifact.\nTo allow access to fetch artifacts with a client like `curl` or a web\nbrowser, without using Taskcluster credentials, include a scope in the\n`anonymous` role.  The convention is to include\n`queue:get-artifact:public/*`.\n\n**API Clients**, this method will redirect you to the artifact, if it is\nstored externally. Either way, the response may not be JSON. So API\nclient users might want to generate a signed URL for this end-point and\nuse that URL with a normal HTTP client.\n\n**Remark**, this end-point is slightly slower than\n`queue.getArtifact`, so consider that if you already know the `runId` of\nthe latest run. Otherwise, just us the most convenient API end-point.",
 				Stability:   "stable",
 				Method:      "get",
 				Route:       "/task/<taskId>/artifacts/<name>",
@@ -2186,84 +2171,6 @@ var services = map[string]definitions.Service{
 			},
 		},
 	},
-	"WebServer": definitions.Service{
-		APIVersion:  "v1",
-		ServiceName: "web-server",
-		Title:       "Web Server Service",
-		Description: "The web-server service provides a GraphQL gateway to Taskcluster APIs,\nas well as profiler endpoints that generate Firefox Profiler–compatible\nprofiles from task group metadata and task logs.",
-		Entries: []definitions.Entry{
-			definitions.Entry{
-				Name:        "ping",
-				Title:       "Ping Server",
-				Description: "Respond without doing anything.\nThis endpoint is used to check that the service is up.",
-				Stability:   "stable",
-				Method:      "get",
-				Route:       "/ping",
-				Args:        []string{},
-				Query:       []string{},
-				Input:       "",
-			},
-			definitions.Entry{
-				Name:        "lbheartbeat",
-				Title:       "Load Balancer Heartbeat",
-				Description: "Respond without doing anything.\nThis endpoint is used to check that the service is up.",
-				Stability:   "stable",
-				Method:      "get",
-				Route:       "/__lbheartbeat__",
-				Args:        []string{},
-				Query:       []string{},
-				Input:       "",
-			},
-			definitions.Entry{
-				Name:        "version",
-				Title:       "Taskcluster Version",
-				Description: "Respond with the JSON version object.\nhttps://github.com/mozilla-services/Dockerflow/blob/main/docs/version_object.md",
-				Stability:   "stable",
-				Method:      "get",
-				Route:       "/__version__",
-				Args:        []string{},
-				Query:       []string{},
-				Input:       "",
-			},
-			definitions.Entry{
-				Name:        "taskGroupProfile",
-				Title:       "Task Group Profile",
-				Description: "Generate a Firefox Profiler–compatible profile from a task group.\nThe profile contains scheduling and execution timing for all tasks.",
-				Stability:   "experimental",
-				Method:      "get",
-				Route:       "/task-group/<taskGroupId>/profile",
-				Args: []string{
-					"taskGroupId",
-				},
-				Query: []string{},
-				Input: "",
-			},
-			definitions.Entry{
-				Name:        "taskProfile",
-				Title:       "Task Log Profile",
-				Description: "Generate a Firefox Profiler–compatible profile from a task's log output.\nParses `public/logs/live.log` (or `live_backing.log`) for timing data.",
-				Stability:   "experimental",
-				Method:      "get",
-				Route:       "/task/<taskId>/profile",
-				Args: []string{
-					"taskId",
-				},
-				Query: []string{},
-				Input: "",
-			},
-			definitions.Entry{
-				Name:        "heartbeat",
-				Title:       "Heartbeat",
-				Description: "Respond with a service heartbeat.\n\nThis endpoint is used to check on backing services this service\ndepends on.",
-				Stability:   "stable",
-				Method:      "get",
-				Route:       "/__heartbeat__",
-				Args:        []string{},
-				Query:       []string{},
-				Input:       "",
-			},
-		},
-	},
 	"WorkerManager": definitions.Service{
 		APIVersion:  "v1",
 		ServiceName: "worker-manager",
@@ -2540,21 +2447,6 @@ var services = map[string]definitions.Service{
 				Stability:   "stable",
 				Method:      "delete",
 				Route:       "/workers/<workerPoolId>/<workerGroup>/<workerId>",
-				Args: []string{
-					"workerPoolId",
-					"workerGroup",
-					"workerId",
-				},
-				Query: []string{},
-				Input: "",
-			},
-			definitions.Entry{
-				Name:        "shouldWorkerTerminate",
-				Title:       "Should worker terminate",
-				Description: "Informs if worker should terminate or keep working.\nWorker might no longer be needed based on the set of factors:\n - current capacity of the worker pool\n - amount of pending and claimed tasks\n - launch configuration changes\n\nDecision is made during provision or scanning loop based on above mentioned conditions.",
-				Stability:   "experimental",
-				Method:      "get",
-				Route:       "/workers/<workerPoolId>/<workerGroup>/<workerId>/should-terminate",
 				Args: []string{
 					"workerPoolId",
 					"workerGroup",

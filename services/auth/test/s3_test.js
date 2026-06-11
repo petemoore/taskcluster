@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import slugid from 'slugid';
 import {
   S3Client,
@@ -9,7 +9,7 @@ import {
 import helper from './helper.js';
 import debugFactory from 'debug';
 const debug = debugFactory('s3_test');
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 
 helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], function(mock, skipping) {
   if (mock) {
@@ -40,7 +40,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], function(mock, s
       bucket,
       'folder1/folder2/',
     );
-    assert(new Date(result.expires).getTime() > Date.now(),
+    assert(new Date(result.expires).getTime() > new Date().getTime(),
       'Expected expires to be in the future');
 
     // Create aws credentials
@@ -81,7 +81,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], function(mock, s
       bucket,
       '',
     );
-    assert(new Date(result.expires).getTime() > Date.now(),
+    assert(new Date(result.expires).getTime() > new Date().getTime(),
       'Expected expires to be in the future');
 
     // Create aws credentials
@@ -122,7 +122,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], function(mock, s
       bucket,
       'folder1/',
     );
-    assert(new Date(result.expires).getTime() > Date.now(),
+    assert(new Date(result.expires).getTime() > new Date().getTime(),
       'Expected expires to be in the future');
 
     // Create aws credentials

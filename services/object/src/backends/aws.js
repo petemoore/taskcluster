@@ -1,5 +1,5 @@
 import { Backend } from './base.js';
-import assert from 'node:assert';
+import assert from 'assert';
 import {
   S3Client,
   GetBucketLocationCommand,
@@ -13,9 +13,9 @@ import {
   getEndpointFromInstructions,
   toEndpointV1,
 } from '@aws-sdk/middleware-endpoint';
-import { reportError } from '@taskcluster/lib-api';
-import taskcluster from '@taskcluster/client';
-import path from 'node:path';
+import { reportError } from 'taskcluster-lib-api';
+import taskcluster from 'taskcluster-client';
+import path from 'path';
 import qs from 'qs';
 import { parse as parseContentType } from 'content-type';
 

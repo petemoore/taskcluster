@@ -11,9 +11,9 @@ import {
   UNDEFINED_FUNCTION,
 } from '../src/index.js';
 
-import path from 'node:path';
-import { strict as assert } from 'node:assert';
-import fs from 'node:fs';
+import path from 'path';
+import { strict as assert } from 'assert';
+import fs from 'fs';
 
 const monitor = helper.monitor;
 const __dirnname = new URL('.', import.meta.url).pathname;
@@ -195,11 +195,7 @@ helper.dbSuite(path.basename(__filename), function() {
     test('currentVersion after set', async function() {
       await db._withClient(WRITE, async client => {
         await client.query('begin');
-        await client.query(`
-          create table if not exists tcversion (
-            version int primary key
-          )`);
-        await client.query('insert into tcversion (version) values (0) on conflict do nothing');
+        await client.query('create table if not exists tcversion as select 0 as version');
         await client.query('update tcversion set version = $1', [3]);
         await client.query('commit');
       });
@@ -223,8 +219,7 @@ helper.dbSuite(path.basename(__filename), function() {
       await createUsers(db);
       await db._withClient('admin', async client => {
         // create some tables for permissions
-        await client.query('create table tcversion (version int primary key)');
-        await client.query('insert into tcversion (version) values (0) on conflict do nothing');
+        await client.query('create table tcversion (version int)');
         await client.query('create table foo (fooId int)');
         await client.query('create table bar (barId int)');
       });
@@ -320,7 +315,7 @@ helper.dbSuite(path.basename(__filename), function() {
         service2: { tables: { foo: 'write' } },
       });
       await assert.rejects(() => Database._checkPermissions({ db, schema, usernamePrefix: 'test' }),
-        /test_service2 has unexpected role badrole/);
+        new RegExp(`test_service2 has unexpected role badrole`));
     });
   });
 

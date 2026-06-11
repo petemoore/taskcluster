@@ -576,7 +576,7 @@ export default {
             "wstClient"
           ],
           "category": "Websocktunnel Credentials",
-          "description": "Get a temporary token suitable for use connecting to a\n[websocktunnel](https://github.com/taskcluster/taskcluster/tree/main/tools/websocktunnel) server.\n\nThe resulting token will only be accepted by servers with a matching audience\nvalue.  Reaching such a server is the caller's responsibility.  In general,\na server URL or set of URLs should be provided to the caller as configuration\nalong with the audience value.\n\nThe token is valid for a limited time (on the scale of hours). Callers should\nrefresh it before expiration.",
+          "description": "Get a temporary token suitable for use connecting to a\n[websocktunnel](https://github.com/taskcluster/taskcluster/tree/main/tools/websocktunnel) server.\n\nThe resulting token will only be accepted by servers with a matching audience\nvalue.  Reaching such a server is the callers responsibility.  In general,\na server URL or set of URLs should be provided to the caller as configuration\nalong with the audience value.\n\nThe token is valid for a limited time (on the scale of hours). Callers should\nrefresh it before expiration.",
           "method": "get",
           "name": "websocktunnelToken",
           "output": "v1/websocktunnel-token-response.json#",
@@ -828,6 +828,20 @@ export default {
           "route": "/__version__",
           "stability": "stable",
           "title": "Taskcluster Version",
+          "type": "function"
+        },
+        {
+          "args": [
+          ],
+          "category": "Github Service",
+          "description": "Capture a GitHub event and publish it via pulse, if it's a push,\nrelease, check run or pull request.",
+          "method": "post",
+          "name": "githubWebHookConsumer",
+          "query": [
+          ],
+          "route": "/github",
+          "stability": "stable",
+          "title": "Consume GitHub WebHook",
           "type": "function"
         },
         {
@@ -1352,7 +1366,7 @@ export default {
             "hookId"
           ],
           "category": "Hooks",
-          "description": "This endpoint will trigger the creation of a task from a hook definition.\n\nThe HTTP payload must match the hook's `triggerSchema`.  If it does, it is\nprovided as the `payload` property of the JSON-e context used to render the\ntask template.\n\nOptionally, a `taskId` can be provided in the payload which the hook task\nwill use. It must be unique and follow the slugid format.",
+          "description": "This endpoint will trigger the creation of a task from a hook definition.\n\nThe HTTP payload must match the hooks `triggerSchema`.  If it does, it is\nprovided as the `payload` property of the JSON-e context used to render the\ntask template.",
           "input": "v1/trigger-hook.json#",
           "method": "post",
           "name": "triggerHook",
@@ -1408,7 +1422,7 @@ export default {
             "token"
           ],
           "category": "Hooks",
-          "description": "This endpoint triggers a defined hook with a valid token.\n\nThe HTTP payload must match the hook's `triggerSchema`.  If it does, it is\nprovided as the `payload` property of the JSON-e context used to render the\ntask template.\n\nOptionally, a `taskId` can be provided in the payload which the hook task\nwill use. It must be unique and follow the slugid format.",
+          "description": "This endpoint triggers a defined hook with a valid token.\n\nThe HTTP payload must match the hooks `triggerSchema`.  If it does, it is\nprovided as the `payload` property of the JSON-e context used to render the\ntask template.",
           "input": "v1/trigger-hook.json#",
           "method": "post",
           "name": "triggerHookWithToken",
@@ -2219,7 +2233,7 @@ export default {
     "reference": {
       "$schema": "/schemas/common/api-reference-v0.json#",
       "apiVersion": "v1",
-      "description": "The queue service is responsible for accepting tasks and tracking their state\nas they are executed by workers, in order to ensure they are eventually\nresolved.\n\n## Artifact Storage Types\n\n* **Object artifacts** contain arbitrary data, stored via the object service.\n* **Redirect artifacts**, will redirect the caller to URL when fetched\nwith a a 303 (See Other) response.  Clients will not apply any kind of\nauthentication to that URL.\n* **Link artifacts**, will be treated as if the caller requested the linked\nartifact on the same task.  Links may be chained, but cycles are forbidden.\nThe caller must have scopes for the linked artifact, or a 403 response will\nbe returned.\n* **Error artifacts**, only consists of meta-data which the queue will\nstore for you. These artifacts are only meant to indicate that you the\nworker or the task failed to generate a specific artifact, that you\nwould otherwise have uploaded. For example generic-worker will upload an\nerror artifact, if the file it was supposed to upload doesn't exists or\nturns out to be a directory. Clients requesting an error artifact will\nget a `424` (Failed Dependency) response. This is mainly designed to\nensure that dependent tasks can distinguish between artifacts that were\nsuppose to be generated and artifacts for which the name is misspelled.\n* **S3 artifacts** are used for static files which will be\nstored on S3. When creating an S3 artifact the queue will return a\npre-signed URL to which you can do a `PUT` request to upload your\nartifact. Note that `PUT` request **must** specify the `content-length`\nheader and **must** give the `content-type` header the same value as in\nthe request to `createArtifact`. S3 artifacts will be deprecated soon,\nand users should prefer object artifacts instead.\n\n## Artifact immutability\n\nGenerally speaking you cannot overwrite an artifact when created.\nBut if you repeat the request with the same properties the request will\nsucceed as the operation is idempotent.\nThis is useful if you need to refresh a signed URL while uploading.\nDo not abuse this to overwrite artifacts created by another entity!\nSuch as worker-host overwriting artifact created by worker-code.\n\nThe queue defines the following *immutability special cases*:\n\n* A `reference` artifact can replace an existing `reference` artifact.\n* A `link` artifact can replace an existing `reference` artifact.\n* Any artifact's `expires` can be extended (made later, but not earlier).",
+      "description": "The queue service is responsible for accepting tasks and tracking their state\nas they are executed by workers, in order to ensure they are eventually\nresolved.\n\n## Artifact Storage Types\n\n* **Object artifacts** contain arbitrary data, stored via the object service.\n* **Redirect artifacts**, will redirect the caller to URL when fetched\nwith a a 303 (See Other) response.  Clients will not apply any kind of\nauthentication to that URL.\n* **Link artifacts**, will be treated as if the caller requested the linked\nartifact on the same task.  Links may be chained, but cycles are forbidden.\nThe caller must have scopes for the linked artifact, or a 403 response will\nbe returned.\n* **Error artifacts**, only consists of meta-data which the queue will\nstore for you. These artifacts are only meant to indicate that you the\nworker or the task failed to generate a specific artifact, that you\nwould otherwise have uploaded. For example docker-worker will upload an\nerror artifact, if the file it was supposed to upload doesn't exists or\nturns out to be a directory. Clients requesting an error artifact will\nget a `424` (Failed Dependency) response. This is mainly designed to\nensure that dependent tasks can distinguish between artifacts that were\nsuppose to be generated and artifacts for which the name is misspelled.\n* **S3 artifacts** are used for static files which will be\nstored on S3. When creating an S3 artifact the queue will return a\npre-signed URL to which you can do a `PUT` request to upload your\nartifact. Note that `PUT` request **must** specify the `content-length`\nheader and **must** give the `content-type` header the same value as in\nthe request to `createArtifact`. S3 artifacts will be deprecated soon,\nand users should prefer object artifacts instead.\n\n## Artifact immutability\n\nGenerally speaking you cannot overwrite an artifact when created.\nBut if you repeat the request with the same properties the request will\nsucceed as the operation is idempotent.\nThis is useful if you need to refresh a signed URL while uploading.\nDo not abuse this to overwrite artifacts created by another entity!\nSuch as worker-host overwriting artifact created by worker-code.\n\nThe queue defines the following *immutability special cases*:\n\n* A `reference` artifact can replace an existing `reference` artifact.\n* A `link` artifact can replace an existing `reference` artifact.\n* Any artifact's `expires` can be extended (made later, but not earlier).",
       "entries": [
         {
           "args": [
@@ -2568,47 +2582,6 @@ export default {
         },
         {
           "args": [
-            "taskId"
-          ],
-          "category": "Tasks",
-          "description": "This method updates the priority of a single unresolved task.\n\n* Claimed or running tasks keep their current run priority until they are retried.\n* Emits `taskPriorityChanged` events so downstream tooling can observe manual overrides.",
-          "input": "v1/change-task-priority-request.json#",
-          "method": "post",
-          "name": "changeTaskPriority",
-          "output": "v1/task-status-response.json#",
-          "query": [
-          ],
-          "route": "/task/<taskId>/priority",
-          "scopes": {
-            "AnyOf": [
-              "queue:change-task-priority:<taskId>",
-              "queue:change-task-priority-in-queue:<taskQueueId>"
-            ]
-          },
-          "stability": "experimental",
-          "title": "Change Task Priority",
-          "type": "function"
-        },
-        {
-          "args": [
-            "taskGroupId"
-          ],
-          "category": "Task-Groups",
-          "description": "This method applies a new priority to unresolved tasks within a task group.\n\n* Updates run in bounded batches to avoid long locks.\n* Claimed or running tasks keep their current run priority until they are retried.\n* Emits `taskGroupPriorityChanged` summary event at the end.",
-          "input": "v1/change-task-priority-request.json#",
-          "method": "post",
-          "name": "changeTaskGroupPriority",
-          "output": "v1/task-group-priority-change-response.json#",
-          "query": [
-          ],
-          "route": "/task-group/<taskGroupId>/priority",
-          "scopes": "queue:change-task-group-priority:<schedulerId>/<taskGroupId>",
-          "stability": "experimental",
-          "title": "Change Task Group Priority",
-          "type": "function"
-        },
-        {
-          "args": [
             "taskQueueId"
           ],
           "category": "Worker Interface",
@@ -2799,7 +2772,7 @@ export default {
             "name"
           ],
           "category": "Artifacts",
-          "description": "Get artifact by `<name>` from the last run of a task.\n\n**Artifact Access**, in order to get an artifact you need the scope\n`queue:get-artifact:<name>`, where `<name>` is the name of the artifact.\nTo allow access to fetch artifacts with a client like `curl` or a web\nbrowser, without using Taskcluster credentials, include a scope in the\n`anonymous` role.  The convention is to include\n`queue:get-artifact:public/*`.\n\n**Response**: the HTTP response to this method is a 303 redirect to the\nURL from which the artifact can be downloaded.  The body of that response\ncontains the data described in the output schema, contianing the same URL.\nCallers are encouraged to use whichever method of gathering the URL is\nmost convenient.  Standard HTTP clients will follow the redirect, while\nAPI client libraries will return the JSON body.\n\nIn order to download an artifact the following must be done:\n\n1. Obtain queue url.  Building a signed url with a taskcluster client is\nrecommended\n1. Make a GET request which does not follow redirects\n1. In all cases, if specified, the\nx-taskcluster-location-{content,transfer}-{sha256,length} values must be\nvalidated to be equal to the Content-Length and Sha256 checksum of the\nfinal artifact downloaded. as well as any intermediate redirects\n1. If this response is a 500-series error, retry using an exponential\nbackoff.  No more than 5 retries should be attempted\n1. If this response is a 400-series error, treat it appropriately for\nyour context.  This might be an error in responding to this request or\nan Error storage type body.  This request should not be retried.\n1. If this response is a 200-series response, the response body is the artifact.\nIf the x-taskcluster-location-{content,transfer}-{sha256,length} and\nx-taskcluster-location-content-encoding are specified, they should match\nthis response body\n1. If the response type is a 300-series redirect, the artifact will be at the\nlocation specified by the `Location` header.  There are multiple artifact storage\ntypes which use a 300-series redirect.\n1. For all redirects followed, the user must verify that the content-sha256, content-length,\ntransfer-sha256, transfer-length and content-encoding match every further request.  The final\nartifact must also be validated against the values specified in the original queue response\n1. Caching of requests with an x-taskcluster-artifact-storage-type value of `reference`\nmust not occur\n\n**Headers**\nThe following important headers are set on the response to this method:\n\n* location: the url of the artifact if a redirect is to be performed\n* x-taskcluster-artifact-storage-type: the storage type.  Example: s3\n\n**Remark**, this end-point is slightly slower than\n`queue.getArtifact`, so consider that if you already know the `runId` of\nthe latest run. Otherwise, just use the most convenient API end-point.",
+          "description": "Get artifact by `<name>` from the last run of a task.\n\n**Artifact Access**, in order to get an artifact you need the scope\n`queue:get-artifact:<name>`, where `<name>` is the name of the artifact.\nTo allow access to fetch artifacts with a client like `curl` or a web\nbrowser, without using Taskcluster credentials, include a scope in the\n`anonymous` role.  The convention is to include\n`queue:get-artifact:public/*`.\n\n**API Clients**, this method will redirect you to the artifact, if it is\nstored externally. Either way, the response may not be JSON. So API\nclient users might want to generate a signed URL for this end-point and\nuse that URL with a normal HTTP client.\n\n**Remark**, this end-point is slightly slower than\n`queue.getArtifact`, so consider that if you already know the `runId` of\nthe latest run. Otherwise, just us the most convenient API end-point.",
           "method": "get",
           "name": "getLatestArtifact",
           "output": "v1/get-artifact-response.json#",
@@ -3872,112 +3845,6 @@ export default {
           "schema": "v1/task-group-changed-message.json#",
           "title": "Task Group Sealed Messages",
           "type": "topic-exchange"
-        },
-        {
-          "description": "A message published when task priority was updated via `changeTaskPriority` API call.",
-          "exchange": "task-priority-changed",
-          "name": "taskPriorityChanged",
-          "routingKey": [
-            {
-              "constant": "primary",
-              "multipleWords": false,
-              "name": "routingKeyKind",
-              "required": true,
-              "summary": "Identifier for the routing-key kind. This is always `'primary'` for the formalized routing key."
-            },
-            {
-              "multipleWords": false,
-              "name": "taskId",
-              "required": true,
-              "summary": "`taskId` for the task this message concerns"
-            },
-            {
-              "multipleWords": false,
-              "name": "runId",
-              "required": false,
-              "summary": "`runId` of latest run for the task, `_` if no run is exists for the task."
-            },
-            {
-              "multipleWords": false,
-              "name": "workerGroup",
-              "required": false,
-              "summary": "`workerGroup` of latest run for the task, `_` if no run is exists for the task."
-            },
-            {
-              "multipleWords": false,
-              "name": "workerId",
-              "required": false,
-              "summary": "`workerId` of latest run for the task, `_` if no run is exists for the task."
-            },
-            {
-              "multipleWords": false,
-              "name": "provisionerId",
-              "required": true,
-              "summary": "`provisionerId` this task is targeted at."
-            },
-            {
-              "multipleWords": false,
-              "name": "workerType",
-              "required": true,
-              "summary": "`workerType` this task must run on."
-            },
-            {
-              "multipleWords": false,
-              "name": "schedulerId",
-              "required": true,
-              "summary": "`schedulerId` this task was created by."
-            },
-            {
-              "multipleWords": false,
-              "name": "taskGroupId",
-              "required": true,
-              "summary": "`taskGroupId` this task was created in."
-            },
-            {
-              "multipleWords": true,
-              "name": "reserved",
-              "required": false,
-              "summary": "Space reserved for future routing-key entries, you should always match this entry with `#`. As automatically done by our tooling, if not specified."
-            }
-          ],
-          "schema": "v1/task-priority-changed-message.json#",
-          "title": "Task Priority Changed Messages",
-          "type": "topic-exchange"
-        },
-        {
-          "description": "A message published when task group priority was changed via `changeTaskGroupPriority` API call.",
-          "exchange": "task-group-priority-changed",
-          "name": "taskGroupPriorityChanged",
-          "routingKey": [
-            {
-              "constant": "primary",
-              "multipleWords": false,
-              "name": "routingKeyKind",
-              "required": true,
-              "summary": "Identifier for the routing-key kind. This is always `'primary'` for the formalized routing key."
-            },
-            {
-              "multipleWords": false,
-              "name": "taskGroupId",
-              "required": true,
-              "summary": "`taskGroupId` for the task-group this message concerns"
-            },
-            {
-              "multipleWords": false,
-              "name": "schedulerId",
-              "required": true,
-              "summary": "`schedulerId` for the task-group this message concerns"
-            },
-            {
-              "multipleWords": true,
-              "name": "reserved",
-              "required": false,
-              "summary": "Space reserved for future routing-key entries, you should always match this entry with `#`. As automatically done by our tooling, if not specified."
-            }
-          ],
-          "schema": "v1/task-group-priority-changed-message.json#",
-          "title": "Task Group Priority Changed Messages",
-          "type": "topic-exchange"
         }
       ],
       "exchangePrefix": "exchange/taskcluster-queue/v1/",
@@ -4119,104 +3986,6 @@ export default {
       ],
       "serviceName": "secrets",
       "title": "Secrets Service"
-    },
-    "referenceKind": "api"
-  },
-  "WebServer": {
-    "reference": {
-      "$schema": "/schemas/common/api-reference-v0.json#",
-      "apiVersion": "v1",
-      "description": "The web-server service provides a GraphQL gateway to Taskcluster APIs,\nas well as profiler endpoints that generate Firefox Profiler–compatible\nprofiles from task group metadata and task logs.",
-      "entries": [
-        {
-          "args": [
-          ],
-          "category": "Monitoring",
-          "description": "Respond without doing anything.\nThis endpoint is used to check that the service is up.",
-          "method": "get",
-          "name": "ping",
-          "query": [
-          ],
-          "route": "/ping",
-          "stability": "stable",
-          "title": "Ping Server",
-          "type": "function"
-        },
-        {
-          "args": [
-          ],
-          "category": "Monitoring",
-          "description": "Respond without doing anything.\nThis endpoint is used to check that the service is up.",
-          "method": "get",
-          "name": "lbheartbeat",
-          "query": [
-          ],
-          "route": "/__lbheartbeat__",
-          "stability": "stable",
-          "title": "Load Balancer Heartbeat",
-          "type": "function"
-        },
-        {
-          "args": [
-          ],
-          "category": "Monitoring",
-          "description": "Respond with the JSON version object.\nhttps://github.com/mozilla-services/Dockerflow/blob/main/docs/version_object.md",
-          "method": "get",
-          "name": "version",
-          "query": [
-          ],
-          "route": "/__version__",
-          "stability": "stable",
-          "title": "Taskcluster Version",
-          "type": "function"
-        },
-        {
-          "args": [
-            "taskGroupId"
-          ],
-          "category": "Profiler",
-          "description": "Generate a Firefox Profiler–compatible profile from a task group.\nThe profile contains scheduling and execution timing for all tasks.",
-          "method": "get",
-          "name": "taskGroupProfile",
-          "query": [
-          ],
-          "route": "/task-group/<taskGroupId>/profile",
-          "stability": "experimental",
-          "title": "Task Group Profile",
-          "type": "function"
-        },
-        {
-          "args": [
-            "taskId"
-          ],
-          "category": "Profiler",
-          "description": "Generate a Firefox Profiler–compatible profile from a task's log output.\nParses `public/logs/live.log` (or `live_backing.log`) for timing data.",
-          "method": "get",
-          "name": "taskProfile",
-          "query": [
-          ],
-          "route": "/task/<taskId>/profile",
-          "stability": "experimental",
-          "title": "Task Log Profile",
-          "type": "function"
-        },
-        {
-          "args": [
-          ],
-          "category": "Monitoring",
-          "description": "Respond with a service heartbeat.\n\nThis endpoint is used to check on backing services this service\ndepends on.",
-          "method": "get",
-          "name": "heartbeat",
-          "query": [
-          ],
-          "route": "/__heartbeat__",
-          "stability": "stable",
-          "title": "Heartbeat",
-          "type": "function"
-        }
-      ],
-      "serviceName": "web-server",
-      "title": "Web Server Service"
     },
     "referenceKind": "api"
   },
@@ -4595,25 +4364,6 @@ export default {
           "scopes": "worker-manager:remove-worker:<workerPoolId>/<workerGroup>/<workerId>",
           "stability": "stable",
           "title": "Remove a Worker",
-          "type": "function"
-        },
-        {
-          "args": [
-            "workerPoolId",
-            "workerGroup",
-            "workerId"
-          ],
-          "category": "Workers",
-          "description": "Informs if worker should terminate or keep working.\nWorker might no longer be needed based on the set of factors:\n - current capacity of the worker pool\n - amount of pending and claimed tasks\n - launch configuration changes\n\nDecision is made during provision or scanning loop based on above mentioned conditions.",
-          "method": "get",
-          "name": "shouldWorkerTerminate",
-          "output": "v1/should-worker-terminate-response.json#",
-          "query": [
-          ],
-          "route": "/workers/<workerPoolId>/<workerGroup>/<workerId>/should-terminate",
-          "scopes": "worker-manager:should-worker-terminate:<workerPoolId>/<workerGroup>/<workerId>",
-          "stability": "experimental",
-          "title": "Should worker terminate",
           "type": "function"
         },
         {

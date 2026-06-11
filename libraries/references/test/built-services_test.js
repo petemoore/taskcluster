@@ -1,9 +1,9 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import load from '../src/built-services.js';
 import mockFs from 'mock-fs';
 import References from '../src/index.js';
 import { getCommonSchemas } from '../src/common-schemas.js';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 
 suite(testing.suiteName(), function() {
   suiteSetup(async function() {

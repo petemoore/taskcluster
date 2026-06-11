@@ -1,5 +1,5 @@
-import taskcluster from '@taskcluster/client';
-import assert from 'node:assert';
+import taskcluster from 'taskcluster-client';
+import assert from 'assert';
 
 export const scopeExpression = {
   AllOf: [

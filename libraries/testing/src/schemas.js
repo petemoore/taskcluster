@@ -1,10 +1,10 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import debugFactory from 'debug';
-const debug = debugFactory('@taskcluster/lib-testing:schemas');
-import fs from 'node:fs';
-import SchemaSet from '@taskcluster/lib-validate';
+const debug = debugFactory('taskcluster-lib-testing:schemas');
+import fs from 'fs';
+import SchemaSet from 'taskcluster-lib-validate';
 import libUrls from 'taskcluster-lib-urls';
-import path from 'node:path';
+import path from 'path';
 
 /**
  * Test schemas with positive and negative test cases. This will call
@@ -27,7 +27,7 @@ import path from 'node:path';
 let schemas = function(options) {
   // Validate options
   assert(options.schemasetOptions, 'Options must be given for validator');
-  assert(Array.isArray(options.cases), 'Array of cases must be given');
+  assert(options.cases instanceof Array, 'Array of cases must be given');
   assert(options.serviceName);
 
   let validate;

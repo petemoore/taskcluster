@@ -1,10 +1,10 @@
-import process from 'node:process';
-import Iterate from '@taskcluster/lib-iterate';
-import { paginatedIterator } from '@taskcluster/lib-postgres';
+import process from 'process';
+import Iterate from 'taskcluster-lib-iterate';
+import { paginatedIterator } from 'taskcluster-lib-postgres';
 import { WorkerPool, Worker, WorkerPoolStats } from './data.js';
 import { ApiError } from './providers/provider.js';
 import { measureTime } from './util.js';
-import { fromNow } from '@taskcluster/client';
+import { fromNow } from 'taskcluster-client';
 
 /**
  * Run all provisioning logic
@@ -16,9 +16,9 @@ export class Provisioner {
    * @param {object} options.iterateConf
    * @param {Worker} options.Worker
    * @param {WorkerPool} options.WorkerPool
-   * @param {import('@taskcluster/lib-monitor').Monitor} options.monitor
+   * @param {import('taskcluster-lib-monitor').Monitor} options.monitor
    * @param {object} options.notify
-   * @param {import('@taskcluster/lib-postgres').Database} options.db
+   * @param {import('taskcluster-lib-postgres').Database} options.db
    * @param {string} options.ownName
    */
   constructor({ providers, iterateConf, Worker, WorkerPool, monitor, notify, db, ownName }) {
@@ -96,22 +96,17 @@ export class Provisioner {
    * @param {string} workerPoolId
    */
   async #scanWorkersInPool(workerPoolId) {
-    const fetch = async (page_size_in, after) =>
-      await this.db.fns.get_non_stopped_workers_with_launch_config_scanner_after({
-        worker_pool_id_in: workerPoolId,
-        worker_group_in: null,
-        worker_id_in: null,
-        providers_filter_cond_in: null,
-        providers_filter_value_in: null,
-        page_size_in,
-        ...after,
-      });
+    /**
+     * @param {number} size
+     * @param {number|Map<string, unknown>|null} offset
+     */
+    const fetch = async (size, offset) =>
+      await this.db.fns.get_non_stopped_workers_with_launch_config_scanner(
+        workerPoolId, null, null, null, null, size, offset,
+      );
 
     const stats = new WorkerPoolStats(workerPoolId);
-    for await (let row of paginatedIterator({
-      fetch,
-      indexColumns: ['worker_pool_id', 'worker_group', 'worker_id'],
-    })) {
+    for await (let row of paginatedIterator({ fetch })) {
       const worker = Worker.fromDb(row);
       // track the providerIds seen for each worker pool, so they can be removed
       // from the list of previous provider IDs

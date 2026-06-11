@@ -31,6 +31,7 @@ import Snackbar from '../../../components/Snackbar';
 import {
   TASK_GROUP_PAGE_SIZE,
   VALID_TASK,
+  ACTIONS_JSON_KNOWN_KINDS,
   INITIAL_CURSOR,
   TASK_STATE,
   INITIAL_TASK_GROUP_NOTIFICATION_PREFERENCES,
@@ -111,6 +112,12 @@ const updateTaskGroupIdHistory = id => {
       taskGroupConnection: {
         limit: 20,
       },
+      taskActionsFilter: {
+        kind: {
+          $in: ACTIONS_JSON_KNOWN_KINDS,
+        },
+        $or: [{ context: { $size: 0 } }, { context: { $size: 1 } }],
+      },
     },
   }),
 })
@@ -165,7 +172,7 @@ export default class TaskGroup extends Component {
       unscheduled: 0,
     };
 
-    if (taskGroup?.edges) {
+    if (taskGroup && taskGroup.edges) {
       taskGroup.edges.forEach(({ node }) => {
         const { state } = node.status;
 
@@ -206,9 +213,10 @@ export default class TaskGroup extends Component {
     const taskGroupLoaded = taskGroup && !taskGroup.pageInfo.hasNextPage;
     // Make sure data is not from another task group which
     // can happen when a user searches for a different task group
-    const isFromSameTaskGroupId = taskGroup?.edges[0]
-      ? taskGroup.edges[0].node.taskGroupId === taskGroupId
-      : true;
+    const isFromSameTaskGroupId =
+      taskGroup && taskGroup.edges[0]
+        ? taskGroup.edges[0].node.taskGroupId === taskGroupId
+        : true;
     const statusCount =
       isFromSameTaskGroupId && taskGroup
         ? TaskGroup.calculateStatusCountStatic(taskGroup)
@@ -264,7 +272,7 @@ export default class TaskGroup extends Component {
 
     this.previousCursor = INITIAL_CURSOR;
     this.listener = null;
-    this.tasks = new Set();
+    this.tasks = new Map();
 
     // Batching for table updates
     this.pendingTableUpdate = null;
@@ -273,6 +281,7 @@ export default class TaskGroup extends Component {
 
   state = {
     filter: null,
+    // eslint-disable-next-line react/no-unused-state
     previousTaskGroupId: '',
     groupActions: initialTaskGroupActions,
     actionLoading: false,
@@ -385,7 +394,11 @@ export default class TaskGroup extends Component {
         const isFromSameTaskGroupId =
           tasksSubscriptions.taskGroupId === taskGroupId;
 
-        if (!previousResult?.taskGroup || !isFromSameTaskGroupId) {
+        if (
+          !previousResult ||
+          !previousResult.taskGroup ||
+          !isFromSameTaskGroupId
+        ) {
           return previousResult;
         }
 
@@ -428,8 +441,9 @@ export default class TaskGroup extends Component {
           });
         } else {
           // unseen task, so keep the Task and TaskStatus values
-          this.tasks.add(tasksSubscriptions.taskId);
+          this.tasks.set(tasksSubscriptions.taskId);
           edges = previousResult.taskGroup.edges.concat({
+            // eslint-disable-next-line no-underscore-dangle
             __typename: 'TasksEdge',
             node: {
               ...cloneDeep(tasksSubscriptions.task),
@@ -499,7 +513,7 @@ export default class TaskGroup extends Component {
         return !taskGroupInfo || !!taskGroupInfo.sealed;
 
       case 'cancelTaskGroup':
-        return !taskGroupInfo?.sealed;
+        return !taskGroupInfo || !taskGroupInfo.sealed;
 
       default:
         return false;
@@ -563,67 +577,65 @@ export default class TaskGroup extends Component {
     this.setState({ dialogError: e, actionLoading: false });
   };
 
-  handleActionSubmit =
-    ({ name }) =>
-    async () => {
-      this.preRunningAction();
+  handleActionSubmit = ({ name }) => async () => {
+    this.preRunningAction();
 
-      const apolloClient = this.props.client;
+    const apolloClient = this.props.client;
+    const {
+      data: { taskGroup },
+    } = this.props;
+
+    if (name === 'sealTaskGroup') {
       const {
-        data: { taskGroup },
-      } = this.props;
-
-      if (name === 'sealTaskGroup') {
-        const {
-          data: { sealTaskGroup },
-        } = await apolloClient.mutate({
-          mutation: sealTaskGroupQuery,
-          variables: {
-            taskGroupId: taskGroup.taskGroup.taskGroupId,
-          },
-        });
-
-        this.setState({ taskGroupInfo: sealTaskGroup });
-        this.handleSnackbarOpen({
-          message: 'Task Group sealed',
-          open: true,
-        });
-
-        return null;
-      }
-
-      if (name === 'cancelTaskGroup') {
-        const {
-          data: { cancelTaskGroup },
-        } = await apolloClient.mutate({
-          mutation: cancelTaskGroupQuery,
-          variables: {
-            taskGroupId: taskGroup.taskGroup.taskGroupId,
-          },
-        });
-
-        this.handleSnackbarOpen({
-          message: `Tasks cancelled: ${cancelTaskGroup.cancelledCount} out of ${cancelTaskGroup.taskGroupSize}.`,
-          open: true,
-        });
-
-        return null;
-      }
-
-      const { taskActions, task } = this.props.data;
-      const { actionInputs, actionData } = this.state;
-      const form = actionInputs[name];
-      const { action } = actionData[name];
-      const taskId = await submitTaskAction({
-        task,
-        taskActions,
-        form,
-        action,
-        apolloClient,
+        data: { sealTaskGroup },
+      } = await apolloClient.mutate({
+        mutation: sealTaskGroupQuery,
+        variables: {
+          taskGroupId: taskGroup.taskGroup.taskGroupId,
+        },
       });
 
-      return taskId;
-    };
+      this.setState({ taskGroupInfo: sealTaskGroup });
+      this.handleSnackbarOpen({
+        message: 'Task Group sealed',
+        open: true,
+      });
+
+      return null;
+    }
+
+    if (name === 'cancelTaskGroup') {
+      const {
+        data: { cancelTaskGroup },
+      } = await apolloClient.mutate({
+        mutation: cancelTaskGroupQuery,
+        variables: {
+          taskGroupId: taskGroup.taskGroup.taskGroupId,
+        },
+      });
+
+      this.handleSnackbarOpen({
+        message: `Tasks cancelled: ${cancelTaskGroup.cancelledCount} out of ${cancelTaskGroup.taskGroupSize}.`,
+        open: true,
+      });
+
+      return null;
+    }
+
+    const { taskActions, task } = this.props.data;
+    const { actionInputs, actionData } = this.state;
+    const form = actionInputs[name];
+    const { action } = actionData[name];
+    const taskId = await submitTaskAction({
+      task,
+      taskActions,
+      form,
+      action,
+      apolloClient,
+    });
+
+    return taskId;
+  };
 
   handleActionTaskComplete = taskId => {
     if (taskId) {
@@ -634,6 +646,7 @@ export default class TaskGroup extends Component {
   handleFormChange = (value, name) =>
     this.setState({
       actionInputs: {
+        // eslint-disable-next-line react/no-access-state-in-setstate
         ...this.state.actionInputs,
         [name]: value,
       },
@@ -657,17 +670,7 @@ export default class TaskGroup extends Component {
     this.setState({ snackbar: { message, variant, open } });
   };
 
-  handleOpenProfiler = () => {
-    const { taskGroupId } = this.props.match.params;
-    const profileUrl = `${window.env.TASKCLUSTER_ROOT_URL}/api/web-server/v1/task-group/${taskGroupId}/profile`;
-    const profilerUrl = `https://profiler.firefox.com/from-url/${encodeURIComponent(
-      profileUrl
-    )}`;
-
-    window.open(profilerUrl, '_blank');
-  };
-
-  handleSnackbarClose = (_event, reason) => {
+  handleSnackbarClose = (event, reason) => {
     if (reason === 'clickaway') {
       return;
     }
@@ -694,6 +697,12 @@ export default class TaskGroup extends Component {
           cursor: taskGroup.pageInfo.nextCursor,
           previousCursor: taskGroup.pageInfo.cursor,
         },
+        taskActionsFilter: {
+          kind: {
+            $in: ACTIONS_JSON_KNOWN_KINDS,
+          },
+          $or: [{ context: { $size: 0 } }, { context: { $size: 1 } }],
+        },
       },
       updateQuery: (previousResult = {}, { fetchMoreResult, variables }) => {
         if (
@@ -712,7 +721,7 @@ export default class TaskGroup extends Component {
               return false;
             }
 
-            this.tasks.add(edge.node.taskId);
+            this.tasks.set(edge.node.taskId);
 
             return true;
           });
@@ -803,8 +812,14 @@ export default class TaskGroup extends Component {
       notifyPreferences,
       taskGroupWasRunningOnPageLoad,
     } = this.state;
-    const { completed, exception, failed, pending, running, unscheduled } =
-      statusCount;
+    const {
+      completed,
+      exception,
+      failed,
+      pending,
+      running,
+      unscheduled,
+    } = statusCount;
     const allTasksCount = sum([
       completed,
       exception,
@@ -877,19 +892,18 @@ export default class TaskGroup extends Component {
     } = this.props;
     // Make sure data is not from another task group which
     // can happen when a user searches for a different task group
-    const isFromSameTaskGroupId = taskGroup?.edges[0]
-      ? taskGroup.edges[0].node.taskGroupId === taskGroupId
-      : true;
-    const notificationsCount =
-      Object.values(notifyPreferences).filter(Boolean).length;
+    const isFromSameTaskGroupId =
+      taskGroup && taskGroup.edges[0]
+        ? taskGroup.edges[0].node.taskGroupId === taskGroupId
+        : true;
+    const notificationsCount = Object.values(notifyPreferences).filter(Boolean)
+      .length;
     const graphqlError = this.getError(error);
 
     this.subscribe({ taskGroupId, subscribeToMore });
 
     if (!this.tasks.size && taskGroup && isFromSameTaskGroupId) {
-      taskGroup.edges.forEach(edge => {
-        this.tasks.add(edge.node.taskId);
-      });
+      taskGroup.edges.forEach(edge => this.tasks.set(edge.node.taskId));
     }
 
     const title = ['Task Group'];
@@ -1001,15 +1015,9 @@ export default class TaskGroup extends Component {
             showTimings={statsOpen}
           />
         )}
-        {!loading && (
+        {!loading && groupActions && groupActions.length ? (
           <SpeedDial>
-            <SpeedDialAction
-              tooltipOpen
-              icon={<ChartIcon />}
-              tooltipTitle="Open in Profiler"
-              onClick={this.handleOpenProfiler}
-            />
-            {groupActions?.map(action => (
+            {groupActions.map(action => (
               <SpeedDialAction
                 requiresAuth
                 tooltipOpen
@@ -1024,7 +1032,7 @@ export default class TaskGroup extends Component {
               />
             ))}
           </SpeedDial>
-        )}
+        ) : null}
         {dialogOpen && (
           <DialogAction
             fullScreen={Boolean(selectedAction.schema)}

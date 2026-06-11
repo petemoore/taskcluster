@@ -1,12 +1,12 @@
 import _ from 'lodash';
 import pg from 'pg';
 const { Pool } = pg;
-import crypto from 'node:crypto';
+import crypto from 'crypto';
 import { annotateError } from './util.js';
 import Keyring from './Keyring.js';
-import { strict as assert } from 'node:assert';
+import { strict as assert } from 'assert';
 import { READ, WRITE, DUPLICATE_OBJECT, UNDEFINED_TABLE } from './constants.js';
-import { MonitorManager } from '@taskcluster/lib-monitor';
+import { MonitorManager } from 'taskcluster-lib-monitor';
 import pgConnectionString from 'pg-connection-string';
 const { parse: parseConnectionString } = pgConnectionString;
 
@@ -636,7 +636,7 @@ class Database {
     // next attempt to use the client, but we have to handle them anyway
     // or Node will kill the process.  However, when this happens we must
     // pass the error back to the pool or it won't know the client is bad.
-    let clientError;
+    let clientError = undefined;
     const handleError = err => clientError = err;
     client.on('error', handleError);
     const wrapped = {
@@ -790,7 +790,7 @@ class Database {
   decrypt({ value }) {
     const key = this.keyring.getCryptoKey(value.kid, 'aes-256');
 
-    const n = value.__bufchunks_val;
+    const n = value['__bufchunks_val'];
     const chunks = [];
     for (let i = 0; i < n; i++) {
       chunks[i] = Buffer.from(value['__buf' + i + '_val'], 'base64');

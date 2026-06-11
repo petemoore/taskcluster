@@ -1,8 +1,8 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import libUrls from 'taskcluster-lib-urls';
 import debugFactory from 'debug';
-const debug = debugFactory('@taskcluster/lib-pulse.publisher');
-import { MonitorManager } from '@taskcluster/lib-monitor';
+const debug = debugFactory('taskcluster-lib-pulse.publisher');
+import { MonitorManager } from 'taskcluster-lib-monitor';
 
 MonitorManager.register({
   name: 'pulsePublisherBlocked',
@@ -44,7 +44,7 @@ export class Exchanges {
 
   reference() {
     return {
-      // this refers to a schema defined in @taskcluster/lib-references
+      // this refers to a schema defined in taskcluster-lib-references
       $schema: '/schemas/common/exchanges-reference-v0.json#',
       serviceName: this.serviceName,
       apiVersion: this.apiVersion,
@@ -156,7 +156,7 @@ export class Entry {
       }
 
       // Check that we have a maxSize
-      assert(typeof key.maxSize === 'number' && key.maxSize > 0,
+      assert(typeof key.maxSize == 'number' && key.maxSize > 0,
         `routingKey declaration ${key.name} must have maxSize > 0`);
 
       // Check size left in routingKey space
@@ -176,7 +176,7 @@ export class PulsePublisher {
     this.schemaset = schemaset;
     this.client = client;
     this.exchanges = exchanges;
-    this.sendDeadline = sendDeadline || 30000;
+    this.sendDeadline = sendDeadline || 12000;
     this.blocked = true;
 
     if (process.env.NODE_ENV === 'production') {
@@ -307,7 +307,7 @@ export class PulsePublisher {
           entry.routingKeyBuilder.apply(undefined, args));
 
         const CCs = entry.CCBuilder.apply(undefined, args);
-        assert(Array.isArray(CCs), 'CCBuilder must return an array');
+        assert(CCs instanceof Array, 'CCBuilder must return an array');
 
         // Serialize message to buffer
         const payload = Buffer.from(JSON.stringify(message), 'utf8');

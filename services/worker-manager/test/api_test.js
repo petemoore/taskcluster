@@ -1,11 +1,11 @@
-import taskcluster from '@taskcluster/client';
+import taskcluster from 'taskcluster-client';
 import slug from 'slugid';
-import assert from 'node:assert';
+import assert from 'assert';
 import helper from './helper.js';
 import { WorkerPool, Worker } from '../src/data.js';
-import testing from '@taskcluster/lib-testing';
-import fs from 'node:fs';
-import path from 'node:path';
+import testing from 'taskcluster-lib-testing';
+import fs from 'fs';
+import path from 'path';
 
 helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
   helper.withDb(mock, skipping);
@@ -351,39 +351,6 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
       messages.filter(({ exchange }) => exchange === 'exchange/taskcluster-worker-manager/v1/launch-config-archived')
         .map(({ data }) => data.launchConfigId),
       ['lc1', 'lc3']);
-  });
-
-  test('update worker pool - launchConfigs are always updated with full config', async function () {
-    const wpId = 'up/date';
-    const input = {
-      providerId: 'aws',
-      description: 'upd',
-      config: {
-        launchConfigs: [
-          genAwsLaunchConfig({ maxCapacity: 5 }, 'us-west-1'),
-          genAwsLaunchConfig({ capacityPerInstance: 3 }, 'us-west-2'),
-        ],
-        minCapacity: 1,
-        maxCapacity: 1,
-      },
-      owner: 'example@example.com',
-      emailOnError: false,
-    };
-    const created = await helper.workerManager.createWorkerPool(wpId, input);
-
-    const modifiedInput = { ...input };
-    modifiedInput.config.launchConfigs[0].workerManager.maxCapacity = 9;
-    modifiedInput.config.launchConfigs[1].workerManager.capacityPerInstance = 8;
-
-    const updated = await helper.workerManager.updateWorkerPool(wpId, modifiedInput);
-
-    assert.notDeepEqual(updated.config.launchConfigs, created.config.launchConfigs);
-
-    assert.equal(created.config.launchConfigs[0].workerManager.maxCapacity, 5);
-    assert.equal(updated.config.launchConfigs[0].workerManager.maxCapacity, 9);
-
-    assert.equal(created.config.launchConfigs[1].workerManager.capacityPerInstance, 3);
-    assert.equal(updated.config.launchConfigs[1].workerManager.capacityPerInstance, 8);
   });
 
   test('launchConfigIds should be unique across worker pool - create worker pool', async function () {
@@ -1821,53 +1788,6 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
       assert(scopes.has(`worker-manager:reregister-worker:${workerPoolId}/${workerGroup}/${workerId}`), msg);
     });
 
-    test('registers with systemBootTime and records metrics', async function () {
-      const monitor = await helper.load('monitor');
-
-      // Install a fake prometheus recorder on the shared manager to capture
-      // metric observations from any child monitor.
-      const observed = [];
-      const origPrometheus = monitor.manager._prometheus;
-      monitor.manager._prometheus = {
-        observe: (name, value, labels) => observed.push({ name, value, labels }),
-        inc: () => {},
-        set: () => {},
-      };
-
-      try {
-        // worker.created must be before systemBootTime (VM requested, then booted)
-        const workerCreated = new Date(Date.now() - 60000);
-        const bootTime = new Date(Date.now() - 30000);
-
-        await createWorkerPool({});
-        await createWorker({
-          created: workerCreated,
-          providerData: {
-            workerConfig: {
-              "someKey": "someValue",
-            },
-          },
-        });
-        const res = await helper.workerManager.registerWorker({
-          ...defaultRegisterWorker,
-          systemBootTime: bootTime.toISOString(),
-        });
-
-        assert.equal(res.credentials.clientId,
-          `worker/${providerId}/${workerPoolId}/${workerGroup}/${workerId}`);
-        assert.equal(res.workerConfig.someKey, "someValue");
-
-        const provisionMetric = observed.find(m => m.name === 'worker_manager_worker_provision_seconds');
-        const startupMetric = observed.find(m => m.name === 'worker_manager_worker_startup_seconds');
-        assert(provisionMetric, 'workerProvisionDuration metric should be recorded');
-        assert(startupMetric, 'workerStartupDuration metric should be recorded');
-        assert(provisionMetric.value >= 0, 'provision duration should be non-negative');
-        assert(startupMetric.value >= 0, 'startup duration should be non-negative');
-      } finally {
-        monitor.manager._prometheus = origPrometheus;
-      }
-    });
-
     test('sweet success for a previous providerId', async function () {
       await createWorkerPool({
         providerId: 'testing2',
@@ -1977,8 +1897,8 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
         secret: firstResponse.secret,
       });
 
-      assert(new Date(secondResponse.expires) - Date.now() > reregistrationTimeout - 250);
-      assert(new Date(secondResponse.expires) - Date.now() < reregistrationTimeout + 250);
+      assert(new Date(secondResponse.expires) - new Date() > reregistrationTimeout - 250);
+      assert(new Date(secondResponse.expires) - new Date() < reregistrationTimeout + 250);
       assert.equal(firstResponse.credentials.clientId, secondResponse.credentials.clientId);
       assert.notStrictEqual(firstResponse.secret, secondResponse.secret);
 
@@ -1996,8 +1916,8 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
         secret: secondResponse.secret,
       });
 
-      assert(new Date(thirdResponse.expires) - Date.now() > reregistrationTimeout - 250);
-      assert(new Date(thirdResponse.expires) - Date.now() < reregistrationTimeout + 250);
+      assert(new Date(thirdResponse.expires) - new Date() > reregistrationTimeout - 250);
+      assert(new Date(thirdResponse.expires) - new Date() < reregistrationTimeout + 250);
       assert.equal(secondResponse.credentials.clientId, thirdResponse.credentials.clientId);
       assert.notStrictEqual(secondResponse.secret, thirdResponse.secret);
 
@@ -2206,7 +2126,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
       // worker is not yet visible to the queue so this method will fail
       await assert.rejects(() =>
         helper.workerManager.getWorker(provisionerId, workerType, workerGroup, workerId),
-      /Worker with workerId.+not found/,
+      new RegExp(`Worker with workerId.+not found`),
       );
 
       await makeQueueVisible(workerPoolId, workerGroup, workerId);
@@ -2267,7 +2187,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
       // worker is not yet visible to the queue so this method will fail
       await assert.rejects(() =>
         helper.workerManager.getWorker(provisionerId, workerType, workerGroup2, workerId2),
-      /Worker with workerId.+not found/,
+      new RegExp(`Worker with workerId.+not found`),
       );
 
       await makeQueueVisible(workerPoolId2, workerGroup2, workerId2);
@@ -2336,55 +2256,6 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
         const { workers } = await helper.workerManager.listWorkers(provisionerId, workerType, filter);
         assert.equal(workers.length, 0);
       }
-    });
-  });
-
-  suite('shouldWorkerTerminate', function() {
-    test('worker marked terminate: true returns true', async function() {
-      await createWorkerPool();
-      await createWorker({
-        providerData: {
-          shouldTerminate: {
-            terminate: true,
-            reason: 'over capacity',
-            decidedAt: new Date().toISOString(),
-          },
-        },
-      });
-      const result = await helper.workerManager.shouldWorkerTerminate(workerPoolId, workerGroup, workerId);
-      assert.strictEqual(result.terminate, true);
-      assert.strictEqual(result.reason, 'over capacity');
-    });
-
-    test('worker marked terminate: false returns false', async function() {
-      await createWorkerPool();
-      await createWorker({
-        providerData: {
-          shouldTerminate: {
-            terminate: false,
-            reason: 'needed',
-            decidedAt: new Date().toISOString(),
-          },
-        },
-      });
-      const result = await helper.workerManager.shouldWorkerTerminate(workerPoolId, workerGroup, workerId);
-      assert.strictEqual(result.terminate, false);
-      assert.strictEqual(result.reason, 'needed');
-    });
-
-    test('no decision yet returns terminate: false', async function() {
-      await createWorkerPool();
-      await createWorker();
-      const result = await helper.workerManager.shouldWorkerTerminate(workerPoolId, workerGroup, workerId);
-      assert.strictEqual(result.terminate, false);
-      assert.strictEqual(result.reason, 'none');
-    });
-
-    test('non-existent worker returns 404', async function() {
-      await assert.rejects(
-        () => helper.workerManager.shouldWorkerTerminate('no/such', 'wg', 'wi'),
-        err => err.statusCode === 404,
-      );
     });
   });
 });

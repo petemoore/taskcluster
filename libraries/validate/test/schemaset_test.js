@@ -1,8 +1,8 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import SchemaSet from '../src/index.js';
 import _ from 'lodash';
 import libUrls from 'taskcluster-lib-urls';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 
 suite(testing.suiteName(), () => {
   const rootUrl = libUrls.testRootUrl();

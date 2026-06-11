@@ -1,12 +1,12 @@
 import request from 'superagent';
-import assert from 'node:assert';
+import assert from 'assert';
 import hawk from 'hawk';
 import { APIBuilder } from '../src/index.js';
 import helper, { monitorManager } from './helper.js';
 import _ from 'lodash';
 import libUrls from 'taskcluster-lib-urls';
-import testing from '@taskcluster/lib-testing';
-import { LEVELS } from '@taskcluster/lib-monitor';
+import testing from 'taskcluster-lib-testing';
+import { LEVELS } from 'taskcluster-lib-monitor';
 
 suite(testing.suiteName(), function() {
   // Create test api

@@ -1,8 +1,8 @@
-import { strict as assert } from 'node:assert';
-import taskcluster from '@taskcluster/client';
+import { strict as assert } from 'assert';
+import taskcluster from 'taskcluster-client';
 import loadMain from '../../src/main.js';
 import builder from '../../src/api.js';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 import { BACKEND_TYPES } from '../../src/backends/index.js';
 import { MIDDLEWARE_TYPES } from '../../src/middleware/index.js';
 import { TestBackend } from '../../src/backends/test.js';
@@ -78,7 +78,7 @@ helper.withBackends = (mock, skipping) => {
     load.save();
 
     // add the 'test' backend type only for testing
-    BACKEND_TYPES.test = TestBackend;
+    BACKEND_TYPES['test'] = TestBackend;
 
     await load('cfg');
     load.cfg('middleware', [
@@ -111,7 +111,7 @@ helper.withBackends = (mock, skipping) => {
     }
 
     load.restore();
-    delete BACKEND_TYPES.test;
+    delete BACKEND_TYPES['test'];
     delete helper.setBackendConfig;
     _backends = null;
   });
@@ -124,7 +124,7 @@ helper.withMiddleware = (mock, skipping, config) => {
     }
 
     // add the 'test' middleware type only for testing
-    MIDDLEWARE_TYPES.test = TestMiddleware;
+    MIDDLEWARE_TYPES['test'] = TestMiddleware;
 
     await load('cfg');
     load.cfg('middleware', config || [
@@ -133,7 +133,7 @@ helper.withMiddleware = (mock, skipping, config) => {
   });
 
   suiteTeardown('withMiddleware', async function() {
-    delete MIDDLEWARE_TYPES.test;
+    delete MIDDLEWARE_TYPES['test'];
   });
 };
 

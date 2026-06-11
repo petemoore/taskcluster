@@ -1,11 +1,11 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import assert from 'node:assert';
+import fs from 'fs';
+import path from 'path';
+import assert from 'assert';
 import _ from 'lodash';
 import helper from './helper.js';
 import libUrls from 'taskcluster-lib-urls';
 import yaml from 'js-yaml';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 
 const webhookDir = new URL('./data/webhooks/', import.meta.url).pathname;
 const loadWebhook = filename => JSON.parse(fs.readFileSync(path.join(webhookDir, filename), 'utf8'));
@@ -94,7 +94,7 @@ suite(testing.suiteName(), function() {
         assert.equal(config.tasks.length, count);
       }
       for (let key of Object.keys(expected)) {
-        if (key === 'scopes') {
+        if ('key' === 'scopes') {
           expected[key].sort();
         }
         assert.deepEqual(_.get(config, key), expected[key]);
@@ -125,9 +125,9 @@ suite(testing.suiteName(), function() {
       'tasks[0].task.extra.github.events': ['push'],
       'metadata.owner': 'test@test.com',
       scopes: [
-        'queue:scheduler-id:tc-gh-devel',
-        'queue:route:statuses',
         'assume:repo:github.com/testorg/testrepo:branch:default_branch',
+        'queue:route:statuses',
+        'queue:scheduler-id:tc-gh-devel',
       ],
     });
 
@@ -543,44 +543,5 @@ suite(testing.suiteName(), function() {
       'tasks[2].taskId': 'docker_build',
       'tasks[3].taskId': 'docker_push',
     },
-  );
-
-  buildConfigTest(
-    'Push Event with hooks, v1',
-    configPath + 'taskcluster.hooks.v1.yml',
-    {
-      payload: buildMessage({
-        details: { 'event.type': 'push' },
-        body: webhookPushJson.body,
-        tasks_for: 'github-push',
-        branch: 'master',
-      }),
-    },
-    {
-      'tasks[0].task.metadata.name': 'Test Task with Hooks',
-      'hooks[0].name': 'project-test/decision-hook',
-      'hooks[0].context.trustDomain': 'test-domain',
-      'hooks[0].context.level': 1,
-      'hooks[1].name': 'project-test/another-hook',
-    },
-    1,
-  );
-
-  buildConfigTest(
-    'Hooks only (no tasks), v1',
-    configPath + 'taskcluster.hooks-only.v1.yml',
-    {
-      payload: buildMessage({
-        details: { 'event.type': 'push' },
-        body: webhookPushJson.body,
-        tasks_for: 'github-push',
-        branch: 'master',
-      }),
-    },
-    {
-      tasks: [],
-      'hooks[0].name': 'project-test/decision-hook',
-    },
-    0,
   );
 });

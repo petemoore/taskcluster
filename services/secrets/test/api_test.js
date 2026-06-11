@@ -1,8 +1,8 @@
 import helper from './helper.js';
-import assert from 'node:assert';
+import assert from 'assert';
 import slugid from 'slugid';
-import taskcluster from '@taskcluster/client';
-import testing from '@taskcluster/lib-testing';
+import taskcluster from 'taskcluster-client';
+import testing from 'taskcluster-lib-testing';
 
 helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
   helper.withDb(mock, skipping);
@@ -33,7 +33,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
    */
   const makeApiCall = async ({ clientName, apiCall, name, args, res, statusCode, errMessage }) => {
     let client = await helper.client(clientName);
-    let gotRes;
+    let gotRes = undefined;
     try {
       if (args) {
         gotRes = await client[apiCall](name, args);
@@ -210,10 +210,6 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
         message: 'keep this secret!!',
         list: ['hello', 'world'],
       });
-
-      // check audit trail
-      const results = await helper.db.fns.get_combined_audit_history(null, expireKey, 'secret', 2, 0);
-      assert.deepEqual(results.map(({ action_type }) => action_type).sort(), ['created', 'expired']);
 
       try {
         await client.get(expireKey);

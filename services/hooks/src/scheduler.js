@@ -1,8 +1,8 @@
-import assert from 'node:assert';
-import events from 'node:events';
+import assert from 'assert';
+import events from 'events';
 import debugFactory from 'debug';
 const debug = debugFactory('hooks:scheduler');
-import taskcluster from '@taskcluster/client';
+import taskcluster from 'taskcluster-client';
 import nextDate from './nextdate.js';
 import taskcreator from './taskcreator.js';
 import { hookUtils } from './utils.js';

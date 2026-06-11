@@ -1,9 +1,9 @@
 import request from 'superagent';
-import assert from 'node:assert';
+import assert from 'assert';
 import { APIBuilder } from '../src/index.js';
 import helper, { monitorManager } from './helper.js';
 import libUrls from 'taskcluster-lib-urls';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 
 suite(testing.suiteName(), function() {
   setup(async function() {
@@ -57,10 +57,10 @@ suite(testing.suiteName(), function() {
 
   test('single parameter', async function() {
     const u = path => libUrls.api(helper.rootUrl, 'test', 'v1', path);
-    await request.get(u('/single-param/Hello'));
-    await request.get(u('/single-param/Goodbye'));
-    await request.get(u('/slash-param/Slash')).catch(err => {});
-    await request.get(u('/another-param/Another')).catch(err => {});
+    await request.get(u('/single-param/Hello')),
+    await request.get(u('/single-param/Goodbye')),
+    await request.get(u('/slash-param/Slash')).catch(err => {}),
+    await request.get(u('/another-param/Another')).catch(err => {}),
     assert.equal(monitorManager.messages.length, 4);
     monitorManager.messages.forEach(event => {
       assert.equal(event.Type, 'monitor.apiMethod');

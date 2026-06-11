@@ -1,12 +1,12 @@
 import { ApiError } from '../src/providers/provider.js';
 import _ from 'lodash';
-import assert from 'node:assert';
+import assert from 'assert';
 import helper from './helper.js';
 import { AwsProvider } from '../src/providers/aws.js';
-import testing from '@taskcluster/lib-testing';
-import fs from 'node:fs';
-import path from 'node:path';
-import taskcluster from '@taskcluster/client';
+import testing from 'taskcluster-lib-testing';
+import fs from 'fs';
+import path from 'path';
+import taskcluster from 'taskcluster-client';
 import { WorkerPool, Worker, WorkerPoolStats } from '../src/data.js';
 import { FakeEC2 } from './fakes/index.js';
 
@@ -87,7 +87,6 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
     await helper.db.fns.delete_worker_pool(workerPoolId);
 
     await provider.setup();
-    provider.scanPrepare();
   });
 
   const makeWorkerPool = async (overrides = {}) => {
@@ -435,8 +434,8 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
       };
 
       const resp = await provider.registerWorker({ worker: runningWorker, workerPool, workerIdentityProof });
-      assert(resp.expires - Date.now() + 10000 > 96 * 3600 * 1000);
-      assert(resp.expires - Date.now() - 10000 < 96 * 3600 * 1000);
+      assert(resp.expires - new Date() + 10000 > 96 * 3600 * 1000);
+      assert(resp.expires - new Date() - 10000 < 96 * 3600 * 1000);
       assert.equal(resp.workerConfig.someConfig, 'someConfigValue');
       helper.assertPulseMessage('worker-running', m => m.payload.workerId === runningWorker.workerId);
       helper.assertPulseMessage('worker-running', m => m.payload.launchConfigId === runningWorker.launchConfigId);
@@ -469,8 +468,8 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
       };
 
       const resp = await provider.registerWorker({ worker: runningWorker, workerPool, workerIdentityProof });
-      assert(resp.expires - Date.now() + 10000 > 10 * 3600 * 1000);
-      assert(resp.expires - Date.now() - 10000 < 10 * 3600 * 1000);
+      assert(resp.expires - new Date() + 10000 > 10 * 3600 * 1000);
+      assert(resp.expires - new Date() - 10000 < 10 * 3600 * 1000);
       assert.equal(resp.workerConfig.someKey, 'someValue');
       helper.assertPulseMessage('worker-running', m => m.payload.workerId === runningWorker.workerId);
       helper.assertPulseMessage('worker-running', m => m.payload.launchConfigId === runningWorker.launchConfigId);
@@ -488,6 +487,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
       });
       await worker.create(helper.db);
 
+      provider.seen = {};
       await provider.checkWorker({ worker: worker });
 
       const workers = await helper.getWorkers();
@@ -507,6 +507,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
       });
       await worker.create(helper.db);
 
+      provider.seen = {};
       await provider.checkWorker({ worker: worker });
 
       const workers = await helper.getWorkers();
@@ -526,6 +527,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
       });
       await worker.create(helper.db);
 
+      provider.seen = {};
       await assert.rejects(provider.checkWorker({ worker: worker }));
       assert.strictEqual(provider.seen[worker.workerPoolId], 0);
     });
@@ -539,6 +541,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
       });
       await worker.create(helper.db);
 
+      provider.seen = {};
       await provider.checkWorker({ worker: worker });
       assert.strictEqual(provider.seen[worker.workerPoolId], 0);
       // should be marked as stopped because it was missing
@@ -559,6 +562,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
       });
       await worker.create(helper.db);
 
+      provider.seen = {};
       await provider.checkWorker({ worker: worker });
 
       const workers = await helper.getWorkers();
@@ -581,6 +585,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
         },
       });
       await worker.create(helper.db);
+      provider.seen = {};
       await provider.checkWorker({ worker: worker });
       assert.deepEqual(fake.rgn('us-west-2').terminatedInstances, ['i-123']);
       helper.assertNoPulseMessage('worker-stopped');
@@ -599,6 +604,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
         },
       });
       await worker.create(helper.db);
+      provider.seen = {};
       await provider.checkWorker({ worker: worker });
       assert.deepEqual(fake.rgn('us-west-2').terminatedInstances, []);
       helper.assertNoPulseMessage('worker-stopped');
@@ -617,6 +623,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
         },
       });
       await worker.create(helper.db);
+      provider.seen = {};
       worker.reload = function () {
         this.providerData.terminateAfter = Date.now() + 1000;
       };
@@ -639,6 +646,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
         },
       });
       await worker.create(helper.db);
+      provider.seen = {};
       await provider.checkWorker({ worker: worker });
       assert.deepEqual(fake.rgn('us-west-2').terminatedInstances, ['i-123']);
       helper.assertPulseMessage('worker-removed', m => m.payload.workerId === worker.workerId &&
@@ -657,6 +665,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
         },
       });
       await worker.create(helper.db);
+      provider.seen = {};
       await provider.checkWorker({ worker: worker });
       assert.deepEqual(fake.rgn('us-west-2').terminatedInstances, []);
       helper.assertNoPulseMessage('worker-removed');
@@ -675,6 +684,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
         },
       });
       await worker.create(helper.db);
+      provider.seen = {};
 
       worker.firstClaim = null;
       worker.lastDateActive = null;
@@ -696,10 +706,13 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
         },
       });
       await worker.create(helper.db);
+      provider.seen = {};
 
+      worker.firstClaim = null;
+      worker.lastDateActive = null;
       worker.created = taskcluster.fromNow('-120 minutes');
       worker.firstClaim = taskcluster.fromNow('-110 minutes');
-      worker.lastDateActive = taskcluster.fromNow('-100 minutes');
+      worker.lastDate = taskcluster.fromNow('-100 minutes');
       await provider.checkWorker({ worker });
       assert.deepEqual(fake.rgn('us-west-2').terminatedInstances, ['i-123']);
       helper.assertPulseMessage('worker-removed', m => m.payload.workerId === worker.workerId);
@@ -718,10 +731,13 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
         },
       });
       await worker.create(helper.db);
+      provider.seen = {};
 
+      worker.firstClaim = null;
+      worker.lastDateActive = null;
       worker.created = taskcluster.fromNow('-120 minutes');
       worker.firstClaim = taskcluster.fromNow('-110 minutes');
-      worker.lastDateActive = taskcluster.fromNow('-100 minutes');
+      worker.lastDate = taskcluster.fromNow('-100 minutes');
       await provider.checkWorker({ worker });
       assert.deepEqual(fake.rgn('us-west-2').terminatedInstances, []);
       helper.assertNoPulseMessage('worker-removed');

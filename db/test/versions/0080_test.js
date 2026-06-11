@@ -1,9 +1,9 @@
-import { strict as assert } from 'node:assert';
-import testing from '@taskcluster/lib-testing';
-import taskcluster from '@taskcluster/client';
+import { strict as assert } from 'assert';
+import testing from 'taskcluster-lib-testing';
+import taskcluster from 'taskcluster-client';
 import helper from '../helper.js';
 
-const THIS_VERSION = parseInt(/.*\/0*(\d+)_test\.js/.exec(import.meta.url)[1], 10);
+const THIS_VERSION = parseInt(/.*\/0*(\d+)_test\.js/.exec(import.meta.url)[1]);
 const PREV_VERSION = THIS_VERSION - 1;
 
 suite(testing.suiteName(), function () {
