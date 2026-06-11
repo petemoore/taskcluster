@@ -173,9 +173,8 @@ func TestBewit(t *testing.T) {
 			}
 
 			// Validate results — the bewit URL is in the Location header.
-			// The handler uses http.Redirect so the response body is a standard
-			// HTML redirect page rather than the raw URL string; we validate
-			// only the Location header.
+			// The handler writes a fixed plain-text body ("303 See Other\n"),
+			// not the raw URL string; we validate only the Location header.
 			bewitURLFromLocation := res.Header().Get("Location")
 			_, err = url.Parse(bewitURLFromLocation)
 			if err != nil {
@@ -245,9 +244,8 @@ func TestBewitArbitraryURL(t *testing.T) {
 		}
 
 		// Validate results — the bewit URL is in the Location header.
-		// The handler uses http.Redirect so the response body is a standard
-		// HTML redirect page rather than the raw URL string; we validate
-		// only the Location header.
+		// The handler writes a fixed plain-text body ("303 See Other\n"),
+		// not the raw URL string; we validate only the Location header.
 		bewitURLFromLocation := res.Header().Get("Location")
 		parsed, err := url.Parse(bewitURLFromLocation)
 		if err != nil {

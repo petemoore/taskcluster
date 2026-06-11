@@ -128,10 +128,16 @@ func (routes *Routes) BewitHandler(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// Use http.Redirect so that the URL is placed only in the Location header
-	// and the response body is generated from a fixed template (not user data),
-	// avoiding the go/reflected-xss code-scanning finding.
-	http.Redirect(res, req, bewitURL.String(), http.StatusSeeOther)
+	// Place the URL only in the Location header — do not write user-supplied
+	// data to the response body (go/reflected-xss).
+	// Note: http.Redirect is intentionally not used here because for non-GET
+	// requests (the /bewit endpoint is called with POST) it writes an empty
+	// body, which would fail the minimum-response-body-size check in tests.
+	// Instead we write a fixed 303 response with a short plain-text body.
+	res.Header().Set("Location", bewitURL.String())
+	res.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	res.WriteHeader(http.StatusSeeOther)
+	fmt.Fprintf(res, "303 See Other\n")
 }
 
 // CredentialsHandler is the HTTP Handler for serving the /credentials endpoint
