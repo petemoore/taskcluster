@@ -27,8 +27,7 @@ describe('exchangesList', () => {
     expect(
       exchanges.some(
         e =>
-          e ===
-          'https://taskcluster.net/references/auth/v1/exchanges/exchange1'
+          e === 'https://taskcluster.net/references/auth/v1/exchanges/exchange1'
       )
     ).toBe(true);
     expect(window.fetch).toHaveBeenCalled();

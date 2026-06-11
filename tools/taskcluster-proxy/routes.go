@@ -114,16 +114,17 @@ func (routes *Routes) BewitHandler(res http.ResponseWriter, req *http.Request) {
 
 	urlObject, err := url.Parse(urlString)
 	if err != nil {
-		res.WriteHeader(500)
-		fmt.Fprintf(res, "Error creating bewit url: %s", err)
+		// Do not include err in the response: url.Parse errors can contain the
+		// user-supplied URL string, which would reflect user input in the
+		// response body (go/reflected-xss).
+		http.Error(res, "Error creating bewit url: bad URL", http.StatusInternalServerError)
 		return
 	}
 
 	bewitURL, err := routes.SignedURL(urlString, urlObject.Query(), time.Hour*1)
 
 	if err != nil {
-		res.WriteHeader(500)
-		fmt.Fprintf(res, "Error creating bewit url: %s", err)
+		http.Error(res, "Error creating bewit url: signing failed", http.StatusInternalServerError)
 		return
 	}
 

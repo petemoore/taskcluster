@@ -223,14 +223,14 @@ export default class ViewClient extends Component {
         loading: false,
       });
 
-      // CLI login: build the redirect URL from validated components so that
-      // user-controlled input never reaches window.location directly.
+      // CLI login: redirect to the callback URL with credentials appended.
+      // Only http(s)://localhost URLs are permitted (enforced below).
       if (callbackUrl) {
-        // Re-parse and validate the callback URL. Only localhost origins are
-        // permitted (already enforced by isAllowedCallback at function start).
         let redirectUrl;
+
         try {
           const parsed = new URL(callbackUrl);
+
           // Enforce that the host is localhost (http or https).
           if (
             parsed.hostname === 'localhost' &&
@@ -239,7 +239,7 @@ export default class ViewClient extends Component {
             parsed.searchParams.set('clientId', clientId);
             parsed.searchParams.set(
               'accessToken',
-              result.data.createClient.accessToken,
+              result.data.createClient.accessToken
             );
             redirectUrl = parsed.toString();
           }
@@ -249,6 +249,7 @@ export default class ViewClient extends Component {
 
         if (redirectUrl) {
           window.location.replace(redirectUrl);
+
           return;
         }
       }
