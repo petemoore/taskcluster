@@ -9,7 +9,7 @@ import {
   execCommand,
 } from '../../utils/index.js';
 
-import path from 'node:path';
+import path from 'path';
 
 /**
  * This builds generic worker docker image containing all tools required to run generic worker
@@ -109,7 +109,7 @@ export default ({ tasks, baseDir, cmdOptions, credentials, logsDir }) => {
     ],
     run: async (requirements, utils) => {
       const tag = requirements[`generic-worker-docker-image`];
-      const provides = { 'generic-worker-push': tag };
+      const provides = { [`generic-worker-push`]: tag };
 
       if (!cmdOptions.push) {
         return utils.skip({ provides });

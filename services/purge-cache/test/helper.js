@@ -1,4 +1,4 @@
-import path from 'node:path';
+import path from 'path';
 import builder from '../src/api.js';
 import taskcluster from '@taskcluster/client';
 import loadMain from '../src/main.js';

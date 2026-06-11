@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import { Task } from './data.js';
 
 /**
@@ -254,7 +254,7 @@ class DependencyTracker {
     }
 
     // Don't attempt to schedule tasks past their deadline
-    if (task.deadline.getTime() < Date.now()) {
+    if (task.deadline.getTime() < new Date().getTime()) {
       return null;
     }
 

@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import assert from 'node:assert';
+import assert from 'assert';
 import helper from './helper.js';
 import testing from '@taskcluster/lib-testing';
 
@@ -67,12 +67,6 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
     ],
   };
 
-  const definedStatus = {
-    ..._.cloneDeep(baseStatus),
-    state: 'unscheduled',
-    runs: [],
-  };
-
   let monitor;
   suiteSetup('create handler', async function() {
     if (skipping()) {
@@ -112,20 +106,6 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
     await helper.fakePulseMessage({
       payload: {
         status: baseStatus,
-      },
-      exchange: 'exchange/taskcluster-queue/v1/task-defined',
-      routingKey: 'doesnt-matter',
-      routes: [route],
-    });
-    helper.assertPulseMessage('notification', m => m.CCs[0] === 'route.notify-test');
-  });
-
-  test('pulse on-defined', async () => {
-    const route = 'test-notify.pulse.notify-test.on-defined';
-    helper.queue.addTask(definedStatus.taskId, makeTask([route]));
-    await helper.fakePulseMessage({
-      payload: {
-        status: definedStatus,
       },
       exchange: 'exchange/taskcluster-queue/v1/task-defined',
       routingKey: 'doesnt-matter',

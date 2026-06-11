@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import assert from 'node:assert';
+import assert from 'assert';
 import yaml from 'js-yaml';
 
 /*

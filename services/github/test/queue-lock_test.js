@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import testing from '@taskcluster/lib-testing';
 import QueueLock from '../src/queue-lock.js';
 

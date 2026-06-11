@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import SchemaSet from '../src/index.js';
 import debugFactory from 'debug';
 const debug = debugFactory('test');

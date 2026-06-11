@@ -1,11 +1,11 @@
 import taskcluster from '@taskcluster/client';
 import slug from 'slugid';
-import assert from 'node:assert';
+import assert from 'assert';
 import helper from './helper.js';
 import { WorkerPool, Worker } from '../src/data.js';
 import testing from '@taskcluster/lib-testing';
-import fs from 'node:fs';
-import path from 'node:path';
+import fs from 'fs';
+import path from 'path';
 
 helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
   helper.withDb(mock, skipping);
@@ -1977,8 +1977,8 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
         secret: firstResponse.secret,
       });
 
-      assert(new Date(secondResponse.expires) - Date.now() > reregistrationTimeout - 250);
-      assert(new Date(secondResponse.expires) - Date.now() < reregistrationTimeout + 250);
+      assert(new Date(secondResponse.expires) - new Date() > reregistrationTimeout - 250);
+      assert(new Date(secondResponse.expires) - new Date() < reregistrationTimeout + 250);
       assert.equal(firstResponse.credentials.clientId, secondResponse.credentials.clientId);
       assert.notStrictEqual(firstResponse.secret, secondResponse.secret);
 
@@ -1996,8 +1996,8 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
         secret: secondResponse.secret,
       });
 
-      assert(new Date(thirdResponse.expires) - Date.now() > reregistrationTimeout - 250);
-      assert(new Date(thirdResponse.expires) - Date.now() < reregistrationTimeout + 250);
+      assert(new Date(thirdResponse.expires) - new Date() > reregistrationTimeout - 250);
+      assert(new Date(thirdResponse.expires) - new Date() < reregistrationTimeout + 250);
       assert.equal(secondResponse.credentials.clientId, thirdResponse.credentials.clientId);
       assert.notStrictEqual(secondResponse.secret, thirdResponse.secret);
 
@@ -2206,7 +2206,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
       // worker is not yet visible to the queue so this method will fail
       await assert.rejects(() =>
         helper.workerManager.getWorker(provisionerId, workerType, workerGroup, workerId),
-      /Worker with workerId.+not found/,
+      new RegExp(`Worker with workerId.+not found`),
       );
 
       await makeQueueVisible(workerPoolId, workerGroup, workerId);
@@ -2267,7 +2267,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function (mock, skipping) {
       // worker is not yet visible to the queue so this method will fail
       await assert.rejects(() =>
         helper.workerManager.getWorker(provisionerId, workerType, workerGroup2, workerId2),
-      /Worker with workerId.+not found/,
+      new RegExp(`Worker with workerId.+not found`),
       );
 
       await makeQueueVisible(workerPoolId2, workerGroup2, workerId2);

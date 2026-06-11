@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import _ from 'lodash';
 import { paginateResults } from '@taskcluster/lib-api';
 import { UNIQUE_VIOLATION } from '@taskcluster/lib-postgres';
@@ -286,7 +286,7 @@ export const namespaceUtils = {
     );
 
     // Parse namespace
-    if (!Array.isArray(namespace)) {
+    if (!(namespace instanceof Array)) {
       namespace = namespace.split('.');
     }
     // Find parent and folder name

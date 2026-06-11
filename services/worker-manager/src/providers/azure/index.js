@@ -1,11 +1,11 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import _ from 'lodash';
 import taskcluster from '@taskcluster/client';
 import forge from 'node-forge';
-import crypto from 'node:crypto';
+import crypto from 'crypto';
 import got from 'got';
-import net from 'node:net';
-import { rootCertificates } from 'node:tls';
+import net from 'net';
+import { rootCertificates } from 'tls';
 import { WorkerPool, Worker } from '../../data.js';
 import azureApi from './azure-api.js';
 import { ApiError, Provider } from '../provider.js';
@@ -2174,7 +2174,7 @@ export class AzureProvider extends Provider {
         }
       }
       // check for un-deleted disks
-      if (!disksDeleted || _.some(worker.providerData.disks.map(i => i.id))) {
+      if (!disksDeleted || _.some(worker.providerData.disks.map(i => i['id']))) {
         return;
       }
 

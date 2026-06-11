@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import Debug from 'debug';
 import pg from 'pg';
 const { Pool } = pg;
