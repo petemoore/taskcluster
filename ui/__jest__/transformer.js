@@ -2,11 +2,13 @@
 // receive (sourceText, sourcePath, transformOptions) with transformOptions being an
 // object that includes { config, configString, instrument }.
 //
-// Jest 26 (still used as the test runner) calls the old API:
+// Jest 26 (@jest/transform@26) calls the old API with different signatures:
 //   getCacheKey(fileData, filePath, configString, { config, instrument, rootDir })
-//   process(sourceText, sourcePath, { config, instrument, ... })
+//     — 3rd arg is a raw JSON string of the config
+//   process(sourceText, sourcePath, rawConfig, { instrument, supportsDynamicImport, supportsStaticESM })
+//     — 3rd arg is the raw ProjectConfig object directly (NOT wrapped in { config: ... })
 //
-// This wrapper detects the Jest 26 call shape and adapts it to what babel-jest v30
+// This wrapper detects each Jest 26 call shape and adapts it to what babel-jest v30
 // expects, bridging the API gap until jest itself is upgraded to v27+.
 
 // babel-jest v30 ships as an ES module compiled to CJS; use .default if present.
@@ -87,33 +89,51 @@ const jestBabelOptions = {
 const innerTransformer = babelJest.createTransformer(jestBabelOptions);
 
 /**
- * Normalise a getCacheKey / process call from Jest 26's 4-arg convention to the
- * Jest 27+ 3-arg convention that babel-jest v30 requires.
+ * Normalise getCacheKey / process arguments from the Jest 26 calling convention
+ * to the Jest 27+ convention that babel-jest v30 requires.
  *
- * Jest 26:  fn(fileData, filePath, configString, { config, instrument, rootDir })
- * Jest 27+: fn(fileData, filePath, { config, configString, instrument, ... })
+ * Jest 26 getCacheKey: (fileData, filePath, configString, { config, instrument, rootDir })
+ *   — 3rd arg is a raw configString (string), 4th carries { config: ProjectConfig, ... }
  *
- * The key requirement for babel-jest v30 is that transformOptions.config.cwd
- * exists; Jest 26's config object uses rootDir but does not always populate cwd.
+ * Jest 26 process:     (sourceText, sourcePath, rawConfig, { instrument, ... })
+ *   — 3rd arg is the raw ProjectConfig object directly (NOT wrapped in { config: ... })
+ *
+ * Jest 27+ both:       (sourceText/fileData, sourcePath/filePath, { config, configString, instrument, ... })
+ *   — 3rd arg is a transformOptions object that wraps config
+ *
+ * babel-jest v30 requires transformOptions.config.cwd to be present.
  */
 function normaliseTransformOptions(configStringOrOptions, legacyOptions) {
   if (typeof configStringOrOptions === 'string') {
-    // Jest 26 style: third arg is the raw configString, fourth arg carries options.
-    const config = (legacyOptions && legacyOptions.config) ? Object.assign({}, legacyOptions.config) : {};
-    if (!config.cwd) {
-      // babel-jest v30 requires config.cwd; fall back to rootDir or process.cwd().
-      config.cwd = config.rootDir || process.cwd();
-    }
+    // Jest 26 getCacheKey style: third arg is configString, fourth arg has { config, instrument, rootDir }
+    const rawConfig = (legacyOptions && legacyOptions.config) || {};
+    const config = Object.assign({}, rawConfig, {
+      cwd: rawConfig.cwd || rawConfig.rootDir || process.cwd(),
+    });
     return Object.assign({}, legacyOptions, {
       config,
       configString: configStringOrOptions,
     });
   }
 
-  // Jest 27+ style: third arg is already the transformOptions object.
-  // Still ensure config.cwd exists in case jest has not set it.
   const opts = configStringOrOptions || {};
-  if (opts.config && !opts.config.cwd) {
+
+  if (!opts.config) {
+    // Jest 26 process style: third arg IS the raw ProjectConfig (has rootDir but no 'config' wrapper),
+    // fourth arg is { instrument, supportsDynamicImport, supportsStaticESM }.
+    const rawConfig = opts;
+    const config = Object.assign({}, rawConfig, {
+      cwd: rawConfig.cwd || rawConfig.rootDir || process.cwd(),
+    });
+    return Object.assign({}, legacyOptions, {
+      config,
+      configString: '',
+    });
+  }
+
+  // Jest 27+ style: third arg is already { config: ProjectConfig, configString, instrument, ... }.
+  // Ensure config.cwd is populated (Jest 26 ProjectConfig lacks it).
+  if (!opts.config.cwd) {
     return Object.assign({}, opts, {
       config: Object.assign({}, opts.config, {
         cwd: opts.config.rootDir || process.cwd(),
