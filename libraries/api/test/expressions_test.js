@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import ScopeExpressionTemplate from '../src/expressions.js';
 import testing from '@taskcluster/lib-testing';
 

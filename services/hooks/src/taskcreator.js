@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import taskcluster from '@taskcluster/client';
 import debugFactory from 'debug';
 const debug = debugFactory('hooks:taskcreator');
@@ -120,7 +120,7 @@ export class TaskCreator {
 
       if (!task) {
         this.monitor.count(`fire.${context.firedBy}.declined`);
-        return { declined: true };
+        return { response: {}, declined: true };
       }
       this.monitor.count(`fire.${context.firedBy}.created`);
 

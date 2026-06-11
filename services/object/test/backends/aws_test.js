@@ -1,5 +1,5 @@
 import helper from '../helper/index.js';
-import assert from 'node:assert';
+import assert from 'assert';
 import {
   DeleteObjectsCommand,
   GetObjectCommand,
@@ -12,8 +12,8 @@ import {
 import testing from '@taskcluster/lib-testing';
 import taskcluster from '@taskcluster/client';
 import { AwsBackend, getBucketRegion } from '../../src/backends/aws.js';
-import { promisify } from 'node:util';
-import zlib from 'node:zlib';
+import { promisify } from 'util';
+import zlib from 'zlib';
 
 const gzip = promisify(zlib.gzip);
 

@@ -1,5 +1,5 @@
 import helper from './helper.js';
-import assert from 'node:assert';
+import assert from 'assert';
 import testing from '@taskcluster/lib-testing';
 
 /**

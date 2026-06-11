@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import pulse from '@taskcluster/lib-pulse';
 import pSynchronize from 'p-synchronize';
 import _ from 'lodash';

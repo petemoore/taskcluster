@@ -1,5 +1,5 @@
-import path from 'node:path';
-import os from 'node:os';
+import path from 'path';
+import os from 'os';
 import { rimraf } from 'rimraf';
 import mkdirp from 'mkdirp';
 import taskcluster from '@taskcluster/client';
@@ -11,8 +11,8 @@ class Base {
   constructor(cmdOptions) {
     this.cmdOptions = cmdOptions;
 
-    this.baseDir = cmdOptions.baseDir || '/tmp/taskcluster-builder-build';
-    this.logsDir = cmdOptions.logsDir || path.join(this.baseDir, 'logs');
+    this.baseDir = cmdOptions['baseDir'] || '/tmp/taskcluster-builder-build';
+    this.logsDir = cmdOptions['logsDir'] || path.join(this.baseDir, 'logs');
   }
 
   // credentials for the tasks
@@ -147,7 +147,7 @@ class Publish extends Base {
       // always build from scratch
       cache: false,
       // to be safe, set push=false for staging runs
-      push: !cmdOptions.staging,
+      push: cmdOptions.staging ? false : true,
       // always push to the "official" Taskcluster repo on publish
       dockerRepo: 'taskcluster/taskcluster',
       dockerRepoGenericWorker: 'taskcluster/generic-worker',

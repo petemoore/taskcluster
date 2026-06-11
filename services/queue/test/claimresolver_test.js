@@ -1,6 +1,6 @@
 import debugFactory from 'debug';
 const debug = debugFactory('test:claim-work');
-import assert from 'node:assert';
+import assert from 'assert';
 import slugid from 'slugid';
 import taskcluster from '@taskcluster/client';
 import helper from './helper.js';

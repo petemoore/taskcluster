@@ -1,6 +1,6 @@
-import { Worker, isMainThread, parentPort } from 'node:worker_threads';
+import { Worker, isMainThread, parentPort } from 'worker_threads';
 import _ from 'lodash';
-import { gitLsFiles, readRepoFile, readRepoJSON } from '../../utils/index.js';
+import { gitLsFiles, readRepoFile } from '../../utils/index.js';
 import * as acorn from 'acorn-loose';
 import * as walk from 'acorn-walk';
 import builtinModules from 'builtin-modules';
@@ -45,11 +45,6 @@ if (isMainThread) {
     // Local imports are less tricky to get right and if broken will fail in tests so we don't
     // bother doing extra work to assert they exist here
     if (packageName.startsWith('.')) {
-      return;
-    }
-
-    // `node:` prefixed imports are always builtin modules
-    if (packageName.startsWith('node:')) {
       return;
     }
 
@@ -110,7 +105,7 @@ if (isMainThread) {
 
     // All of our dependencies live at the top level and all dependencies
     // are available in dev so we concat
-    const rootPkg = await readRepoJSON('package.json');
+    const rootPkg = JSON.parse(await readRepoFile('package.json'));
     const deps = Object.keys(rootPkg.dependencies);
     const devDeps = Object.keys(rootPkg.devDependencies).concat(deps);
     const specials = rootPkg.metatests.specialImports;

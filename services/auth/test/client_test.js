@@ -1,4 +1,4 @@
-import { strict as assert } from 'node:assert';
+import { strict as assert } from 'assert';
 import helper from './helper.js';
 import _ from 'lodash';
 import assume from 'assume';
