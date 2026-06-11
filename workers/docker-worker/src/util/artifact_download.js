@@ -46,7 +46,7 @@ module.exports = async function(queue, stream, taskId, artifactPath, destination
       });
       req.on('response', (res) => {
         // measure the expected HTTP response body size and actual, to compare later
-        expectedSize = parseInt(res.headers['content-length']);
+        expectedSize = parseInt(res.headers['content-length'], 10);
         receivedSize = 0;
         res.on('data', chunk => {
           // note that this event is emitted with compressed data
