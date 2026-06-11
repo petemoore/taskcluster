@@ -301,8 +301,16 @@ module.exports = (_, { mode }) => ({
         ],
       },
       {
-        test: /\.mjs?$/,
+        // webpack 5 in strict-ESM mode requires fully-specified paths (with
+        // extensions). Many npm packages (e.g. react-diff-viewer-continued)
+        // have CJS files that import 'react/jsx-runtime' without a '.js'
+        // extension. Setting fullySpecified:false for node_modules JS/MJS
+        // files restores the webpack 4 behaviour of resolving bare specifiers.
+        test: /\.m?js$/,
         type: "javascript/auto",
+        resolve: {
+          fullySpecified: false,
+        },
         include: [/node_modules/],
       },
       {
@@ -331,8 +339,10 @@ module.exports = (_, { mode }) => ({
         ],
       },
       {
+        // webpack 5 has built-in JSON support; use native type instead of
+        // the external json-loader which is no longer in devDependencies.
         test: /\.all-contributorsrc$/,
-        loader: "json-loader",
+        type: "json",
       },
     ],
   },
