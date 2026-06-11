@@ -127,14 +127,16 @@ func cmdSignin(cmd *cobra.Command, _ []string) error {
 		loginURL += libUrls.UI(config.RootURL(), "/auth/clients/create")
 	}
 
+	var scopeParams strings.Builder
 	for i := range scopes {
 		if i == 0 {
-			loginURL += "?"
+			scopeParams.WriteString("?")
 		} else {
-			loginURL += "&"
+			scopeParams.WriteString("&")
 		}
-		loginURL += "scope=" + url.QueryEscape(scopes[i])
+		scopeParams.WriteString("scope=" + url.QueryEscape(scopes[i]))
 	}
+	loginURL += scopeParams.String()
 
 	loginURL += "&name=" + url.QueryEscape(name) + "-" + slugid.Nice()[0:6]
 	loginURL += "&expires=" + url.QueryEscape(expires)
