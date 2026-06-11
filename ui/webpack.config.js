@@ -24,7 +24,7 @@ if (process.env.GENERATE_ENV_JS) {
 }
 
 module.exports = (_, { mode }) => ({
-  devtool: mode === "production" ? false : "cheap-module-eval-source-map",
+  devtool: mode === "production" ? false : "eval-cheap-module-source-map",
   target: "web",
   context: __dirname,
   watchOptions: {
@@ -34,19 +34,19 @@ module.exports = (_, { mode }) => ({
   output: {
     path: `${__dirname}/build`,
     publicPath: "/",
-    filename: "assets/[name].[hash:8].js",
+    filename: "assets/[name].[contenthash:8].js",
   },
   stats: {
     children: false,
     entrypoints: false,
     modules: false,
   },
-  node: {
-    Buffer: true,
-    fs: "empty",
-    tls: "empty",
-  },
   resolve: {
+    fallback: {
+      fs: false,
+      tls: false,
+      buffer: false,
+    },
     alias: {
       "@taskcluster/ui": `${__dirname}/src`,
     },
@@ -62,7 +62,7 @@ module.exports = (_, { mode }) => ({
   },
   optimization: {
     minimize: true,
-    splitChunks: { chunks: "all", maxInitialRequests: 5, name: false },
+    splitChunks: { chunks: "all", maxInitialRequests: 5 },
     runtimeChunk: "single",
   },
   devServer: {
@@ -114,9 +114,6 @@ module.exports = (_, { mode }) => ({
         use: [
           {
             loader: "html-loader",
-            options: {
-              attrs: ["img:src", "link:href"],
-            },
           },
         ],
       },
@@ -207,9 +204,6 @@ module.exports = (_, { mode }) => ({
             use: [
               {
                 loader: MiniCssExtractPlugin.loader,
-                options: {
-                  esModule: true,
-                },
               },
               {
                 loader: "css-loader",
@@ -225,9 +219,6 @@ module.exports = (_, { mode }) => ({
             use: [
               {
                 loader: MiniCssExtractPlugin.loader,
-                options: {
-                  esModule: true,
-                },
               },
               {
                 loader: "css-loader",
@@ -347,9 +338,9 @@ module.exports = (_, { mode }) => ({
       lang: "en",
     }),
     new MiniCssExtractPlugin({
-      filename: "assets/[name].[hash:8].css",
+      filename: "assets/[name].[contenthash:8].css",
       ignoreOrder: false,
-      chunkFilename: "assets/[name].[hash:8].css",
+      chunkFilename: "assets/[name].[contenthash:8].css",
     }),
     new CleanWebpackPlugin({
       dangerouslyAllowCleanPatternsOutsideProject: false,
@@ -363,7 +354,7 @@ module.exports = (_, { mode }) => ({
       initialClean: false,
       outputPath: "",
     }),
-    new CopyPlugin([{ context: "src/static", from: "**/*", to: "static" }]),
+    new CopyPlugin({ patterns: [{ context: "src/static", from: "**/*", to: "static" }] }),
   ],
   entry: {
     index: [`${__dirname}/src/index.jsx`],
