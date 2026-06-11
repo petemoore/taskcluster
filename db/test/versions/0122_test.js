@@ -1,9 +1,9 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import helper from '../helper.js';
 import testing from '@taskcluster/lib-testing';
 import taskcluster from '@taskcluster/client';
 
-const THIS_VERSION = parseInt(/.*\/0*(\d+)_test\.js/.exec(import.meta.url)[1], 10);
+const THIS_VERSION = parseInt(/.*\/0*(\d+)_test\.js/.exec(import.meta.url)[1]);
 
 suite(testing.suiteName(), function() {
   helper.withDbForVersion();

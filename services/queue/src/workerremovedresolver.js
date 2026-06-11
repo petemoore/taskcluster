@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import { consume } from '@taskcluster/lib-pulse';
 import { Task } from './data.js';
 import { splitTaskQueueId } from './utils.js';

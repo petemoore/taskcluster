@@ -1,5 +1,5 @@
 import taskcluster from '@taskcluster/client';
-import assert from 'node:assert';
+import assert from 'assert';
 import scan from '../src/login/scanner.js';
 import testing from '@taskcluster/lib-testing';
 import libUrls from 'taskcluster-lib-urls';
@@ -16,7 +16,7 @@ suite(testing.suiteName(), () => {
         // client name as the continuationToken
         let names = Object.keys(clients).filter(n => n.startsWith(prefix));
         if (continuationToken) {
-          names = names.slice(names.indexOf(continuationToken));
+          names = names.slice(names.findIndex(n => n === continuationToken));
         }
         if (names.length > 1) {
           continuationToken = names[1];

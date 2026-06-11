@@ -25,7 +25,7 @@ import tcdb from '@taskcluster/db';
 import pulse from '@taskcluster/lib-pulse';
 import QuickLRU from 'quick-lru';
 import { artifactUtils } from './utils.js';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath } from 'url';
 
 // default claim timeout to 20 minutes (in seconds)
 const DEFAULT_CLAIM_TIMEOUT = 1200;

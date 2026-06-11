@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import debugFactory from 'debug';
 const debug = debugFactory('index:test:index_test');
 import helper from './helper.js';
@@ -269,7 +269,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
     debug('listNamespaces returns continuationToken after limit = 10');
 
     let i = 1;
-    let continuationToken;
+    let continuationToken = undefined;
     do {
       const query = { limit: 1 };
       if (!_.isUndefined(continuationToken)) {
@@ -282,7 +282,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
       debug('listNamespaces entries match the namespace regex');
       assert.equal(
         new RegExp(myns + '.my-task').test(obj.namespace) &&
-        /my-task/.test(obj.name),
+        new RegExp('my-task').test(obj.name),
         true, 'Expect namespace to match regex');
       continuationToken = result.continuationToken;
       i ++;

@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import libUrls from 'taskcluster-lib-urls';
 import debugFactory from 'debug';
 const debug = debugFactory('@taskcluster/lib-pulse.publisher');
@@ -156,7 +156,7 @@ export class Entry {
       }
 
       // Check that we have a maxSize
-      assert(typeof key.maxSize === 'number' && key.maxSize > 0,
+      assert(typeof key.maxSize == 'number' && key.maxSize > 0,
         `routingKey declaration ${key.name} must have maxSize > 0`);
 
       // Check size left in routingKey space
@@ -307,7 +307,7 @@ export class PulsePublisher {
           entry.routingKeyBuilder.apply(undefined, args));
 
         const CCs = entry.CCBuilder.apply(undefined, args);
-        assert(Array.isArray(CCs), 'CCBuilder must return an array');
+        assert(CCs instanceof Array, 'CCBuilder must return an array');
 
         // Serialize message to buffer
         const payload = Buffer.from(JSON.stringify(message), 'utf8');

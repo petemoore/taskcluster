@@ -1,6 +1,6 @@
 import debug from 'debug';
 import amqplib from 'amqplib';
-import assert from 'node:assert';
+import assert from 'assert';
 import slugid from 'slugid';
 
 /**
@@ -270,7 +270,8 @@ export class PulseConsumer {
     };
 
     // Find CC'ed routes
-    if (msg.properties && msg.properties.headers && Array.isArray(msg.properties.headers.CC)) {
+    if (msg.properties && msg.properties.headers &&
+        msg.properties.headers.CC instanceof Array) {
       message.routes = msg.properties.headers.CC.filter(function(route) {
         // Only return the CC'ed routes that starts with "route."
         return /^route\.(.*)$/.test(route);

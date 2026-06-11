@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import assert from 'node:assert';
+import assert from 'assert';
 import assume from 'assume';
 import debugFactory from 'debug';
 const debug = debugFactory('test:api:createhook');
@@ -72,7 +72,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
   const invalidHookDef = _.defaults({
     schedule: ['0 0 3 0 * *'],
   }, hookWithTriggerSchema);
-  const unique = Date.now().toString();
+  const unique = new Date().getTime().toString();
   const hookWithBindings = _.defaults({
     bindings: [{ exchange: `exchange/test/${unique}`, routingKeyPattern: 'amongst.rockets.wizards' }],
   }, hookWithHookIds);
