@@ -1,3 +1,4 @@
+const webpack = require("webpack");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
@@ -24,29 +25,62 @@ if (process.env.GENERATE_ENV_JS) {
 }
 
 module.exports = (_, { mode }) => ({
-  devtool: mode === "production" ? false : "cheap-module-eval-source-map",
+  devtool: mode === "production" ? false : "eval-cheap-module-source-map",
   target: "web",
   context: __dirname,
   watchOptions: {
-    ignored: (p) => !p.startsWith(__dirname),
+    ignored: /node_modules/,
   },
   externals: { bindings: "bindings" },
   output: {
     path: `${__dirname}/build`,
     publicPath: "/",
-    filename: "assets/[name].[hash:8].js",
+    filename: "assets/[name].[contenthash:8].js",
   },
   stats: {
     children: false,
     entrypoints: false,
     modules: false,
   },
-  node: {
-    Buffer: true,
-    fs: "empty",
-    tls: "empty",
-  },
   resolve: {
+    fallback: {
+      // Modules that cannot meaningfully run in a browser — set to false
+      fs: false,
+      tls: false,
+      net: false,
+      module: false,
+      child_process: false,
+      dgram: false,
+      cluster: false,
+      readline: false,
+      repl: false,
+      // Node.js core modules polyfilled for browser use.
+      // Webpack 4 provided all of these automatically via node-libs-browser;
+      // webpack 5 removed that behaviour and requires explicit configuration.
+      // These are needed by various dependencies (remark-mdx/@babel/core,
+      // docker-exec-websocket-client/ws, hawk, @taskcluster/client-web, etc.)
+      // that were designed for Node.js but are also bundled for the browser.
+      assert: require.resolve("assert"),
+      buffer: require.resolve("buffer"),
+      constants: require.resolve("constants-browserify"),
+      crypto: require.resolve("crypto-browserify"),
+      domain: require.resolve("domain-browser"),
+      events: require.resolve("events"),
+      http: require.resolve("stream-http"),
+      https: require.resolve("https-browserify"),
+      os: require.resolve("os-browserify/browser"),
+      path: require.resolve("path-browserify"),
+      punycode: require.resolve("punycode"),
+      querystring: require.resolve("querystring-es3"),
+      stream: require.resolve("stream-browserify"),
+      string_decoder: require.resolve("string_decoder"),
+      sys: require.resolve("util"),
+      timers: require.resolve("timers-browserify"),
+      url: require.resolve("url"),
+      util: require.resolve("util"),
+      vm: require.resolve("vm-browserify"),
+      zlib: require.resolve("browserify-zlib"),
+    },
     alias: {
       "@taskcluster/ui": `${__dirname}/src`,
     },
@@ -62,7 +96,7 @@ module.exports = (_, { mode }) => ({
   },
   optimization: {
     minimize: true,
-    splitChunks: { chunks: "all", maxInitialRequests: 5, name: false },
+    splitChunks: { chunks: "all", maxInitialRequests: 5 },
     runtimeChunk: "single",
   },
   devServer: {
@@ -115,20 +149,23 @@ module.exports = (_, { mode }) => ({
           {
             loader: "html-loader",
             options: {
-              attrs: ["img:src", "link:href"],
+              // Preserve original behaviour: only process img:src and link:href.
+              // html-loader v5 processes all source attributes by default, which
+              // would cause webpack to try to bundle /static/env.js (a statically
+              // served file outside webpack's control).
+              sources: {
+                list: [
+                  { tag: "img", attribute: "src", type: "src" },
+                  { tag: "link", attribute: "href", type: "src" },
+                ],
+              },
             },
           },
         ],
       },
       {
         test: /\.(js|jsx)$/,
-        include: [
-          `${__dirname}/src`,
-          `${__dirname}/test`,
-          resolve(__dirname, "node_modules/@sentry"),
-          resolve(__dirname, "node_modules/@sentry-internal"),
-          resolve(__dirname, "node_modules/react-diff-viewer-continued"),
-        ],
+        include: [`${__dirname}/src`, `${__dirname}/test`],
         use: [
           {
             loader: "babel-loader",
@@ -213,9 +250,6 @@ module.exports = (_, { mode }) => ({
             use: [
               {
                 loader: MiniCssExtractPlugin.loader,
-                options: {
-                  esModule: true,
-                },
               },
               {
                 loader: "css-loader",
@@ -231,9 +265,6 @@ module.exports = (_, { mode }) => ({
             use: [
               {
                 loader: MiniCssExtractPlugin.loader,
-                options: {
-                  esModule: true,
-                },
               },
               {
                 loader: "css-loader",
@@ -301,7 +332,7 @@ module.exports = (_, { mode }) => ({
       },
       {
         test: /\.all-contributorsrc$/,
-        type: "json",
+        loader: "json-loader",
       },
     ],
   },
@@ -353,9 +384,9 @@ module.exports = (_, { mode }) => ({
       lang: "en",
     }),
     new MiniCssExtractPlugin({
-      filename: "assets/[name].[hash:8].css",
+      filename: "assets/[name].[contenthash:8].css",
       ignoreOrder: false,
-      chunkFilename: "assets/[name].[hash:8].css",
+      chunkFilename: "assets/[name].[contenthash:8].css",
     }),
     new CleanWebpackPlugin({
       dangerouslyAllowCleanPatternsOutsideProject: false,
@@ -369,7 +400,27 @@ module.exports = (_, { mode }) => ({
       initialClean: false,
       outputPath: "",
     }),
-    new CopyPlugin([{ context: "src/static", from: "**/*", to: "static" }]),
+    // Webpack 4 automatically injected Buffer and process globals;
+    // webpack 5 requires explicit ProvidePlugin configuration.
+    // Buffer: needed by many packages for binary data handling.
+    // process: needed for process.env, process.nextTick, etc.
+    new webpack.ProvidePlugin({
+      Buffer: ["buffer", "Buffer"],
+      process: "process/browser",
+    }),
+    new CopyPlugin({
+      patterns: [
+        {
+          context: "src/static",
+          from: "**/*",
+          to: "static",
+          // copy-webpack-plugin v6+ errors when the glob finds no files
+          // (e.g. in CI production builds where src/static/ doesn't exist yet
+          // because GENERATE_ENV_JS is not set and env.js hasn't been created).
+          noErrorOnMissing: true,
+        },
+      ],
+    }),
   ],
   entry: {
     index: [`${__dirname}/src/index.jsx`],
