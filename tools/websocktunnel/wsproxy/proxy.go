@@ -215,7 +215,7 @@ func (p *proxy) register(w http.ResponseWriter, r *http.Request, id, tokenString
 
 	url := p.urlPrefix + "/" + id
 	header.Set("x-websocktunnel-client-url", url)
-	p.logf(id, r.RemoteAddr, "sending url= %s", url)
+	p.logf(id, r.RemoteAddr, "sending url= %q", url)
 	conn, err := p.upgrader.Upgrade(w, r, header)
 	if err != nil {
 		p.logger.Print(err)
@@ -273,7 +273,7 @@ func (p *proxy) serveRequest(w http.ResponseWriter, r *http.Request, id string, 
 	p.logf(id, r.RemoteAddr, "attempting to open new stream")
 	reqStream, err := session.Open()
 	if err != nil {
-		p.logerrorf(id, r.RemoteAddr, "could not open stream: path=%s", path)
+		p.logerrorf(id, r.RemoteAddr, "could not open stream: path=%q", path)
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
@@ -281,7 +281,7 @@ func (p *proxy) serveRequest(w http.ResponseWriter, r *http.Request, id string, 
 	// rewrite path for tunnel and write request
 	err = r.Write(reqStream)
 	if err != nil {
-		p.logerrorf(id, r.RemoteAddr, "could not write request: path=%s", path)
+		p.logerrorf(id, r.RemoteAddr, "could not write request: path=%q", path)
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
@@ -290,7 +290,7 @@ func (p *proxy) serveRequest(w http.ResponseWriter, r *http.Request, id string, 
 	bufReader := bufio.NewReader(reqStream)
 	resp, err := http.ReadResponse(bufReader, r)
 	if err != nil {
-		p.logerrorf(id, r.RemoteAddr, "could not read response: path=%s", path)
+		p.logerrorf(id, r.RemoteAddr, "could not read response: path=%q", path)
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
