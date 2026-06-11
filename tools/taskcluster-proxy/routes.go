@@ -213,7 +213,7 @@ func (routes *Routes) APIHandler(res http.ResponseWriter, req *http.Request) {
 	}
 
 	if err != nil {
-		log.Printf("%s parsing %q", err, req.URL.String())
+		log.Printf("%q parsing %q", err.Error(), req.URL.String())
 		http.Error(res, err.Error(), http.StatusNotFound)
 		return
 	}
@@ -224,7 +224,7 @@ func (routes *Routes) APIHandler(res http.ResponseWriter, req *http.Request) {
 // Common code for RootHandler and APIHandler
 func (routes *Routes) commonHandler(res http.ResponseWriter, req *http.Request, targetPath *url.URL) {
 	res.Header().Set("X-Taskcluster-Endpoint", targetPath.String())
-	log.Printf("Proxying %q | %s | %q", req.URL.String(), req.Method, targetPath.String())
+	log.Printf("Proxying %q | %q | %q", req.URL.String(), req.Method, targetPath.String())
 
 	// In theory, req.Body should never be nil when running as a server, but
 	// during testing, with a direct call to the method rather than a real http

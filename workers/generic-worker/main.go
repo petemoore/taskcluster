@@ -812,7 +812,7 @@ func (task *TaskRun) Log(prefix, message string) {
 			_, _ = task.logWriter.Write([]byte(prefix + line + "\n"))
 		}
 	} else {
-		log.Print("Unloggable task log message (no task log writer): " + message)
+		log.Printf("Unloggable task log message (no task log writer): %q", message)
 	}
 }
 
