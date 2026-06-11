@@ -114,6 +114,18 @@ module.exports = (_, { mode }) => ({
         use: [
           {
             loader: "html-loader",
+            options: {
+              // Preserve original behaviour: only process img:src and link:href.
+              // html-loader v5 processes all source attributes by default, which
+              // would cause webpack to try to bundle /static/env.js (a statically
+              // served file outside webpack's control).
+              sources: {
+                list: [
+                  { tag: "img", attribute: "src", type: "src" },
+                  { tag: "link", attribute: "href", type: "src" },
+                ],
+              },
+            },
           },
         ],
       },
