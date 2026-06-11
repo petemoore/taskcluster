@@ -2,6 +2,7 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
+const webpack = require("webpack");
 const generateEnvJs = require("./generate-env-js");
 const DEFAULT_PORT = 5080;
 const port = process.env.PORT || DEFAULT_PORT;
@@ -24,27 +25,24 @@ if (process.env.GENERATE_ENV_JS) {
 }
 
 module.exports = (_, { mode }) => ({
-  devtool: mode === "production" ? false : "cheap-module-eval-source-map",
+  devtool: mode === "production" ? false : "eval-cheap-module-source-map",
   target: "web",
   context: __dirname,
   watchOptions: {
-    ignored: (p) => !p.startsWith(__dirname),
+    // webpack 5: ignored must be a glob/string/RegExp, not a function;
+    // ignore node_modules to avoid performance issues in monorepo setups.
+    ignored: /node_modules/,
   },
   externals: { bindings: "bindings" },
   output: {
     path: `${__dirname}/build`,
     publicPath: "/",
-    filename: "assets/[name].[hash:8].js",
+    filename: "assets/[name].[contenthash:8].js",
   },
   stats: {
     children: false,
     entrypoints: false,
     modules: false,
-  },
-  node: {
-    Buffer: true,
-    fs: "empty",
-    tls: "empty",
   },
   resolve: {
     alias: {
@@ -59,6 +57,35 @@ module.exports = (_, { mode }) => ({
       ".js",
       ".json",
     ],
+    // webpack 5 removed automatic Node.js polyfills; restore the ones
+    // that webpack 4 injected so that browser-targeting dependencies
+    // (e.g. hterm-umdjs, apollo-link-ws) continue to build.
+    fallback: {
+      assert: require.resolve("assert/"),
+      buffer: require.resolve("buffer/"),
+      crypto: require.resolve("crypto-browserify"),
+      domain: require.resolve("domain-browser"),
+      events: require.resolve("events/"),
+      http: require.resolve("stream-http"),
+      https: require.resolve("https-browserify"),
+      os: require.resolve("os-browserify/browser"),
+      path: require.resolve("path-browserify"),
+      querystring: require.resolve("querystring-es3"),
+      stream: require.resolve("stream-browserify"),
+      string_decoder: require.resolve("string_decoder/"),
+      timers: require.resolve("timers-browserify"),
+      tty: require.resolve("tty-browserify"),
+      url: require.resolve("url/"),
+      util: require.resolve("util/"),
+      vm: require.resolve("vm-browserify"),
+      zlib: require.resolve("browserify-zlib"),
+      // modules with no browser equivalent
+      fs: false,
+      tls: false,
+      net: false,
+      child_process: false,
+      dns: false,
+    },
   },
   optimization: {
     minimize: true,
@@ -71,24 +98,14 @@ module.exports = (_, { mode }) => ({
       disableDotRule: true,
       rewrites: [{ from: /^\/docs/, to: "/docs.html" }],
     },
-    proxy: {
-      "/login": {
-        target: proxyTarget,
-        changeOrigin: true,
-      },
-      "/graphql": {
-        target: proxyTarget,
-        changeOrigin: true,
-      },
-      "/schemas": {
-        target: proxyTarget,
-        changeOrigin: true,
-      },
-      "/references": {
-        target: proxyTarget,
-        changeOrigin: true,
-      },
-      "/subscription": {
+    // webpack-dev-server v5: proxy must be an array (not a path-keyed object)
+    proxy: [
+      { context: ["/login"], target: proxyTarget, changeOrigin: true },
+      { context: ["/graphql"], target: proxyTarget, changeOrigin: true },
+      { context: ["/schemas"], target: proxyTarget, changeOrigin: true },
+      { context: ["/references"], target: proxyTarget, changeOrigin: true },
+      {
+        context: ["/subscription"],
         ws: true,
         changeOrigin: true,
         target: proxyTarget.replace(/^http(s)?:/, "ws$1:"),
@@ -101,11 +118,8 @@ module.exports = (_, { mode }) => ({
           });
         },
       },
-      "/api/web-server": {
-        target: proxyTarget,
-        changeOrigin: true,
-      },
-    },
+      { context: ["/api/web-server"], target: proxyTarget, changeOrigin: true },
+    ],
   },
   module: {
     rules: [
@@ -114,9 +128,9 @@ module.exports = (_, { mode }) => ({
         use: [
           {
             loader: "html-loader",
-            options: {
-              attrs: ["img:src", "link:href"],
-            },
+            // html-loader v5: the `attrs` option was replaced by `sources`
+            // (true by default); omitting options keeps the default behaviour
+            // which handles img:src and link:href automatically.
           },
         ],
       },
@@ -212,10 +226,9 @@ module.exports = (_, { mode }) => ({
             test: /\.module\.css$/,
             use: [
               {
+                // mini-css-extract-plugin v2: esModule is always on; no
+                // loader options needed
                 loader: MiniCssExtractPlugin.loader,
-                options: {
-                  esModule: true,
-                },
               },
               {
                 loader: "css-loader",
@@ -231,9 +244,6 @@ module.exports = (_, { mode }) => ({
             use: [
               {
                 loader: MiniCssExtractPlugin.loader,
-                options: {
-                  esModule: true,
-                },
               },
               {
                 loader: "css-loader",
@@ -353,9 +363,9 @@ module.exports = (_, { mode }) => ({
       lang: "en",
     }),
     new MiniCssExtractPlugin({
-      filename: "assets/[name].[hash:8].css",
+      filename: "assets/[name].[contenthash:8].css",
       ignoreOrder: false,
-      chunkFilename: "assets/[name].[hash:8].css",
+      chunkFilename: "assets/[name].[contenthash:8].css",
     }),
     new CleanWebpackPlugin({
       dangerouslyAllowCleanPatternsOutsideProject: false,
@@ -369,7 +379,13 @@ module.exports = (_, { mode }) => ({
       initialClean: false,
       outputPath: "",
     }),
-    new CopyPlugin([{ context: "src/static", from: "**/*", to: "static" }]),
+    // copy-webpack-plugin v6+: configuration moved to { patterns: [...] }
+    new CopyPlugin({ patterns: [{ from: "src/static", to: "static" }] }),
+    // webpack 5 no longer injects Buffer/process globals automatically
+    new webpack.ProvidePlugin({
+      Buffer: ["buffer", "Buffer"],
+      process: "process/browser",
+    }),
   ],
   entry: {
     index: [`${__dirname}/src/index.jsx`],
