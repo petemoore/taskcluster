@@ -6,9 +6,9 @@ import SchemaSet from '@taskcluster/lib-validate';
 import { APIBuilder } from '@taskcluster/lib-api';
 import { MonitorManager } from '@taskcluster/lib-monitor';
 import { App } from '@taskcluster/lib-app';
-import assert from 'node:assert';
+import assert from 'assert';
 import taskcluster from '@taskcluster/client';
-import path from 'node:path';
+import path from 'path';
 import libUrls from 'taskcluster-lib-urls';
 import testing from '@taskcluster/lib-testing';
 
@@ -105,7 +105,7 @@ suite(testing.suiteName(), function() {
       },
     };
     if (extContent) {
-      content.ext = Buffer.from(JSON.stringify(extContent)).toString('base64');
+      content['ext'] = Buffer.from(JSON.stringify(extContent)).toString('base64');
     }
 
     let { header } = hawk.client.header(reqUrl, 'GET', content);

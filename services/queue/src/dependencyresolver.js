@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import Iterate from '@taskcluster/lib-iterate';
 import { sleep } from './utils.js';
 
@@ -34,7 +34,6 @@ class DependencyResolver {
     this.dependencyTracker = options.dependencyTracker;
     this.queueService = options.queueService;
     this.monitor = options.monitor;
-    this.count = options.count;
 
     // Set polling delay
     this._pollingDelay = options.pollingDelay;
@@ -43,7 +42,7 @@ class DependencyResolver {
     this.iterator = new Iterate({
       name: options.ownName,
       maxFailures: 10,
-      waitTime: 0,
+      waitTime: this._pollingDelay,
       monitor: this.monitor,
       maxIterationTime: 600 * 1000,
       handler: async () => this._pollResolvedTasks(),
@@ -81,9 +80,9 @@ class DependencyResolver {
       }
     }));
 
-    // If we emptied the queue, back off
-    if (messages.length < this.count) {
-      await sleep(this._pollingDelay);
+    // If there were no messages, back off for a bit.
+    if (messages.length === 0) {
+      await sleep(1000);
     }
 
     this.monitor.log.queuePoll({

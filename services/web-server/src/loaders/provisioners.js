@@ -1,4 +1,5 @@
 import DataLoader from 'dataloader';
+import sift from '../utils/sift.js';
 import ConnectionLoader from '../ConnectionLoader.js';
 
 export default ({ queue }, isAuthed, rootUrl, monitor, strategies, req, cfg, requestId) => {
@@ -13,10 +14,11 @@ export default ({ queue }, isAuthed, rootUrl, monitor, strategies, req, cfg, req
       }),
     ),
   );
-  const provisioners = new ConnectionLoader(async ({ options }) => {
+  const provisioners = new ConnectionLoader(async ({ options, filter }) => {
     const raw = await queue.listProvisioners(options);
+    const provisioners = sift(filter, raw.provisioners);
 
-    return { ...raw, items: raw.provisioners };
+    return { ...raw, items: provisioners };
   });
 
   return {

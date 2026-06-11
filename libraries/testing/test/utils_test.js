@@ -1,11 +1,11 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import testing from '@taskcluster/lib-testing';
 
 suite(testing.suiteName(), function() {
   test('sleep', async function() {
-    let start = Date.now();
+    const start = new Date().getTime();
     await testing.sleep(10);
-    const end = Date.now();
+    const end = new Date().getTime();
     // as long as it waited 5ms or more we'll call it good..
     assert(end - start > 5, 'did not wait long enough');
   });

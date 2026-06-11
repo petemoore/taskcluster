@@ -18,20 +18,12 @@ const parseMarkdownIntoSections = markdown => {
   let version = '';
   let audience = '';
   let content = [];
-  const pushSection = () => {
-    sections.push({
-      id: sections.length,
-      version,
-      audience,
-      content,
-      html: content.join('\n'),
-    });
-  };
+  let id = 0;
 
   lines.forEach(line => {
     if (line.startsWith('## ')) {
       if (version) {
-        pushSection();
+        sections.push({ version, audience, content, html: content.join('\n') });
       }
 
       version = line.slice(3);
@@ -39,19 +31,20 @@ const parseMarkdownIntoSections = markdown => {
       content = [];
     } else if (line.startsWith('### ')) {
       if (audience) {
-        pushSection();
+        sections.push({ version, audience, content, html: content.join('\n') });
         audience = '';
         content = [];
       }
 
-      audience = titleCase(line.slice(4).toLowerCase());
+      audience = line.slice(4);
     } else {
       content.push(line);
     }
   });
 
-  if (version && content.length) {
-    pushSection();
+  if (version && version && content.length) {
+    sections.push({ version, audience, content, html: content.join('\n'), id });
+    id += 1;
   }
 
   return sections;
@@ -78,6 +71,10 @@ const FILTERS = ['version', 'from', 'to', 'q', 'all', 'audience'];
   },
   chip: {
     marginLeft: theme.spacing(2),
+    textTransform: 'lowercase',
+    'span::first-letter': {
+      textTransform: 'uppercase',
+    },
   },
   section: {
     '&.MuiGrid-item': {
@@ -87,11 +84,6 @@ const FILTERS = ['version', 'from', 'to', 'q', 'all', 'audience'];
   },
   version: {
     cursor: 'pointer',
-    background: 'none',
-    border: 'none',
-    padding: 0,
-    font: 'inherit',
-    color: 'inherit',
   },
 }))
 export default class Changelog extends Component {
@@ -101,30 +93,30 @@ export default class Changelog extends Component {
     super(props);
 
     this.sections = parseMarkdownIntoSections(ChangelogMd);
-    this.versions = [...new Set(this.sections.map(section => section.version))];
+    this.versions = [
+      ...new Set([...this.sections.map(section => section.version)]),
+    ].map(version => ({ label: version, value: version }));
+
     this.audiences = [
-      ...new Set(this.sections.map(section => section.audience)),
-    ].filter(Boolean);
+      ...new Set([...this.sections.map(section => section.audience)]),
+    ].map(audience => ({ label: titleCase(audience), value: audience }));
 
     const search = new URLSearchParams(this.props.location.search);
 
     this.state = {
-      version: search.get('version') || '',
-      from: search.get('from') || '',
-      to: search.get('to') || '',
-      q: search.get('q') || '',
-      all: search.get('all') === 'true',
-      audience: search.get('audience') || '',
+      version: search.get('version', ''),
+      from: search.get('from', ''),
+      to: search.get('to', ''),
+      q: search.get('q', ''),
+      all: search.get('all', ''),
+      audience: search.get('audience', ''),
     };
   }
 
   filteredSections = memoize(
     ({ version, from, to, q, all, audience }) => {
       return this.sections.filter(section => {
-        if (
-          audience &&
-          section.audience.toLowerCase() !== audience.toLowerCase()
-        ) {
+        if (audience && section.audience !== audience) {
           return false;
         }
 
@@ -161,7 +153,7 @@ export default class Changelog extends Component {
     }
   );
 
-  componentDidUpdate(_prevProps, prevState) {
+  componentDidUpdate(prevProps, prevState) {
     if (FILTERS.map(key => prevState[key] !== this.state[key]).some(a => a)) {
       this.updateUrl();
     }
@@ -192,7 +184,7 @@ export default class Changelog extends Component {
     const maybeHighlight = (text, q) =>
       q ? text.replace(new RegExp(`(${q})(?![^<>]*>)`, 'gi'), '**$1**') : text;
     const onToggleFilter = (key, value) => {
-      if (this.state[key].toLowerCase() === value.toLowerCase()) {
+      if (this.state[key] === value) {
         this.setState({ [key]: '' });
       } else {
         this.setState({ [key]: value });
@@ -205,13 +197,9 @@ export default class Changelog extends Component {
           <Grid item xs={4} key={key}>
             <Autocomplete
               options={this.versions}
-              freeSolo
-              value={this.state[key] || null}
-              inputValue={this.state[key]}
-              onChange={(_event, value) =>
-                this.setState({ [key]: value || '' })
-              }
-              onInputChange={(_event, value) => this.setState({ [key]: value })}
+              getOptionLabel={option => option.label}
+              onInputChange={(event, value) => this.setState({ [key]: value })}
+              defaultValue={{ label: this.state[key], value: this.state[key] }}
               renderInput={params => (
                 <TextField {...params} label={label} fullWidth />
               )}
@@ -229,15 +217,12 @@ export default class Changelog extends Component {
         <Grid item xs={4}>
           <Autocomplete
             options={this.audiences}
-            freeSolo
-            value={this.state.audience || null}
-            inputValue={this.state.audience}
-            onChange={(_event, value) =>
-              this.setState({ audience: value || '' })
-            }
-            onInputChange={(_event, value) =>
-              this.setState({ audience: value })
-            }
+            getOptionLabel={option => option.label}
+            onInputChange={(event, value) => this.setState({ audience: value })}
+            defaultValue={{
+              label: this.state.audience,
+              value: this.state.audience,
+            }}
             renderInput={params => (
               <TextField {...params} label="Audience" fullWidth />
             )}
@@ -259,12 +244,11 @@ export default class Changelog extends Component {
         {this.filteredSections(this.state).map(section => (
           <Grid key={section.id} item xs={12} className={classes.section}>
             <h1>
-              <button
-                type="button"
+              <span
                 className={classes.version}
                 onClick={() => onToggleFilter('version', section.version)}>
                 {section.version}
-              </button>
+              </span>
               {section.audience && (
                 <Chip
                   className={classes.chip}

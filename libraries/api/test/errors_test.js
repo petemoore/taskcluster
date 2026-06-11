@@ -1,5 +1,5 @@
 import request from 'superagent';
-import assert from 'node:assert';
+import assert from 'assert';
 import { APIBuilder } from '../src/index.js';
 import helper from './helper.js';
 import _ from 'lodash';
@@ -49,7 +49,7 @@ suite(testing.suiteName(), function() {
       const response = JSON.parse(res.response.text);
       assert(response.code === 'InputError');
       assert(/Testing Error\n\n---\n\n/.test(response.message));
-      delete response.requestInfo.time;
+      delete response.requestInfo['time'];
       assert(_.isEqual(response.requestInfo, {
         method: 'InputError',
         params: {},
@@ -128,7 +128,7 @@ suite(testing.suiteName(), function() {
       assert(response.code === 'InternalServerError');
       assert(/^Internal/.test(response.message));
       assert(!/uhoh/.test(response.message)); // error doesn't go to user
-      delete response.requestInfo.time;
+      delete response.requestInfo['time'];
       assert(_.isEqual(response.requestInfo, {
         method: 'ISE',
         params: {},
@@ -163,7 +163,7 @@ suite(testing.suiteName(), function() {
         assert(!/s3kr!t/.test(res.text)); // secret does not appear in response
         assert(response.code === 'InputValidationError');
         assert(response.requestInfo.payload.secret === '<HIDDEN>'); // replaced payload appears in response
-        delete response.requestInfo.time;
+        delete response.requestInfo['time'];
         assert(_.isEqual(response.requestInfo, {
           method: 'InputValidationError',
           params: {},

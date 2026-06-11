@@ -7,9 +7,9 @@ import {
   TerminateInstancesCommand,
 } from '@aws-sdk/client-ec2';
 import taskcluster from '@taskcluster/client';
-import crypto from 'node:crypto';
-import fs from 'node:fs';
-import path from 'node:path';
+import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 import _ from 'lodash';
 import { CloudAPI } from './cloudapi.js';
 import { WorkerPool, Worker } from '../data.js';
@@ -60,6 +60,7 @@ export class AwsProvider extends Provider {
       intervalDefault: this.providerConfig.intervalDefault,
       intervalCapDefault: this.providerConfig.intervalCapDefault,
       timeout: 10 * 60 * 1000, // each cloud call should not take longer than 10 minutes
+      throwOnTimeout: true,
       monitor: this.monitor,
       providerId: this.providerId,
       errorHandler: ({ err, tries }) => {

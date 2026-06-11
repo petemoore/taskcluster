@@ -1,10 +1,10 @@
 import _ from 'lodash';
-import path from 'node:path';
+import path from 'path';
 import yaml from 'js-yaml';
-import fs from 'node:fs';
+import fs from 'fs';
 import debugFactory from 'debug';
 const debug = debugFactory('@taskcluster/lib-config');
-import assert from 'node:assert';
+import assert from 'assert';
 import buildSchema from './schema.js';
 
 const __dirname = new URL('.', import.meta.url).pathname;
@@ -21,7 +21,7 @@ const config = ({
   serviceName,
   getEnvVars = false,
 }) => {
-  assert(Array.isArray(files), 'Expected an array of files');
+  assert(files instanceof Array, 'Expected an array of files');
   assert(typeof env === 'object', 'Expected env to be an object');
   assert(serviceName, 'serviceName is required');
 

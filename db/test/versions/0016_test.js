@@ -1,11 +1,11 @@
 import _ from 'lodash';
 import helper from '../helper.js';
 import testing from '@taskcluster/lib-testing';
-import { strict as assert } from 'node:assert';
+import { strict as assert } from 'assert';
 import slugid from 'slugid';
 
 suite(testing.suiteName(), function() {
-  const THIS_VERSION = parseInt(/.*\/0*(\d+)_test\.js/.exec(import.meta.url)[1], 10);
+  const THIS_VERSION = parseInt(/.*\/0*(\d+)_test\.js/.exec(import.meta.url)[1]);
   helper.withDbForVersion();
 
   suiteSetup(async function() {

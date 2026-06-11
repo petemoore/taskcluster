@@ -1,5 +1,5 @@
 import helper from './helper.js';
-import assert from 'node:assert';
+import assert from 'assert';
 import slugid from 'slugid';
 import taskcluster from '@taskcluster/client';
 import testing from '@taskcluster/lib-testing';
@@ -33,7 +33,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
    */
   const makeApiCall = async ({ clientName, apiCall, name, args, res, statusCode, errMessage }) => {
     let client = await helper.client(clientName);
-    let gotRes;
+    let gotRes = undefined;
     try {
       if (args) {
         gotRes = await client[apiCall](name, args);

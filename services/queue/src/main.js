@@ -25,7 +25,7 @@ import tcdb from '@taskcluster/db';
 import pulse from '@taskcluster/lib-pulse';
 import QuickLRU from 'quick-lru';
 import { artifactUtils } from './utils.js';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath } from 'url';
 
 // default claim timeout to 20 minutes (in seconds)
 const DEFAULT_CLAIM_TIMEOUT = 1200;
@@ -185,7 +185,7 @@ let load = loader({
   // Create dependencyTracker
   dependencyTracker: {
     requires: [
-      'publisher', 'monitor', 'db',
+      'publisher', 'queueService', 'monitor', 'db',
     ],
     setup: ({ monitor, ...ctx }) => new DependencyTracker({
       monitor: monitor.childMonitor('dependency-tracker'),
@@ -294,15 +294,15 @@ let load = loader({
   // Create the worker-removed-resolver process
   'worker-removed-resolver': {
     requires: [
-      'cfg', 'db', 'publisher', 'monitor',
+      'cfg', 'db', 'queueService', 'publisher', 'monitor',
       'dependencyTracker', 'pulseClient', 'workerManagerEvents',
     ],
     setup: async ({
-      db, publisher, dependencyTracker,
+      db, queueService, publisher, dependencyTracker,
       monitor, pulseClient, workerManagerEvents,
     }) => {
       let resolver = new WorkerRemovedResolver({
-        db, publisher, dependencyTracker,
+        db, queueService, publisher, dependencyTracker,
         pulseClient, workerManagerEvents,
         monitor: monitor.childMonitor('worker-removed-resolver'),
       });

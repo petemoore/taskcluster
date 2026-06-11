@@ -1,5 +1,5 @@
-import fs from 'node:fs';
-import { strict as assert } from 'node:assert';
+import fs from 'fs';
+import { strict as assert } from 'assert';
 import testing from '@taskcluster/lib-testing';
 
 import { newVersion, renumberVersions } from '../src/versions.js';

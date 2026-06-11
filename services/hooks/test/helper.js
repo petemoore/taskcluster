@@ -1,4 +1,4 @@
-import { globalAgent } from 'node:http';
+import { globalAgent } from 'http';
 import taskcluster from '@taskcluster/client';
 import taskcreator from '../src/taskcreator.js';
 
