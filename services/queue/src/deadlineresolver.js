@@ -1,6 +1,6 @@
 import debugFactory from 'debug';
 const debug = debugFactory('app:deadline-resolver');
-import assert from 'node:assert';
+import assert from 'assert';
 import _ from 'lodash';
 import QueueService from './queueservice.js';
 import Iterate from '@taskcluster/lib-iterate';
@@ -131,14 +131,7 @@ class DeadlineResolver {
       return remove();
     }
 
-    const updated = task.updateStatusWith(
-      await this.db.fns.cancel_task(taskId, 'deadline-exceeded'),
-    );
-
-    if (!updated) {
-      debug('No cancellation run created for taskId: %s; task was already resolved', taskId);
-      return remove();
-    }
+    task.updateStatusWith(await this.db.fns.cancel_task(taskId, 'deadline-exceeded'));
 
     // Check if the last run was resolved here (or possibly by a previous
     // attempt to process this message)

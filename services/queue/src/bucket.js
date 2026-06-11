@@ -10,10 +10,10 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { getEndpointFromInstructions } from '@aws-sdk/middleware-endpoint';
 import _ from 'lodash';
-import path from 'node:path';
+import path from 'path';
 import debugFactory from 'debug';
 const debug = debugFactory('app:bucket');
-import assert from 'node:assert';
+import assert from 'assert';
 
 /**
  * Create S3 bucket wrapper.
@@ -150,7 +150,7 @@ Bucket.prototype.deleteObject = function(prefix) {
 
 /** Delete a list of objects */
 Bucket.prototype.deleteObjects = function(prefixes, quiet = false) {
-  assert(Array.isArray(prefixes), 'prefixes must be an array');
+  assert(prefixes instanceof Array, 'prefixes must be an array');
   // S3 API limit: https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html
   assert(prefixes.length <= 1000, 'not more than 1000 prefixes can be deleted');
   return this.s3.send(new DeleteObjectsCommand({

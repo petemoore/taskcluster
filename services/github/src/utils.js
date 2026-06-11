@@ -1,6 +1,6 @@
-import crypto from 'node:crypto';
+import crypto from 'crypto';
 import request from 'superagent';
-import util from 'node:util';
+import util from 'util';
 
 import { ISSUE_COMMENT_ACTIONS } from './constants.js';
 
@@ -48,7 +48,7 @@ export const throttleRequest = async ({ url, method, response = { status: 0 }, a
 // for overriding in testing..
 throttleRequest.request = request;
 
-export const ciSkipRegexp = /\[(skip ci|ci skip)\]/i;
+export const ciSkipRegexp = new RegExp('\\[(skip ci|ci skip)\\]', 'i');
 
 /**
  * Check if push event should be skipped.
@@ -88,7 +88,7 @@ export const shouldSkipPullRequest = ({ pull_request }) => {
   return pull_request !== undefined && ciSkipRegexp.test(pull_request.title);
 };
 
-export const taskclusterCommandRegExp = /^\s*\/taskcluster\s+(.+)$/m;
+export const taskclusterCommandRegExp = new RegExp('^\\s*/taskcluster\\s+(.+)$', 'm');
 
 /**
  * Check if comment event should be skipped.

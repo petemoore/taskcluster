@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import { Task } from './data.js';
 
 /**
@@ -9,6 +9,7 @@ import { Task } from './data.js';
  * Options:
  * {
  *   publisher:          publisher from exchanges
+ *   queueService:       QueueService instance
  * }
  */
 class DependencyTracker {
@@ -17,11 +18,13 @@ class DependencyTracker {
     assert(options, 'options are required');
     assert(options.db, 'Expected options.db');
     assert(options.publisher, 'Expected options.publisher');
+    assert(options.queueService, 'Expected options.queueService');
     assert(options.monitor, 'Expected options.monitor');
 
     // Store options on this object
     this.db = options.db;
     this.publisher = options.publisher;
+    this.queueService = options.queueService;
     this.monitor = options.monitor;
   }
 
@@ -254,7 +257,7 @@ class DependencyTracker {
     }
 
     // Don't attempt to schedule tasks past their deadline
-    if (task.deadline.getTime() < Date.now()) {
+    if (task.deadline.getTime() < new Date().getTime()) {
       return null;
     }
 
@@ -269,17 +272,17 @@ class DependencyTracker {
     // Construct status structure
     let status = task.status();
 
-    // Publish task-pending. queue_pending_tasks insert is now atomic inside
-    // schedule_task (db v124). The publish is intentionally NOT wrapped:
-    // this method is invoked from the dependencyResolver's resolved-message
-    // loop, where a throw triggers redelivery and re-attempts the publish,
-    // preserving at-least-once semantics for downstream consumers.
+    // Put message into pending queue, and publish message to pulse,
+    // if the initial run is pending
     if (task.runs && task.runs[0].state === 'pending') {
-      await this.publisher.taskPending({
-        status: status,
-        runId: 0,
-        task: { tags: task.tags || {} },
-      }, task.routes);
+      await Promise.all([
+        this.queueService.putPendingMessage(task, 0),
+        this.publisher.taskPending({
+          status: status,
+          runId: 0,
+          task: { tags: task.tags || {} },
+        }, task.routes),
+      ]);
       this.monitor.log.taskPending({ taskId: task.taskId, runId: 0 });
     }
 

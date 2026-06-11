@@ -1,5 +1,5 @@
 import slugid from 'slugid';
-import assert from 'node:assert';
+import assert from 'assert';
 import taskcluster from '@taskcluster/client';
 import assume from 'assume';
 import helper from './helper.js';

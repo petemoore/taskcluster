@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import assert from 'node:assert';
+import assert from 'assert';
 import slugid from 'slugid';
 import taskcluster from '@taskcluster/client';
 import builder from '../src/api.js';
@@ -17,7 +17,7 @@ import {
 import { mockClient } from 'aws-sdk-client-mock';
 import nock from 'nock';
 import testing from '@taskcluster/lib-testing';
-import { globalAgent } from 'node:http';
+import { globalAgent } from 'http';
 
 export const load = testing.stickyLoader(loadMain);
 const __dirname = new URL('.', import.meta.url).pathname;
@@ -314,11 +314,11 @@ export const withServer = (mock, skipping) => {
       };
       // if called as scopes('none'), don't pass credentials at all
       if (scopes && scopes[0] !== 'none') {
-        options.credentials = {
+        options['credentials'] = {
           clientId: 'test-client',
           accessToken: 'none',
         };
-        options.authorizedScopes = scopes.length > 0 ? scopes : undefined;
+        options['authorizedScopes'] = scopes.length > 0 ? scopes : undefined;
       }
       helper.queue = new helper.Queue(options);
     };

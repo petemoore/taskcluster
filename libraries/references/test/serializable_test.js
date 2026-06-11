@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import References from '../src/index.js';
 import { makeSerializable } from '../src/serializable.js';
 import { getCommonSchemas } from '../src/common-schemas.js';

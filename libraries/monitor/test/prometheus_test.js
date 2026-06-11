@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import _ from 'lodash';
 import request from 'superagent';
 import nock from 'nock';
@@ -32,15 +32,6 @@ MonitorManager.registerMetric('testingServiceGauge', {
   labels: { instance: 'Instance' },
   serviceName: 'taskcluster-testing-service',
   registers: ['extra'],
-});
-
-MonitorManager.registerMetric('testingGlobalCounter', {
-  name: 'testing_global_counter',
-  type: 'counter',
-  title: 'A global test counter',
-  description: 'A global counter that should propagate to any exposed registry',
-  labels: { op: 'Operation name' },
-  global: true,
 });
 
 const TEST_PORT = 39090;
@@ -95,45 +86,6 @@ suite(testing.suiteName(), function() {
       /Not Found/);
 
     await monitor.terminate();
-  });
-
-  test('global metrics propagate to non-default registries on exposeMetrics', async function() {
-    const monitor = MonitorManager.setup({
-      ...configDefaults,
-      prometheusConfig: { server: { port: TEST_PORT } },
-    });
-    try {
-      // Expose a non-default registry — global metrics should be copied into it
-      monitor.exposeMetrics('extra');
-      monitor.metric.testingGlobalCounter(1, { op: 'test-op' });
-
-      const res = await request.get(`http://localhost:${TEST_PORT}/metrics`);
-      assert(res.ok);
-      // Global counter appears in the 'extra' registry
-      assert.match(res.text, /testing_global_counter/);
-      assert.match(res.text, /op="test-op"/);
-      // The non-global default-only counter does NOT appear
-      assert.doesNotMatch(res.text, /testing_service_test_counter/);
-    } finally {
-      await monitor.terminate();
-    }
-  });
-
-  test('global metrics appear in default registry', async function() {
-    const monitor = MonitorManager.setup({
-      ...configDefaults,
-      prometheusConfig: { server: { port: TEST_PORT } },
-    });
-    try {
-      monitor.exposeMetrics(); // default registry
-      monitor.metric.testingGlobalCounter(1, { op: 'default-op' });
-
-      const res = await request.get(`http://localhost:${TEST_PORT}/metrics`);
-      assert(res.ok);
-      assert.match(res.text, /testing_global_counter/);
-    } finally {
-      await monitor.terminate();
-    }
   });
 
   test('push gateway successfully sends metrics', async function() {

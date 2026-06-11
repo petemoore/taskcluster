@@ -1,5 +1,5 @@
 import helper from './helper.js';
-import assert from 'node:assert';
+import assert from 'assert';
 import MockDate from 'mockdate';
 import testing from '@taskcluster/lib-testing';
 import { GithubCheckOutput, GithubCheck, getTimeDifference } from '../src/handlers/utils.js';

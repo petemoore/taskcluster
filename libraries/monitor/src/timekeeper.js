@@ -1,4 +1,4 @@
-import { hrtime } from 'node:process';
+import { hrtime } from 'process';
 
 /**
  * A TimeKeeper is used for measuring arbitrary times.  This is nice when the

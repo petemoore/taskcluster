@@ -1,4 +1,4 @@
-import path from 'node:path';
+import path from 'path';
 import libUrls from 'taskcluster-lib-urls';
 import { CHECK_RUN_STATES } from '../constants.js';
 
@@ -86,7 +86,6 @@ export class GithubCheck {
     // task resolution and status
     status = null,
     conclusion = null,
-    started_at = null,
 
     // output shown in check run details page
     output_title = '',
@@ -105,7 +104,6 @@ export class GithubCheck {
 
     this.status = status;
     this.conclusion = conclusion;
-    this.started_at = started_at;
 
     this.output = new GithubCheckOutput({
       title: output_title,
@@ -121,11 +119,8 @@ export class GithubCheck {
    * automatically resolve check run as completed
    */
   getStatusPayload() {
-    const { status, conclusion, started_at } = this;
+    const { status, conclusion } = this;
     const resolution = { status };
-    if (started_at) {
-      resolution.started_at = started_at;
-    }
     if (status === CHECK_RUN_STATES.COMPLETED) {
       resolution.conclusion = conclusion;
       resolution.completed_at = new Date().toISOString();

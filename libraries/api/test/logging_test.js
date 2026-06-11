@@ -1,5 +1,5 @@
 import request from 'superagent';
-import assert from 'node:assert';
+import assert from 'assert';
 import hawk from 'hawk';
 import { APIBuilder } from '../src/index.js';
 import helper, { monitorManager } from './helper.js';

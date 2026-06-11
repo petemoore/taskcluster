@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import helper from './helper.js';
 import _ from 'lodash';
 import testing from '@taskcluster/lib-testing';
@@ -37,8 +37,8 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
 
     // Now loop over the existing workers as we do in scanworker
     // we do an initial comparison to ensure they make sense up to this point
-    const fetched = Worker.fromDbRows(await helper.db.fns.get_non_stopped_workers_with_launch_config_scanner_after(
-      null, null, null, null, null, 10, null, null, null));
+    const fetched = Worker.fromDbRows(await helper.db.fns.get_non_stopped_workers_with_launch_config_scanner(
+      null, null, null, null, null, 10, 0));
 
     assert.deepEqual(fetched.serializable(), w.serializable());
 

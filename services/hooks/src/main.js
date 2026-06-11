@@ -16,7 +16,7 @@ import exchanges from './exchanges.js';
 import libPulse from '@taskcluster/lib-pulse';
 import HookListeners from './listeners.js';
 import './monitor.js';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath } from 'url';
 
 // Create component loader
 const load = loader({
