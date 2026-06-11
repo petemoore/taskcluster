@@ -43,9 +43,20 @@ module.exports = (_, { mode }) => ({
   },
   resolve: {
     fallback: {
+      // Modules that cannot run in a browser — set to false
       fs: false,
       tls: false,
+      net: false,
+      module: false,
+      // Node.js core modules polyfilled for browser via explicit packages.
+      // Webpack 4 provided these automatically; webpack 5 requires explicit config.
+      // They are needed by @babel/core (bundled inside @mdx-js/runtime via remark-mdx)
+      // which is used at runtime for MDX transpilation in the browser.
       buffer: false,
+      path: require.resolve("path-browserify"),
+      os: require.resolve("os-browserify/browser"),
+      constants: require.resolve("constants-browserify"),
+      assert: require.resolve("assert"),
     },
     alias: {
       "@taskcluster/ui": `${__dirname}/src`,
@@ -366,7 +377,19 @@ module.exports = (_, { mode }) => ({
       initialClean: false,
       outputPath: "",
     }),
-    new CopyPlugin({ patterns: [{ context: "src/static", from: "**/*", to: "static" }] }),
+    new CopyPlugin({
+      patterns: [
+        {
+          context: "src/static",
+          from: "**/*",
+          to: "static",
+          // copy-webpack-plugin v6+ errors when the glob finds no files
+          // (e.g. in CI production builds where src/static/ doesn't exist yet
+          // because GENERATE_ENV_JS is not set and env.js hasn't been created).
+          noErrorOnMissing: true,
+        },
+      ],
+    }),
   ],
   entry: {
     index: [`${__dirname}/src/index.jsx`],
