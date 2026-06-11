@@ -1,8 +1,8 @@
 import { Client, Exchanges, connectionStringCredentials } from '../src/index.js';
-import path from 'node:path';
+import path from 'path';
 import amqplib from 'amqplib';
 import assume from 'assume';
-import assert from 'node:assert';
+import assert from 'assert';
 import SchemaSet from '@taskcluster/lib-validate';
 import libUrls from 'taskcluster-lib-urls';
 import helper from './helper.js';
@@ -187,7 +187,7 @@ helper.secrets.mockSuite(suiteName(), ['pulse'], function(mock, skipping) {
 
   suite('PulsePublisher', function() {
     // use a unique name for each test run, just to ensure nothing interferes
-    const unique = `test-${Date.now()}`;
+    const unique = `test-${new Date().getTime()}`;
     let client, conn, chan, exchanges, schemaset, publisher, messages;
 
     suiteSetup(async function() {

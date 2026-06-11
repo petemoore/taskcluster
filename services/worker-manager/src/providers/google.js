@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import slugid from 'slugid';
 import _ from 'lodash';
 import taskcluster from '@taskcluster/client';

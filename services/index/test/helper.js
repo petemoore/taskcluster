@@ -1,8 +1,8 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import builder from '../src/api.js';
 import taskcluster from '@taskcluster/client';
 import loadMain from '../src/main.js';
-import { globalAgent } from 'node:http';
+import { globalAgent } from 'http';
 import { satisfiesExpression } from 'taskcluster-lib-scopes';
 
 import testing from '@taskcluster/lib-testing';
@@ -120,11 +120,11 @@ export const withServer = (mock, skipping) => {
       };
       // if called as scopes('none'), don't pass credentials at all
       if (scopes && scopes[0] !== 'none') {
-        options.credentials = {
+        options['credentials'] = {
           clientId: 'test-client',
           accessToken: 'none',
         };
-        options.authorizedScopes = scopes.length > 0 ? scopes : undefined;
+        options['authorizedScopes'] = scopes.length > 0 ? scopes : undefined;
       }
       helper.index = new helper.Index(options);
     };

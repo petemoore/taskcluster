@@ -1,9 +1,9 @@
 import { Netmask } from 'netmask';
 import requestIp from 'request-ip';
 import request from 'superagent';
-import assert from 'node:assert';
-import fs from 'node:fs';
-import path from 'node:path';
+import assert from 'assert';
+import fs from 'fs';
+import path from 'path';
 
 const __dirname = new URL('.', import.meta.url).pathname;
 // Static URL from which ip-ranges from AWS services can be fetched
@@ -15,7 +15,7 @@ const LOCAL_IP_RANGES = path.join(__dirname, 'ip-ranges.json');
 class EC2RegionResolver {
   /** Construct EC2RegionResolver given a list of regions we care about */
   constructor(regions, monitor) {
-    assert(Array.isArray(regions), 'regions must be an array');
+    assert(regions instanceof Array, 'regions must be an array');
     this.regions = regions;
     this.monitor = monitor;
     this.ipRanges = [];

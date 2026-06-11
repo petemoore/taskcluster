@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import makeDebug from 'debug';
 const debug = makeDebug('app:queue');
-import assert from 'node:assert';
+import assert from 'assert';
 import slugid from 'slugid';
 import taskcluster from '@taskcluster/client';
 import { UNIQUE_VIOLATION } from '@taskcluster/lib-postgres';
