@@ -29,29 +29,31 @@ export default class TaskRedirect extends Component {
 
     return (
       <Dashboard>
-        {error ? (
-          <ErrorPanel fixed error={error} />
-        ) : (
-          <Fragment>
-            {loading && <Spinner />}
-            {!loading && task && (
-              <Redirect
-                to={{
-                  pathname:
-                    action === 'interactive'
-                      ? '/tasks/create?interactive=1'
-                      : '/tasks/create',
-                  state: {
-                    task:
+        <Fragment>
+          {error ? (
+            <ErrorPanel fixed error={error} />
+          ) : (
+            <Fragment>
+              {loading && <Spinner />}
+              {!loading && task && (
+                <Redirect
+                  to={{
+                    pathname:
                       action === 'interactive'
-                        ? parameterizeTask(sanitizedTask)
-                        : sanitizedTask,
-                  },
-                }}
-              />
-            )}
-          </Fragment>
-        )}
+                        ? '/tasks/create?interactive=1'
+                        : '/tasks/create',
+                    state: {
+                      task:
+                        action === 'interactive'
+                          ? parameterizeTask(sanitizedTask)
+                          : sanitizedTask,
+                    },
+                  }}
+                />
+              )}
+            </Fragment>
+          )}
+        </Fragment>
       </Dashboard>
     );
   }

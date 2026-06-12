@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import taskcluster from '@taskcluster/client';
 import gql from 'graphql-tag';
 import testing from '@taskcluster/lib-testing';
@@ -6,11 +6,11 @@ import helper from '../helper.js';
 import WebSocket from 'ws';
 import { SubscriptionClient } from 'subscriptions-transport-ws';
 
-helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
+helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
   // Use mutable scopeOverride to allow tests to dynamically change auth scopes
   let scopeOverride = null;
 
-  suiteSetup('withMutableAuthFactory', () => {
+  suiteSetup('withMutableAuthFactory', function() {
     if (skipping()) {
       return;
     }
@@ -26,7 +26,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     );
   });
 
-  suiteTeardown(() => {
+  suiteTeardown(function() {
     helper.load.remove('authFactory');
   });
 
@@ -36,8 +36,8 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
   helper.withPulse(helper, skipping);
   helper.resetTables(mock, skipping);
 
-  suite('Task Queries and Mutations', () => {
-    test('query works', async () => {
+  suite('Task Queries and Mutations', function() {
+    test('query works', async function() {
       const client = helper.getHttpClient();
       const taskId = taskcluster.slugid();
       const createTaskQuery = await helper.loadFixture('createTask.graphql');
@@ -63,7 +63,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       assert.equal(response.data.task.taskId, taskId);
     });
 
-    test('mutation works', async () => {
+    test('mutation works', async function() {
       const client = helper.getHttpClient();
       const taskId = taskcluster.slugid();
       const createTaskQuery = await helper.loadFixture('createTask.graphql');
@@ -80,15 +80,15 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     });
   });
 
-  suite('Task Subscriptions', () => {
+  suite('Task Subscriptions', function() {
     helper.withMockedEventIterator();
 
-    test('subscribe works', async () => {
-      const subscriptionClient = await helper.createSubscriptionClient();
+    test('subscribe works', async function() {
+      let subscriptionClient = await helper.createSubscriptionClient();
       const client = helper.getWebsocketClient(subscriptionClient);
 
-      const taskId = "subscribe-task-id";
-      const taskGroupId = "subscribe-task-group-id";
+      let taskId = "subscribe-task-id";
+      let taskGroupId = "subscribe-task-group-id";
 
       const payload = {
         tasksSubscriptions: {
@@ -109,7 +109,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       const subscribeTasks = await helper.loadFixture('tasksSubscriptions.graphql');
 
       let tasksSubscriptionsResult;
-      const taskSubscription = client.subscribe({
+      let taskSubscription = client.subscribe({
         query: gql`${subscribeTasks}`,
         variables: {
           taskGroupId,
@@ -130,7 +130,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       subscriptionClient.close();
     });
 
-    test('connection rejected without web:read-pulse scope', async () => {
+    test('connection rejected without web:read-pulse scope', async function() {
       scopeOverride = [];
       let subscriptionClient;
       try {
