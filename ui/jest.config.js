@@ -17,7 +17,7 @@ module.exports = {
   transform: {
     "\\.(mjs|jsx|js)$": "<rootDir>/__jest__/transformer.js",
     "^.+\\.(js|jsx)$": "babel-jest",
-    "\\.graphql$": "jest-transform-graphql",
+    "\\.graphql$": "<rootDir>/__jest__/graphqlTransformer.js",
   },
   testMatch: [
     "<rootDir>/src/**/*.test.(js|jsx)",
@@ -25,6 +25,6 @@ module.exports = {
   ],
   setupFilesAfterEnv: ["./jest.setup.js"],
   transformIgnorePatterns: [
-    "node_modules/(?!is-absolute-url|@taskcluster/client-web)",
+    "node_modules/(?!is-absolute-url|@taskcluster/client-web|dexie)",
   ],
 };
