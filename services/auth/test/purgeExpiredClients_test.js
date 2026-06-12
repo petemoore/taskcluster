@@ -1,9 +1,9 @@
 import helper from './helper.js';
 import assume from 'assume';
-import taskcluster from '@taskcluster/client';
-import testing from '@taskcluster/lib-testing';
+import taskcluster from 'taskcluster-client';
+import testing from 'taskcluster-lib-testing';
 
-helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping) => {
+helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], function(mock, skipping) {
   helper.withCfg(mock, skipping);
   helper.withDb(mock, skipping);
   helper.withPulse(mock, skipping);
@@ -25,7 +25,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
   };
 
   const assertClientPresent = async () => {
-    const client = await helper.apiClient.client(CLIENT_ID);
+    let client = await helper.apiClient.client(CLIENT_ID);
     assume(client.clientId).to.equal(CLIENT_ID);
   };
 
@@ -55,8 +55,5 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
     await testClient({ expires: '-1 hour', deleteOnExpiration: true });
     await helper.load('purge-expired-clients');
     await assertClientAbsent();
-
-    const results = await helper.db.fns.get_combined_audit_history(null, CLIENT_ID, 'client', 10, 0);
-    assume(results.map(({ action_type }) => action_type).includes('expired'));
   });
 });

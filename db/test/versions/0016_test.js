@@ -1,13 +1,14 @@
+import _ from 'lodash';
 import helper from '../helper.js';
-import testing from '@taskcluster/lib-testing';
-import { strict as assert } from 'node:assert';
+import testing from 'taskcluster-lib-testing';
+import { strict as assert } from 'assert';
 import slugid from 'slugid';
 
-suite(testing.suiteName(), () => {
-  const THIS_VERSION = parseInt(/.*\/0*(\d+)_test\.js/.exec(import.meta.url)[1], 10);
+suite(testing.suiteName(), function() {
+  const THIS_VERSION = parseInt(/.*\/0*(\d+)_test\.js/.exec(import.meta.url)[1]);
   helper.withDbForVersion();
 
-  suiteSetup(async () => {
+  suiteSetup(async function() {
     await testing.resetDb({ testDbUrl: helper.dbUrl });
     await helper.upgradeTo(THIS_VERSION);
 
@@ -27,7 +28,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('uuid_to_slugid', async () => {
+  test('uuid_to_slugid', async function() {
     await helper.withDbClient(async client => {
       const bugs = await client.query(
         `select
@@ -40,7 +41,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('slugid_to_uuid', async () => {
+  test('slugid_to_uuid', async function() {
     await helper.withDbClient(async client => {
       const bugs = await client.query(
         `select

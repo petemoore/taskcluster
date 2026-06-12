@@ -1,8 +1,8 @@
 import subject from '../src/watchdog.js';
 import assume from 'assume';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 
-suite(testing.suiteName(), () => {
+suite(testing.suiteName(), function() {
   let events;
 
   const runWithFakeTime = fn => {
@@ -13,10 +13,10 @@ suite(testing.suiteName(), () => {
 
   const listen = w => {
     events = [];
-    w.on('expired', () => events.push(['expired', Date.now()]));
+    w.on('expired', () => events.push(['expired', +new Date()]));
   };
 
-  test('should emit expired event', runWithFakeTime(async () => {
+  test('should emit expired event', runWithFakeTime(async function() {
     const w = new subject(1 * 1000);
     listen(w);
     w.start();
@@ -26,7 +26,7 @@ suite(testing.suiteName(), () => {
     ]);
   }));
 
-  test('should not expire early', runWithFakeTime(async () => {
+  test('should not expire early', runWithFakeTime(async function() {
     const w = new subject(1 * 1000);
     listen(w);
     w.start();
@@ -35,7 +35,7 @@ suite(testing.suiteName(), () => {
     assume(events).to.deeply.equal([]);
   }));
 
-  test('should expire on time', runWithFakeTime(async () => {
+  test('should expire on time', runWithFakeTime(async function() {
     const w = new subject(1 * 1000);
     listen(w);
     w.start();
@@ -46,7 +46,7 @@ suite(testing.suiteName(), () => {
     ]);
   }));
 
-  test('should not expire twice', runWithFakeTime(async () => {
+  test('should not expire twice', runWithFakeTime(async function() {
     const w = new subject(1 * 1000);
     listen(w);
     w.start();
@@ -57,7 +57,7 @@ suite(testing.suiteName(), () => {
     ]);
   }));
 
-  test('touching should reset timer', runWithFakeTime(async () => {
+  test('touching should reset timer', runWithFakeTime(async function() {
     const w = new subject(1 * 1000);
     listen(w);
     w.start();

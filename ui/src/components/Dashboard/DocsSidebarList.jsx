@@ -1,6 +1,7 @@
 import React, { Fragment, Component } from 'react';
 import { Link, withRouter } from 'react-router-dom';
 import classNames from 'classnames';
+import { lowerCase } from 'lower-case';
 import { withStyles } from '@material-ui/core/styles';
 import Typography from '@material-ui/core/Typography';
 import ListItem from '@material-ui/core/ListItem';
@@ -21,7 +22,7 @@ const getDocsSectionFromPathname = pathname => {
   }
 
   const item = DOCS_MENU_ITEMS.find(({ label }) => {
-    if (pathname.startsWith(join(DOCS_PATH_PREFIX, label.toLowerCase()))) {
+    if (pathname.startsWith(join(DOCS_PATH_PREFIX, lowerCase(label)))) {
       return true;
     }
 
@@ -101,6 +102,7 @@ export default class DocsSidebarList extends Component {
   state = {
     currentMenu: null,
     menuOpen: true,
+    // eslint-disable-next-line react/no-unused-state
     previousPathname: null,
   };
 
@@ -188,7 +190,7 @@ export default class DocsSidebarList extends Component {
     const href = removeReadmeFromPath(join(DOCS_PATH_PREFIX, node.path));
     const isLinkActive = removeReadmeFromPath(location.pathname) === href;
 
-    if (node.children?.length) {
+    if (node.children && node.children.length) {
       const [nodes, inlineNodes] = node.children.reduce(
         (acc, curr) => {
           if (curr.data.inline) {
@@ -231,13 +233,14 @@ export default class DocsSidebarList extends Component {
     }
 
     return (
-      <Link to={href} key={node.path}>
+      <Link to={href}>
         <Typography
           variant="body2"
           className={classNames(classes.link, classes.hover, {
             [classes.linkActive]: isLinkActive,
             [classes.header]: isRoot,
-          })}>
+          })}
+          key={node.path}>
           {node.data.title}
         </Typography>
       </Link>
@@ -284,10 +287,10 @@ export default class DocsSidebarList extends Component {
             <Collapse
               in={item.hasChildren && menuOpen && currentMenu === item.label}>
               <div className={classes.collapse}>
-                {docsTableOfContents[item.label.toLowerCase()] &&
-                  docsTableOfContents[item.label.toLowerCase()].children.map(
-                    child => this.renderNode(child, true)
-                  )}
+                {docsTableOfContents[lowerCase(item.label)] &&
+                  docsTableOfContents[
+                    lowerCase(item.label)
+                  ].children.map(child => this.renderNode(child, true))}
               </div>
             </Collapse>
           </Fragment>

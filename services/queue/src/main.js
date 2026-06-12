@@ -1,7 +1,7 @@
 import '../../prelude.js';
 import debugFactory from 'debug';
 const debug = debugFactory('app:main');
-import taskcluster from '@taskcluster/client';
+import taskcluster from 'taskcluster-client';
 import builder from './api.js';
 import exchanges from './exchanges.js';
 import Bucket from './bucket.js';
@@ -9,23 +9,22 @@ import QueueService from './queueservice.js';
 import EC2RegionResolver from './ec2regionresolver.js';
 import DeadlineResolver from './deadlineresolver.js';
 import ClaimResolver from './claimresolver.js';
-import WorkerRemovedResolver from './workerremovedresolver.js';
 import DependencyTracker from './dependencytracker.js';
 import DependencyResolver from './dependencyresolver.js';
 import MetricsCollector from './metricscollector.js';
 import WorkClaimer from './workclaimer.js';
 import WorkerInfo from './workerinfo.js';
-import loader from '@taskcluster/lib-loader';
-import config from '@taskcluster/lib-config';
-import { MonitorManager } from '@taskcluster/lib-monitor';
-import SchemaSet from '@taskcluster/lib-validate';
-import libReferences from '@taskcluster/lib-references';
-import { App } from '@taskcluster/lib-app';
-import tcdb from '@taskcluster/db';
-import pulse from '@taskcluster/lib-pulse';
+import loader from 'taskcluster-lib-loader';
+import config from 'taskcluster-lib-config';
+import { MonitorManager } from 'taskcluster-lib-monitor';
+import SchemaSet from 'taskcluster-lib-validate';
+import libReferences from 'taskcluster-lib-references';
+import { App } from 'taskcluster-lib-app';
+import tcdb from 'taskcluster-db';
+import pulse from 'taskcluster-lib-pulse';
 import QuickLRU from 'quick-lru';
 import { artifactUtils } from './utils.js';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath } from 'url';
 
 // default claim timeout to 20 minutes (in seconds)
 const DEFAULT_CLAIM_TIMEOUT = 1200;
@@ -47,7 +46,7 @@ const DEFAULT_MAX_TASK_DEPENDENCIES = 10000;
 import './monitor.js';
 
 // Create component loader
-const load = loader({
+let load = loader({
   cfg: {
     requires: ['profile'],
     setup: ({ profile }) => config({
@@ -98,7 +97,7 @@ const load = loader({
   publicArtifactBucket: {
     requires: ['cfg', 'monitor'],
     setup: async ({ cfg, monitor }) => {
-      const bucket = new Bucket({
+      let bucket = new Bucket({
         bucket: cfg.app.publicArtifactBucket,
         awsOptions: cfg.aws,
         bucketCDN: cfg.app.publicArtifactBucketCDN,
@@ -111,7 +110,7 @@ const load = loader({
   privateArtifactBucket: {
     requires: ['cfg', 'monitor'],
     setup: async ({ cfg, monitor }) => {
-      const bucket = new Bucket({
+      let bucket = new Bucket({
         bucket: cfg.app.privateArtifactBucket,
         awsOptions: cfg.aws,
         monitor: monitor.childMonitor('private-bucket'),
@@ -126,13 +125,6 @@ const load = loader({
     setup: ({ cfg }) => new taskcluster.Object({
       rootUrl: cfg.taskcluster.rootUrl,
       credentials: cfg.taskcluster.credentials,
-    }),
-  },
-
-  workerManagerEvents: {
-    requires: ['cfg'],
-    setup: ({ cfg }) => new taskcluster.WorkerManagerEvents({
-      rootUrl: cfg.taskcluster.rootUrl,
     }),
   },
 
@@ -185,7 +177,7 @@ const load = loader({
   // Create dependencyTracker
   dependencyTracker: {
     requires: [
-      'publisher', 'monitor', 'db',
+      'publisher', 'queueService', 'monitor', 'db',
     ],
     setup: ({ monitor, ...ctx }) => new DependencyTracker({
       monitor: monitor.childMonitor('dependency-tracker'),
@@ -197,7 +189,7 @@ const load = loader({
   regionResolver: {
     requires: ['cfg', 'monitor'],
     setup: async ({ cfg, monitor }) => {
-      const regionResolver = new EC2RegionResolver([cfg.aws.region], monitor);
+      let regionResolver = new EC2RegionResolver([cfg.aws.region], monitor);
       regionResolver.start();
       return regionResolver;
     },
@@ -277,7 +269,7 @@ const load = loader({
     setup: async ({
       cfg, db, queueService, publisher, dependencyTracker, monitor,
     }, ownName) => {
-      const resolver = new ClaimResolver({
+      let resolver = new ClaimResolver({
         ownName,
         db, queueService, publisher, dependencyTracker,
         pollingDelay: cfg.app.claimResolver.pollingDelay,
@@ -286,28 +278,6 @@ const load = loader({
         monitor: monitor.childMonitor('claim-resolver'),
       });
       await resolver.start();
-      monitor.exposeMetrics('resolvers');
-      return resolver;
-    },
-  },
-
-  // Create the worker-removed-resolver process
-  'worker-removed-resolver': {
-    requires: [
-      'cfg', 'db', 'publisher', 'monitor',
-      'dependencyTracker', 'pulseClient', 'workerManagerEvents',
-    ],
-    setup: async ({
-      db, publisher, dependencyTracker,
-      monitor, pulseClient, workerManagerEvents,
-    }) => {
-      const resolver = new WorkerRemovedResolver({
-        db, publisher, dependencyTracker,
-        pulseClient, workerManagerEvents,
-        monitor: monitor.childMonitor('worker-removed-resolver'),
-      });
-      await resolver.start();
-      monitor.exposeMetrics('resolvers');
       return resolver;
     },
   },
@@ -321,7 +291,7 @@ const load = loader({
     setup: async ({
       cfg, db, queueService, publisher, dependencyTracker, monitor,
     }, ownName) => {
-      const resolver = new DeadlineResolver({
+      let resolver = new DeadlineResolver({
         ownName,
         db, queueService, publisher, dependencyTracker,
         pollingDelay: cfg.app.deadlineResolver.pollingDelay,
@@ -330,7 +300,6 @@ const load = loader({
         monitor: monitor.childMonitor('deadline-resolver'),
       });
       await resolver.start();
-      monitor.exposeMetrics('resolvers');
       return resolver;
     },
   },
@@ -339,7 +308,7 @@ const load = loader({
   'dependency-resolver': {
     requires: ['cfg', 'queueService', 'dependencyTracker', 'monitor'],
     setup: async ({ cfg, queueService, dependencyTracker, monitor }, ownName) => {
-      const resolver = new DependencyResolver({
+      let resolver = new DependencyResolver({
         ownName,
         queueService, dependencyTracker,
         pollingDelay: cfg.app.dependencyResolver.pollingDelay,
@@ -449,7 +418,7 @@ const load = loader({
   'queue-metrics': {
     requires: ['cfg', 'db', 'monitor', 'queueService'],
     setup: async ({ cfg, db, monitor, queueService }, ownName) => {
-      /** @type {import('@taskcluster/lib-monitor').Monitor} */
+      /** @type {import('taskcluster-lib-monitor').Monitor} */
       const childMonitor = monitor.childMonitor('queue-metrics');
       const collector = new MetricsCollector({
         ownName,

@@ -1,14 +1,14 @@
 import helper from '../helper.js';
-import assert from 'node:assert';
-import testing from '@taskcluster/lib-testing';
+import assert from 'assert';
+import testing from 'taskcluster-lib-testing';
 
-const THIS_VERSION = parseInt(/.*\/0*(\d+)_test\.js/.exec(import.meta.url)[1], 10);
+const THIS_VERSION = parseInt(/.*\/0*(\d+)_test\.js/.exec(import.meta.url)[1]);
 const PREV_VERSION = THIS_VERSION - 1;
 
-suite(testing.suiteName(), () => {
+suite(testing.suiteName(), function() {
   helper.withDbForVersion();
 
-  test('task_queue_id, provisioner_id, worker_type columns created / removed appropriately and table named changed correctly for queue_worker_types -> task_queues', async () => {
+  test('task_queue_id, provisioner_id, worker_type columns created / removed appropriately and table named changed correctly for queue_worker_types -> task_queues', async function() {
     await testing.resetDb({ testDbUrl: helper.dbUrl });
 
     await helper.upgradeTo(PREV_VERSION);
@@ -45,7 +45,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('task_queue_id, provisioner_id, worker_type columns created / removed appropriately for queue_workers', async () => {
+  test('task_queue_id, provisioner_id, worker_type columns created / removed appropriately for queue_workers', async function() {
     await testing.resetDb({ testDbUrl: helper.dbUrl });
 
     await helper.upgradeTo(PREV_VERSION);
@@ -82,7 +82,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('queue_provisioners deleted and recreated appropriately', async () => {
+  test('queue_provisioners deleted and recreated appropriately', async function() {
     await testing.resetDb({ testDbUrl: helper.dbUrl });
 
     await helper.upgradeTo(PREV_VERSION);

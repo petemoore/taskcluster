@@ -1,4 +1,4 @@
-import * as Sentry from '@sentry/node';
+import Sentry from '@sentry/node';
 
 const tcToSentryLevel = {
   emerg: 'fatal',
@@ -12,17 +12,19 @@ const tcToSentryLevel = {
 };
 
 export class SentryReporter {
-  constructor({ dsn, taskclusterVersion, serviceName, processName, sentryOptions }) {
+  constructor({ dsn, taskclusterVersion, serviceName, processName }) {
     if (!dsn) {
       throw new Error('SentryReporter plugin must have a `dsn` set to work.');
     }
     Sentry.init({
       dsn,
       release: taskclusterVersion,
-      ...sentryOptions,
+      autoSessionTracking: false,
     });
-    Sentry.setTag('service', serviceName);
-    Sentry.setTag('proc', processName);
+    Sentry.configureScope(scope => {
+      scope.setTag('service', serviceName);
+      scope.setTag('proc', processName);
+    });
   }
 
   report(error, level, extra) {

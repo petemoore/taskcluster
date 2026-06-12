@@ -11,8 +11,8 @@ import (
 	"sync"
 
 	docopt "github.com/docopt/docopt-go"
-	"github.com/taskcluster/taskcluster/v100/internal"
-	stream "github.com/taskcluster/taskcluster/v100/tools/livelog/writer"
+	"github.com/taskcluster/taskcluster/v86/internal"
+	stream "github.com/taskcluster/taskcluster/v86/tools/livelog/writer"
 )
 
 const (
@@ -30,7 +30,6 @@ Environment:
  ACCESS_TOKEN			an arbitrary url-safe string
  SERVER_CRT_FILE		path to a file containing a certificate, if not provided, the server will run without TLS
  SERVER_KEY_FILE		path to a file containing a key, if not provided, the server will run without TLS
- LIVELOG_TEMP_DIR		directory for temporary streaming files, defaults to the system temp dir
 
 Options:
 -h --help       Show help
@@ -239,7 +238,6 @@ func serve(putAddr, getAddr string) {
 			mutex.Unlock() // used instead of defer so we don't block other rejections
 			return
 		}
-		handlingPut = true
 		mutex.Unlock() // So we don't block other rejections...
 
 		stream, streamErr := stream.NewStream(r.Body)

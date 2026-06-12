@@ -1,10 +1,10 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import { getCommonSchemas } from '../src/common-schemas.js';
 import libUrls from 'taskcluster-lib-urls';
 import _ from 'lodash';
 import References from '../src/index.js';
 import { validate } from '../src/validate.js';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 
 const { omit, merge } = _;
 
@@ -85,7 +85,7 @@ class RefBuilder {
   }
 }
 
-suite(testing.suiteName(), () => {
+suite(testing.suiteName(), function() {
   const assertProblems = (references, expected) => {
     try {
       validate(references);
@@ -101,14 +101,14 @@ suite(testing.suiteName(), () => {
     }
   };
 
-  test('empty references pass', async () => {
+  test('empty references pass', async function() {
     (new RefBuilder()).then(references => {
       references.end();
       assertProblems(references, []);
     });
   });
 
-  test('schema with no $id fails', async () => {
+  test('schema with no $id fails', async function() {
     (new RefBuilder()).then(async (references) => {
       references.schema({ omitPaths: ['$id'] })
         .end();
@@ -116,7 +116,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('schema with invalid $id fails', async () => {
+  test('schema with invalid $id fails', async function() {
     (new RefBuilder()).then(async (references) => {
       references.schema({ $id: '/schemas/foo.yml' })
         .end();
@@ -127,7 +127,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('schema with invalid absolute $ref fails', async () => {
+  test('schema with invalid absolute $ref fails', async function() {
     (new RefBuilder()).then(async (references) => {
       references.schema({
         type: 'object',
@@ -142,7 +142,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('schema with invalid relative $ref fails', async () => {
+  test('schema with invalid relative $ref fails', async function() {
     (new RefBuilder()).then(async (references) => {
       references.schema({
         type: 'object',
@@ -157,7 +157,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('schema with no metaschema fails', async () => {
+  test('schema with no metaschema fails', async function() {
     (new RefBuilder()).then(async (references) => {
       references.schema({ omitPaths: ['$schema'] })
         .end();
@@ -165,7 +165,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('common schema with custom metaschema passes', async () => {
+  test('common schema with custom metaschema passes', async function() {
     (new RefBuilder()).then(async (references) => {
       references.schema({
         $id: '/schemas/common/some-format.json#',
@@ -177,7 +177,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('invalid schema fails', async () => {
+  test('invalid schema fails', async function() {
     (new RefBuilder()).then(async (references) => {
       references.schema({
         type: 'object',
@@ -194,7 +194,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('schema with "entries" but no "type" fails', async () => {
+  test('schema with "entries" but no "type" fails', async function() {
     (new RefBuilder()).then(async (references) => {
       references.schema({
         entries: { type: 'string' },
@@ -207,7 +207,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('schema with "entries" but no "uniqueItems" fails', async () => {
+  test('schema with "entries" but no "uniqueItems" fails', async function() {
     (new RefBuilder()).then(async (references) => {
       references.schema({
         type: 'array',
@@ -220,7 +220,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('schema with "properties" but no "type" fails', async () => {
+  test('schema with "properties" but no "type" fails', async function() {
     (new RefBuilder()).then(async (references) => {
       references.schema({
         properties: {},
@@ -233,7 +233,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('schema with "properties" but no "additionalProperties" fails', async () => {
+  test('schema with "properties" but no "additionalProperties" fails', async function() {
     (new RefBuilder()).then(async (references) => {
       references.schema({
         type: 'object',
@@ -246,7 +246,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('invalid schema with custom metaschema fails', async () => {
+  test('invalid schema with custom metaschema fails', async function() {
     (new RefBuilder()).then(async (references) => {
       references.schema({
         $schema: '/schemas/common/metadata-metaschema.json#',
@@ -259,7 +259,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('schema with undefined metaschema fails', async () => {
+  test('schema with undefined metaschema fails', async function() {
     (new RefBuilder()).then(async (references) => {
       references.schema({ $schema: '/schemas/nosuch.json#' })
         .end();
@@ -269,7 +269,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('api reference with no $schema fails', async () => {
+  test('api reference with no $schema fails', async function() {
     (new RefBuilder()).then(async (references) => {
       references.apiref({ omitPaths: ['$schema'] })
         .end();
@@ -277,7 +277,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('exchanges reference with no $schema fails', async () => {
+  test('exchanges reference with no $schema fails', async function() {
     (new RefBuilder()).then(async (references) => {
       references.exchangesref({ omitPaths: ['$schema'] })
         .end();
@@ -285,7 +285,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('invalid api reference fails', async () => {
+  test('invalid api reference fails', async function() {
     (new RefBuilder()).then(async (references) => {
       references.apiref({ serviceName: true })
         .end();
@@ -295,7 +295,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('invalid exchanges reference fails', async () => {
+  test('invalid exchanges reference fails', async function() {
     (new RefBuilder()).then(async (references) => {
       references.schema({ $id: '/schemas/test/v2/message.json#' })
         .exchangesref({ title: false })
@@ -306,7 +306,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('reference with undefined $schema fails', async () => {
+  test('reference with undefined $schema fails', async function() {
     (new RefBuilder()).then(async (references) => {
       references.apiref({ $schema: '/schemas/nosuch.json#' })
         .end();
@@ -316,7 +316,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('reference with non-metadata metaschema fails', async () => {
+  test('reference with non-metadata metaschema fails', async function() {
     (new RefBuilder()).then(async (references) => {
       references.apiref({ $schema: '/schemas/common/metadata-metaschema.json#' })
         .end();
@@ -328,7 +328,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('exchanges reference with absolute entry schema URL fails', async () => {
+  test('exchanges reference with absolute entry schema URL fails', async function() {
     (new RefBuilder()).then(async (references) => {
       references.exchangesref({ entries: [{ schema: 'https://schemas.exmaple.com/message.json#' }] })
         .end();
@@ -338,7 +338,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('exchanges reference with /-relative entry schema (that exists) fails', async () => {
+  test('exchanges reference with /-relative entry schema (that exists) fails', async function() {
     (new RefBuilder()).then(async (references) => {
       references.schema({ $id: '/schemas/test/v2/message.json#' })
         .exchangesref({ entries: [{ schema: '/schemas/test/v2/message.json#' }] })
@@ -349,7 +349,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('exchanges reference with ../-relative entry schema (that exists) fails', async () => {
+  test('exchanges reference with ../-relative entry schema (that exists) fails', async function() {
     (new RefBuilder()).then(async (references) => {
       references.schema({ $id: '/schemas/test/v2/message.json#' })
         .exchangesref({ entries: [{ schema: '../test/v2/message.json#' }] })
@@ -360,7 +360,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('exchanges reference with entry schema that does not exist fails', async () => {
+  test('exchanges reference with entry schema that does not exist fails', async function() {
     (new RefBuilder()).then(async (references) => {
       references.exchangesref({ entries: [{ schema: 'v2/message.json#' }] })
         .end();
@@ -370,7 +370,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('api reference with absolute entry input URL fails', async () => {
+  test('api reference with absolute entry input URL fails', async function() {
     (new RefBuilder()).then(async (references) => {
       references.apiref({ entries: [{ input: 'https://schemas.exmaple.com/resource.json#' }] })
         .end();
@@ -380,7 +380,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('api reference with /-relative entry input (that exists) fails', async () => {
+  test('api reference with /-relative entry input (that exists) fails', async function() {
     (new RefBuilder()).then(async (references) => {
       references.schema({ $id: '/schemas/test/v2/resource.json#' })
         .apiref({ entries: [{ input: '/schemas/test/v2/resource.json#' }] })
@@ -391,7 +391,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('api reference with entry input that does not exist fails', async () => {
+  test('api reference with entry input that does not exist fails', async function() {
     (new RefBuilder()).then(async (references) => {
       references.apiref({ entries: [{ input: 'v2/resource.json#' }] })
         .end();
@@ -401,7 +401,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('api reference with absolute entry output URL fails', async () => {
+  test('api reference with absolute entry output URL fails', async function() {
     (new RefBuilder()).then(async (references) => {
       references.apiref({ entries: [{ output: 'https://schemas.exmaple.com/resource.json#' }] })
         .end();
@@ -411,7 +411,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('api reference with /-relative entry output (that exists) fails', async () => {
+  test('api reference with /-relative entry output (that exists) fails', async function() {
     (new RefBuilder()).then(async (references) => {
       references.schema({ $id: '/schemas/test/v2/resource.json#' })
         .apiref({ entries: [{ output: '/schemas/test/v2/resource.json#' }] })
@@ -422,7 +422,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('api reference with entry output that does not exist fails', async () => {
+  test('api reference with entry output that does not exist fails', async function() {
     (new RefBuilder()).then(async (references) => {
       references.apiref({ entries: [{ output: 'v2/resource.json#' }] })
         .end();
@@ -432,7 +432,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('api reference with entry output that exists but has wrong $schema fails', async () => {
+  test('api reference with entry output that exists but has wrong $schema fails', async function() {
     (new RefBuilder()).then(async (references) => {
       references.schema({
         $schema: 'http://json-schema.org/draft-06/schema#',
@@ -446,7 +446,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('api reference with entry output that exists but has right $schema passes', async () => {
+  test('api reference with entry output that exists but has right $schema passes', async function() {
     (new RefBuilder()).then(async (references) => {
       references.schema({
         $schema: 'https://tc-tests.example.com/schemas/common/metaschema.json#',
@@ -458,7 +458,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('service schema referenced by service passes', async () => {
+  test('service schema referenced by service passes', async function() {
     (new RefBuilder()).then(async (references) => {
       references.schema({
         $id: '/schemas/test/test.json#',
@@ -471,7 +471,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('service schema *not* referenced by service fails', async () => {
+  test('service schema *not* referenced by service fails', async function() {
     (new RefBuilder()).then(async (references) => {
       references.schema({
         $id: '/schemas/test/test.json#',

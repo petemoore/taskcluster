@@ -1,10 +1,10 @@
-import assert from 'node:assert';
-import taskcluster from '@taskcluster/client';
+import assert from 'assert';
+import taskcluster from 'taskcluster-client';
 import debugFactory from 'debug';
 const debug = debugFactory('index:handlers');
 import _ from 'lodash';
 import helpers from './helpers.js';
-import { consume } from '@taskcluster/lib-pulse';
+import { consume } from 'taskcluster-lib-pulse';
 
 /**
  * Create handlers
@@ -20,7 +20,7 @@ import { consume } from '@taskcluster/lib-pulse';
  *   db:                 // db instance
  * }
  */
-const Handlers = function(options) {
+let Handlers = function(options) {
   // Validate options
   assert(options.queue, 'An instance of taskcluster.Queue is required');
   assert(options.queueEvents instanceof taskcluster.QueueEvents,
@@ -71,12 +71,16 @@ Handlers.prototype.terminate = async function() {
 
 /** Handle notifications of completed messages */
 Handlers.prototype.completed = function(message) {
+  let that = this;
 
   // Find namespaces to index under
-  const namespaces = message.routes
-    .filter((route) => this.routeRegexp.test(route))
-    .map((route) => this.routeRegexp.exec(route)[1])
-    .filter((namespace) => helpers.namespaceFormat.test(namespace));
+  let namespaces = message.routes.filter(function(route) {
+    return that.routeRegexp.test(route);
+  }).map(function(route) {
+    return that.routeRegexp.exec(route)[1];
+  }).filter(function(namespace) {
+    return helpers.namespaceFormat.test(namespace);
+  });
 
   // If there is no namespace we better log this
   if (namespaces.length === 0) {
@@ -85,7 +89,7 @@ Handlers.prototype.completed = function(message) {
   }
 
   // Get task definition
-  return this.queue.task(message.payload.status.taskId).then((task) => {
+  return this.queue.task(message.payload.status.taskId).then(function(task) {
 
     // Create default expiration date
     let expires;
@@ -97,7 +101,7 @@ Handlers.prototype.completed = function(message) {
     }
 
     // Get `index` from `extra` section
-    const options = _.defaults({}, task.extra?.index || {}, {
+    let options = _.defaults({}, (task.extra || {}).index || {}, {
       rank: 0,
       expires: expires.toJSON(),
       data: {},
@@ -121,12 +125,14 @@ Handlers.prototype.completed = function(message) {
     }
 
     // Insert everything into the index
-    return Promise.all(namespaces.map((namespace) => helpers.taskUtils.insertTask(this.db, namespace, {
-      taskId: message.payload.status.taskId,
-      data: options.data,
-      expires: expires,
-      rank: options.rank,
-    }))).then(() => {
+    return Promise.all(namespaces.map(function(namespace) {
+      return helpers.taskUtils.insertTask(that.db, namespace, {
+        taskId: message.payload.status.taskId,
+        data: options.data,
+        expires: expires,
+        rank: options.rank,
+      });
+    })).then(function() {
       debug('Indexed: %s', message.payload.status.taskId);
     });
   });

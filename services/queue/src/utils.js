@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 
 export const artifactUtils = {
   // Create a single instance, or undefined, from a set of rows containing zero
@@ -19,7 +19,6 @@ export const artifactUtils = {
       details: row.details,
       present: row.present,
       expires: row.expires,
-      contentLength: row.content_length != null ? Number(row.content_length) : null,
     };
   },
   // Create a serializable representation of this namespace suitable for response
@@ -30,7 +29,6 @@ export const artifactUtils = {
       name: artifact.name,
       expires: artifact.expires.toJSON(),
       contentType: artifact.contentType,
-      ...(artifact.contentLength != null ? { contentLength: artifact.contentLength } : {}),
     };
   },
   /**
@@ -54,7 +52,7 @@ export const artifactUtils = {
     // then remove the entity from the database
     // repeat until there are no more expired artifacts
     while (true) {
-      const rows = await db.fns.get_expired_artifacts_for_deletion_2({
+      const rows = await db.fns.get_expired_artifacts_for_deletion({
         expires_in: expires,
         page_size_in: expireArtifactsBatchSize,
       });
@@ -74,7 +72,7 @@ export const artifactUtils = {
           } else if (entry.details.bucket === privateBucket.bucket) {
             s3private.push(entry);
           } else {
-            const err = new Error('Expiring artifact with bucket which isn\'t ' +
+            let err = new Error('Expiring artifact with bucket which isn\'t ' +
               'configured for use. Please investigate!');
             err.bucket = entry.details.bucket;
             err.taskId = entry.taskId;
@@ -90,7 +88,7 @@ export const artifactUtils = {
         if (entries.length) {
           try {
             const response = await bucket.deleteObjects(entries.map(entry => entry.details.prefix), true);
-            if (response.Errors?.length) {
+            if (response.Errors && response.Errors.length) {
               errors.push(response.Errors.map(obj => ({
                 code: obj.Code,
                 message: obj.Message,
@@ -164,14 +162,10 @@ export const artifactUtils = {
         );
 
         count += entries.length;
-        const totalContentLength = entries.reduce((sum, e) => {
-          return e.contentLength != null ? sum + e.contentLength : sum;
-        }, 0);
         monitor.debug({
           message: 'Deleted artifacts from db',
           batch: entries.length,
           total: count,
-          deletedContentLength: totalContentLength,
         });
       } catch (err) {
         monitor.debug('WARNING: Failed to delete expired artifacts: %s, %j', err, err);

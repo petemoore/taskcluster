@@ -111,9 +111,9 @@ oneOf:
             title: Artifact location
             type: string
             description: |-
-              Filesystem path of the file/directory relative to the
-              task directory, or an absolute path.
-              Example: `dist\regedit.exe`. It doesn't matter if
+              Relative path of the file/directory from the task directory. Note this is not an absolute
+              path as is typically used in docker-worker, since the absolute task directory name is not
+              known when the task is submitted. Example: `dist\regedit.exe`. It doesn't matter if
               forward slashes or backslashes are used.
 
               Since: generic-worker 1.0.0
@@ -164,29 +164,23 @@ oneOf:
               compressed:
 
               * 7z
-              * aab
-              * apk
               * bz2
               * deb
               * dmg
               * flv
               * gif
               * gz
-              * jar
               * jpeg
               * jpg
               * npz
-              * pkg
               * png
               * swf
               * tbz
               * tgz
-              * wasm
               * webp
               * whl
               * woff
               * woff2
-              * xpi
               * xz
               * zip
               * zst
@@ -232,7 +226,7 @@ oneOf:
             as json to file chain-of-trust-additional-data.json in the task
             directory.
 
-            Since: generic-worker 81.0.0
+            Since: generic-worker v81.0.0
         taskclusterProxy:
           type: boolean
           title: Run [taskcluster-proxy](https://github.com/taskcluster/taskcluster/tree/main/tools/taskcluster-proxy) to allow tasks to dynamically proxy requests to taskcluster services
@@ -673,6 +667,17 @@ oneOf:
           title: Artifact uploads
           description: ""
           default: true
+        dind:
+          type: boolean
+          title: Docker in Docker
+          description: >-
+            Runs docker-in-docker and binds `/var/run/docker.sock` into the container. Doesn't allow privileged mode, capabilities or host volume mounts.
+          default: false
+        dockerSave:
+          type: boolean
+          title: Docker save
+          description: Uploads docker images as artifacts
+          default: false
         interactive:
           type: boolean
           title: Docker Exec Interactive
@@ -712,10 +717,7 @@ definitions:
         title: File
         type: string
         description: |-
-          The filesystem location to mount the file. This can be a
-          path relative to the task directory, or an absolute path.
-          The file will be created as the task user, so the target
-          location must be writable by the task user.
+          The filesystem location to mount the file.
 
           Since: generic-worker 5.4.0
       content:
@@ -732,16 +734,11 @@ definitions:
 
           Since: generic-worker 55.3.0
         enum:
-        - br
         - bz2
         - gz
-        - lz
         - lz4
-        - mz
-        - sz
         - xz
         - zst
-        - zz
     additionalProperties: false
     required:
     - file
@@ -755,10 +752,6 @@ definitions:
         type: string
         description: |-
           The filesystem location to mount the directory volume.
-          This can be a path relative to the task directory, or an
-          absolute path. The directory will be created as the task
-          user, so the target location must be writable by the task
-          user.
 
           Since: generic-worker 5.4.0
       cacheName:
@@ -787,19 +780,12 @@ definitions:
 
           Since: generic-worker 5.4.0
         enum:
-        - 7z
         - rar
-        - tar
-        - tar.br
         - tar.bz2
         - tar.gz
-        - tar.lz
         - tar.lz4
-        - tar.mz
-        - tar.sz
         - tar.xz
         - tar.zst
-        - tar.zz
         - zip
     additionalProperties: false
     required:
@@ -819,10 +805,6 @@ definitions:
         type: string
         description: |-
           The filesystem location to mount the directory volume.
-          This can be a path relative to the task directory, or an
-          absolute path. The directory will be created as the task
-          user, so the target location must be writable by the task
-          user.
 
           Since: generic-worker 5.4.0
       content:
@@ -840,19 +822,12 @@ definitions:
 
           Since: generic-worker 5.4.0
         enum:
-        - 7z
         - rar
-        - tar
-        - tar.br
         - tar.bz2
         - tar.gz
-        - tar.lz
         - tar.lz4
-        - tar.mz
-        - tar.sz
         - tar.xz
         - tar.zst
-        - tar.zz
         - zip
     additionalProperties: false
     required:

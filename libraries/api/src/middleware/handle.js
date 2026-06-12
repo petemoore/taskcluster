@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 
 /**
  * Handle API end-point request
@@ -10,7 +10,7 @@ import assert from 'node:assert';
  * @param {{
  *   entry: import('../../@types/index.d.ts').APIEntryOptions<TContext>,
  *   context: Record<string, any>,
- *   monitor: import('@taskcluster/lib-monitor').Monitor
+ *   monitor: import('taskcluster-lib-monitor').Monitor
  * }} options
  * @returns {import('../../@types/index.d.ts').APIRequestHandler<TContext>}
  */

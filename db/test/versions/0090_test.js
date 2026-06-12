@@ -1,13 +1,13 @@
 import helper from '../helper.js';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 
-const THIS_VERSION = parseInt(/.*\/0*(\d+)_test\.js/.exec(import.meta.url)[1], 10);
+const THIS_VERSION = parseInt(/.*\/0*(\d+)_test\.js/.exec(import.meta.url)[1]);
 const PREV_VERSION = THIS_VERSION - 1;
 
-suite(testing.suiteName(), () => {
+suite(testing.suiteName(), function () {
   helper.withDbForVersion();
 
-  test('azure_queue_messages define extra fields for upcoming migration', async () => {
+  test('azure_queue_messages define extra fields for upcoming migration', async function () {
     await testing.resetDb({ testDbUrl: helper.dbUrl });
     await helper.upgradeTo(PREV_VERSION);
 

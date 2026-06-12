@@ -1,5 +1,5 @@
 import { FakeCloud } from './fake.js';
-import { strict as assert } from 'node:assert';
+import { strict as assert } from 'assert';
 import slugid from 'slugid';
 import google from '@googleapis/compute';
 import gcpIam from '@googleapis/iam';
@@ -18,6 +18,9 @@ const PROJECT = 'testy';
  * the instance returned from the constructor is available at `fake.oauth2`.
  */
 export class FakeGoogle extends FakeCloud {
+  constructor() {
+    super();
+  }
 
   _patch() {
     this.sinon.stub(google, 'auth');
@@ -29,7 +32,9 @@ export class FakeGoogle extends FakeCloud {
     // OAuth2 must be a constructor, so we have to use `function` here, but
     // we want to refer to the FakeGoogle instance.
     const self = this;
-    google.auth.OAuth2 = function () { return self.oauth2; };
+    google.auth.OAuth2 = function() {
+      return self.oauth2;
+    };
 
     this.sinon.stub(google, 'compute').callsFake(({ version, auth }) => {
       assert.equal(version, 'v1');
@@ -71,20 +76,13 @@ export class FakeGoogle extends FakeCloud {
     };
   }
 
+  /**
+   * Make an API error in the shape the google apis return
+   */
   makeError(message, code) {
     const err = new Error(message);
     err.code = code;
-    err.status = code;
-    err.response = {
-      data: {
-        error: {
-          code,
-          message,
-          errors: [{ message, code }],
-        },
-      },
-    };
-    err.errors = err.response.data.error.errors;
+    err.errors = [{ message }];
     return err;
   }
 }
@@ -191,7 +189,7 @@ export class ServiceAccounts {
   }
 
   async get({ name }) {
-    const [_, proj, acct] = /^projects\/([^/]*)\/serviceAccounts\/([^/]*)$/.exec(name);
+    const [_, proj, acct] = /^projects\/([^\/]*)\/serviceAccounts\/([^\/]*)$/.exec(name);
     return { data: { email: `${proj}-${acct}@example.com` } };
   }
 }

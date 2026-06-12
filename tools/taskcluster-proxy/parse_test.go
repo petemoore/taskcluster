@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/taskcluster/taskcluster/v100/clients/client-go/tcqueue"
+	"github.com/taskcluster/taskcluster/v86/clients/client-go/tcqueue"
 )
 
 func TestNoTaskNoScopes(t *testing.T) {
-	routes, address, _, _, err := ParseCommandArgs(
+	routes, address, err := ParseCommandArgs(
 		[]string{
 			"--root-url", "https://tc-tests.example.com",
 			"--client-id", "abc",
@@ -28,7 +28,7 @@ func TestNoTaskNoScopes(t *testing.T) {
 }
 
 func TestNondefaultPort(t *testing.T) {
-	_, address, _, _, err := ParseCommandArgs(
+	_, address, err := ParseCommandArgs(
 		[]string{
 			"--root-url", "https://tc-tests.example.com",
 			"--client-id", "abc",
@@ -46,7 +46,7 @@ func TestNondefaultPort(t *testing.T) {
 }
 
 func TestWithTwoScopes(t *testing.T) {
-	routes, address, _, _, err := ParseCommandArgs(
+	routes, address, err := ParseCommandArgs(
 		[]string{
 			"--root-url", "https://tc-tests.example.com",
 			"--client-id", "abc",
@@ -97,7 +97,7 @@ func TestWithTaskWithNoScopes(t *testing.T) {
 	defer withFakeTask("abc", &tcqueue.TaskDefinitionResponse{
 		Scopes: nil,
 	})()
-	routes, _, _, _, err := ParseCommandArgs(
+	routes, _, err := ParseCommandArgs(
 		[]string{
 			"--task-id", "abc",
 			"--root-url", "https://tc-tests.example.com",
@@ -120,7 +120,7 @@ func TestWithTaskWithScopes(t *testing.T) {
 	defer withFakeTask("abc", &tcqueue.TaskDefinitionResponse{
 		Scopes: []string{exampleScope},
 	})()
-	routes, _, _, _, err := ParseCommandArgs(
+	routes, _, err := ParseCommandArgs(
 		[]string{
 			"--task-id", "abc",
 			"--root-url", "https://tc-tests.example.com",
@@ -139,7 +139,7 @@ func TestWithTaskWithScopes(t *testing.T) {
 }
 
 func TestWithInterface(t *testing.T) {
-	_, address, _, _, err := ParseCommandArgs(
+	_, address, err := ParseCommandArgs(
 		[]string{
 			"--root-url", "https://tc-tests.example.com",
 			"--client-id", "abc",
@@ -159,7 +159,7 @@ func TestWithInterface(t *testing.T) {
 }
 
 func TestBadPort(t *testing.T) {
-	_, _, _, _, err := ParseCommandArgs(
+	_, _, err := ParseCommandArgs(
 		[]string{
 			"--port", "-12345",
 			"--ip-address", "172.17.0.44",
@@ -175,7 +175,7 @@ func TestBadPort(t *testing.T) {
 }
 
 func TestBadIPAddress(t *testing.T) {
-	_, _, _, _, err := ParseCommandArgs(
+	_, _, err := ParseCommandArgs(
 		[]string{
 			"--port", "12345",
 			"--ip-address", "172.17.0.44.66",

@@ -406,12 +406,14 @@ export default class Dashboard extends Component {
               ModalProps={{
                 keepMounted: true,
               }}>
-              <IconButton
-                onClick={this.handleHelpViewToggle}
-                className={classes.helpCloseIcon}>
-                <CloseIcon />
-              </IconButton>
-              {helpView}
+              <Fragment>
+                <IconButton
+                  onClick={this.handleHelpViewToggle}
+                  className={classes.helpCloseIcon}>
+                  <CloseIcon />
+                </IconButton>
+                {helpView}
+              </Fragment>
             </Drawer>
           </Fragment>
         )}

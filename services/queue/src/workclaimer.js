@@ -1,5 +1,6 @@
-import assert from 'node:assert';
-import events from 'node:events';
+import assert from 'assert';
+import _ from 'lodash';
+import events from 'events';
 import taskCreds from './task-creds.js';
 import { Task } from './data.js';
 import HintPoller from './hintpoller.js';
@@ -14,7 +15,7 @@ class WorkClaimer extends events.EventEmitter {
    *   publisher:     // Pulse publisher from exchanges.js
    *   db:            // Database object
    *   queueService:  // queueService from queueservice.js
-   *   monitor:       // monitor object from @taskcluster/lib-monitor
+   *   monitor:       // monitor object from taskcluster-lib-monitor
    *   claimTimeout:  // Time for a claim to timeout in seconds
    *   credentials:   // Taskcluster credentials for creating temp creds.
    * }
@@ -62,12 +63,12 @@ class WorkClaimer extends events.EventEmitter {
       hintPoller = this.getHintPoller(taskQueueId);
 
       // Poll for hints (messages saying a task may be pending)
-      const hints = await hintPoller.requestClaim(count, aborted);
+      let hints = await hintPoller.requestClaim(count, aborted);
       // Try to claim all the hints
       claims = await Promise.all(hints.map(async (hint) => {
         try {
           // Try to claim task from hint
-          const result = await this._monitor.timer('claimTask', this.claimTask(
+          let result = await this._monitor.timer('claimTask', this.claimTask(
             hint.taskId, hint.runId, workerGroup, workerId, null, hint.hintId,
           ));
           // Remove hint, if successfully used (don't block)
@@ -116,7 +117,7 @@ class WorkClaimer extends events.EventEmitter {
     // Set takenUntil to now + claimTimeout, rounding up to the nearest second
     // since we compare these times for equality after sending them to queue
     // and toJSON()
-    const takenUntil = new Date();
+    let takenUntil = new Date();
     takenUntil.setSeconds(Math.ceil(takenUntil.getSeconds() + this._claimTimeout));
 
     // put the claim-expiration message into the queue first.  If the
@@ -127,7 +128,7 @@ class WorkClaimer extends events.EventEmitter {
       await this.db.fns.claim_task(taskId, runId, workerGroup, workerId, hintId, takenUntil));
 
     // Find run that we (may) have modified
-    const run = task.runs[runId];
+    let run = task.runs[runId];
     if (!run) {
       return 'run-not-found';
     }
@@ -143,7 +144,7 @@ class WorkClaimer extends events.EventEmitter {
     }
 
     // Construct status object
-    const status = task.status();
+    let status = task.status();
 
     // Publish task running message, it's important that we publish even if this
     // is a retry request and we didn't make any changes in task.modify
@@ -153,11 +154,10 @@ class WorkClaimer extends events.EventEmitter {
       workerGroup: workerGroup,
       workerId: workerId,
       takenUntil: run.takenUntil,
-      task: { tags: task.tags || {} },
     }, task.routes);
     this._monitor.log.taskRunning({ taskId, runId });
 
-    const credentials = taskCreds(
+    let credentials = taskCreds(
       taskId,
       runId,
       workerGroup,

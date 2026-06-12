@@ -1,14 +1,14 @@
 import config from '../src/index.js';
-import path from 'node:path';
+import path from 'path';
 import assume from 'assume';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 
 const __dirname = new URL('.', import.meta.url).pathname;
 
-suite(testing.suiteName(), () => {
+suite(testing.suiteName(), function() {
 
   test('load yaml', () => {
-    const cfg = config({
+    let cfg = config({
       serviceName: 'test',
       files: [
         { path: path.join(__dirname, 'test.yml'), required: true },
@@ -21,7 +21,7 @@ suite(testing.suiteName(), () => {
   });
 
   test('load profile', () => {
-    const cfg = config({
+    let cfg = config({
       serviceName: 'test',
       files: [
         { path: path.join(__dirname, 'test-profile.yml'), required: true },
@@ -34,7 +34,7 @@ suite(testing.suiteName(), () => {
   });
 
   test('load profile (default)', () => {
-    const cfg = config({
+    let cfg = config({
       serviceName: 'test',
       files: [
         { path: path.join(__dirname, 'test-profile.yml'), required: true },
@@ -47,7 +47,7 @@ suite(testing.suiteName(), () => {
   });
 
   test('load !env', () => {
-    const cfg = config({
+    let cfg = config({
       serviceName: 'test',
       files: [
         { path: path.join(__dirname, 'test-env.yml'), required: true },
@@ -89,7 +89,7 @@ suite(testing.suiteName(), () => {
   });
 
   test('load yaml (merge missing file)', () => {
-    const cfg = config({
+    let cfg = config({
       serviceName: 'test',
       files: [
         { path: path.join(__dirname, 'test.yml'), required: true },
@@ -103,7 +103,7 @@ suite(testing.suiteName(), () => {
   });
 
   test('load !env and overwrite text', () => {
-    const cfg = config({
+    let cfg = config({
       serviceName: 'test',
       files: [
         { path: path.join(__dirname, 'test.yml'), required: true },
@@ -135,7 +135,7 @@ suite(testing.suiteName(), () => {
   });
 
   test('load !env and fallback text', () => {
-    const cfg = config({
+    let cfg = config({
       serviceName: 'test',
       files: [
         { path: path.join(__dirname, 'test.yml'), required: true },
