@@ -1,10 +1,10 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import debugFactory from 'debug';
 const debug = debugFactory('@taskcluster/lib-testing:schemas');
-import fs from 'node:fs';
+import fs from 'fs';
 import SchemaSet from '@taskcluster/lib-validate';
 import libUrls from 'taskcluster-lib-urls';
-import path from 'node:path';
+import path from 'path';
 
 /**
  * Test schemas with positive and negative test cases. This will call
@@ -24,35 +24,35 @@ import path from 'node:path';
  *   basePath:      path.join(__dirname, 'validate')  // basePath test cases
  * }
  */
-const schemas = (options) => {
+let schemas = function(options) {
   // Validate options
   assert(options.schemasetOptions, 'Options must be given for validator');
-  assert(Array.isArray(options.cases), 'Array of cases must be given');
+  assert(options.cases instanceof Array, 'Array of cases must be given');
   assert(options.serviceName);
 
   let validate;
-  setup(async () => {
+  setup(async function() {
     const schemaset = new SchemaSet(options.schemasetOptions);
     validate = await schemaset.validator(libUrls.testRootUrl());
   });
 
   // Create test cases
-  options.cases.forEach((testCase) => {
-    test(testCase.path, () => {
+  options.cases.forEach(function(testCase) {
+    test(testCase.path, function() {
       // Load test data
       let filePath = testCase.path;
       // Prefix with basePath if a basePath is given
       if (options.basePath) {
         filePath = path.join(options.basePath, filePath);
       }
-      const data = fs.readFileSync(filePath, { encoding: 'utf-8' });
-      const json = JSON.parse(data);
+      let data = fs.readFileSync(filePath, { encoding: 'utf-8' });
+      let json = JSON.parse(data);
 
       // Find schema
-      const schema = libUrls.schema(libUrls.testRootUrl(), options.serviceName, testCase.schema);
+      let schema = libUrls.schema(libUrls.testRootUrl(), options.serviceName, testCase.schema);
 
       // Validate json
-      const error = validate(json, schema);
+      let error = validate(json, schema);
 
       // Test errors
       if (testCase.success) {

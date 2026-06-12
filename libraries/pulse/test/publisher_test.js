@@ -1,8 +1,8 @@
 import { Client, Exchanges, connectionStringCredentials } from '../src/index.js';
-import path from 'node:path';
+import path from 'path';
 import amqplib from 'amqplib';
 import assume from 'assume';
-import assert from 'node:assert';
+import assert from 'assert';
 import SchemaSet from '@taskcluster/lib-validate';
 import libUrls from 'taskcluster-lib-urls';
 import helper from './helper.js';
@@ -10,7 +10,7 @@ import { suiteName, poll } from '@taskcluster/lib-testing';
 
 const __dirname = new URL('.', import.meta.url).pathname;
 
-helper.secrets.mockSuite(suiteName(), ['pulse'], (mock, skipping) => {
+helper.secrets.mockSuite(suiteName(), ['pulse'], function(mock, skipping) {
   if (mock) {
     return; // Only test with real creds
   }
@@ -61,27 +61,27 @@ helper.secrets.mockSuite(suiteName(), ['pulse'], (mock, skipping) => {
 
   const monitor = helper.monitor;
 
-  setup(async () => {
+  setup(async function() {
     connectionString = helper.secrets.get('pulse').connectionString;
   });
 
-  suite('Exchanges', () => {
-    test('constructor args required', () => {
+  suite('Exchanges', function() {
+    test('constructor args required', function() {
       assume(() => new Exchanges({})).to.throw(/is required/);
     });
 
-    test('declare args required', () => {
+    test('declare args required', function() {
       const exchanges = new Exchanges(exchangeOptions);
       assume(() => exchanges.declare({})).to.throw(/is required/);
     });
 
-    test('declare routing key args required', () => {
+    test('declare routing key args required', function() {
       const exchanges = new Exchanges(exchangeOptions);
       assume(() => exchanges.declare({ ...declarationNoConstant, routingKey: [{}] }))
         .to.throw(/is required/);
     });
 
-    test('declare routing key too long fails', () => {
+    test('declare routing key too long fails', function() {
       const exchanges = new Exchanges(exchangeOptions);
       const routingKey = [
         {
@@ -108,27 +108,27 @@ helper.secrets.mockSuite(suiteName(), ['pulse'], (mock, skipping) => {
         .to.throw(/cannot be larger than/);
     });
 
-    test('declaration with same name fails', () => {
+    test('declaration with same name fails', function() {
       const exchanges = new Exchanges(exchangeOptions);
       exchanges.declare({ ...declarationNoConstant, name: 'x', exchange: 'xx' });
       assume(() => exchanges.declare({ ...declarationNoConstant, name: 'x', exchange: 'yy' }))
         .to.throw(/already declared/);
     });
 
-    test('declaration with same exchange fails', () => {
+    test('declaration with same exchange fails', function() {
       const exchanges = new Exchanges(exchangeOptions);
       exchanges.declare({ ...declarationNoConstant, name: 'x', exchange: 'xx' });
       assume(() => exchanges.declare({ ...declarationNoConstant, name: 'y', exchange: 'xx' }))
         .to.throw(/already declared/);
     });
 
-    test('sucessful declaration', () => {
+    test('sucessful declaration', function() {
       const exchanges = new Exchanges(exchangeOptions);
       exchanges.declare(declarationNoConstant);
       // doesn't throw anything..
     });
 
-    test('reference is correct, no constant routing key', () => {
+    test('reference is correct, no constant routing key', function() {
       const exchanges = new Exchanges(exchangeOptions);
       exchanges.declare(declarationNoConstant);
       assume(exchanges.reference()).to.deeply.equal({
@@ -156,7 +156,7 @@ helper.secrets.mockSuite(suiteName(), ['pulse'], (mock, skipping) => {
       });
     });
 
-    test('reference is correct, constant in the routing key', () => {
+    test('reference is correct, constant in the routing key', function() {
       const exchanges = new Exchanges(exchangeOptions);
       exchanges.declare(declarationConstant);
       assume(exchanges.reference()).to.deeply.equal({
@@ -185,12 +185,12 @@ helper.secrets.mockSuite(suiteName(), ['pulse'], (mock, skipping) => {
     });
   });
 
-  suite('PulsePublisher', () => {
+  suite('PulsePublisher', function() {
     // use a unique name for each test run, just to ensure nothing interferes
-    const unique = `test-${Date.now()}`;
+    const unique = `test-${new Date().getTime()}`;
     let client, conn, chan, exchanges, schemaset, publisher, messages;
 
-    suiteSetup(async () => {
+    suiteSetup(async function() {
 
       client = new Client({
         credentials: connectionStringCredentials(connectionString),
@@ -236,21 +236,21 @@ helper.secrets.mockSuite(suiteName(), ['pulse'], (mock, skipping) => {
       });
     });
 
-    setup(() => {
+    setup(function() {
       messages = [];
     });
 
-    test('invalid message fails', async () => {
+    test('invalid message fails', async function() {
       await assume(publisher.eggHatched({ bogusThing: 'uhoh' }))
         .rejects();
     });
 
-    test('message with too-long routingKey fails', async () => {
+    test('message with too-long routingKey fails', async function() {
       await assume(publisher.eggHatched({ eggId: 'uhoh! '.repeat(100) }))
         .rejects();
     });
 
-    test('publish a message', async () => {
+    test('publish a message', async function() {
       await publisher.eggHatched({ eggId: 'yolks-on-you' });
 
       await poll(async () => {
@@ -276,7 +276,7 @@ helper.secrets.mockSuite(suiteName(), ['pulse'], (mock, skipping) => {
       });
     });
 
-    test('publish messages in parallel (with failed connections)', async () => {
+    test('publish messages in parallel (with failed connections)', async function() {
       await Promise.all(['a', 'b', 'c'].map(eggId => publisher.eggHatched({ eggId })));
       client.connections[0].amqp.close(); // force closure..
       await Promise.all(['i', 'j', 'k', 'l', 'm'].map(eggId => publisher.eggHatched({ eggId })));
@@ -289,7 +289,7 @@ helper.secrets.mockSuite(suiteName(), ['pulse'], (mock, skipping) => {
       });
     });
 
-    suiteTeardown(async () => {
+    suiteTeardown(async function() {
       if (!connectionString) {
         return;
       }

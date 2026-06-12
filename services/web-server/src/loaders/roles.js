@@ -1,25 +1,25 @@
 import DataLoader from 'dataloader';
-import substringFilter from '../utils/searchFilter.js';
+import sift from '../utils/sift.js';
 import ConnectionLoader from '../ConnectionLoader.js';
 
 export default ({ auth }, isAuthed, rootUrl, monitor, strategies, req, cfg, requestId) => {
   const roles = new DataLoader(queries =>
     Promise.all(
-      queries.map(async ({ searchTerm }) => {
+      queries.map(async ({ filter }) => {
         try {
           const roles = await auth.listRoles();
 
-          return substringFilter(searchTerm, 'roleId', roles);
+          return sift(filter, roles);
         } catch (err) {
           return err;
         }
       }),
     ),
   );
-  const roleIds = new ConnectionLoader(async ({ searchTerm, options }) => {
+  const roleIds = new ConnectionLoader(async ({ filter, options }) => {
     const raw = await auth.listRoleIds(options);
     const roleIds = raw.roleIds.map(roleId => ({ roleId }));
-    const roles = substringFilter(searchTerm, 'roleId', roleIds);
+    const roles = sift(filter, roleIds);
 
     return {
       ...raw,
