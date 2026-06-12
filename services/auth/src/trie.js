@@ -67,7 +67,7 @@ export class Node {
       // If there is a prefix, we find the child for the first character c of
       // the prefix (or create such a child), and merge node into that...
       let child = this.children.get(prefix[0]);
-      const isNew = !child;
+      let isNew = !child;
       if (isNew) {
         child = new Node();
       }

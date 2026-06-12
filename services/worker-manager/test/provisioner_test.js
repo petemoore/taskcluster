@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import helper from './helper.js';
 import testing from '@taskcluster/lib-testing';
 import taskcluster from '@taskcluster/client';
@@ -6,7 +6,7 @@ import { LEVELS } from '@taskcluster/lib-monitor';
 import { WorkerPool, Worker } from '../src/data.js';
 import { ApiError } from '../src/providers/provider.js';
 
-helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
+helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
   helper.withDb(mock, skipping);
   helper.withPulse(mock, skipping);
   helper.withFakeNotify(mock, skipping);
@@ -17,7 +17,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
   helper.resetTables(mock, skipping);
 
   let monitor;
-  suiteSetup(async () => {
+  suiteSetup(async function() {
     monitor = await helper.load('monitor');
   });
   const makeDurationPredictable = (msg) => {
@@ -27,7 +27,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     return msg;
   };
 
-  suite('provisioning loop', () => {
+  suite('provisioning loop', function() {
     const testCase = async ({ workers = [], workerPools = [], assertion, expectErrors = false }) => {
       await Promise.all(workers.map(async w => {
         const worker = Worker.fromApi(w);
@@ -313,8 +313,8 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     }));
   });
 
-  suite('provision', () => {
-    test('provision scan provisions a worker pool', async () => {
+  suite('provision', function() {
+    test('provision scan provisions a worker pool', async function() {
       await WorkerPool.fromApi({
         workerPoolId: 'pp/ww',
         providerId: 'testing1',
@@ -338,7 +338,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       });
     });
 
-    test('provision scan skips worker pools with unknown providerId', async () => {
+    test('provision scan skips worker pools with unknown providerId', async function() {
       await WorkerPool.fromApi({
         workerPoolId: 'pp/ww',
         providerId: 'NO-SUCH',
@@ -366,7 +366,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
         });
     });
 
-    test('provision scan skips worker pools with unknown previous providerId', async () => {
+    test('provision scan skips worker pools with unknown previous providerId', async function() {
       await WorkerPool.fromApi({
         workerPoolId: 'pp/ww',
         providerId: 'testing1',
@@ -397,7 +397,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
         });
     });
 
-    test("provision loop is not running in parallel", async () => {
+    test("provision loop is not running in parallel", async function() {
       await WorkerPool.fromApi({
         workerPoolId: 'pp/ww',
         providerId: 'testing1',
@@ -430,8 +430,8 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     });
   });
 
-  suite('deprovisioning loop', () => {
-    test('create and destroy', async () => {
+  suite('deprovisioning loop', function() {
+    test('create and destroy', async function() {
       const workerPool = {
         workerPoolId: 'pp/ee',
         input: {
@@ -477,7 +477,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
         });
     });
 
-    test('create and change', async () => {
+    test('create and change', async function() {
       const workerPool = {
         workerPoolId: 'pp/ee',
         input: {

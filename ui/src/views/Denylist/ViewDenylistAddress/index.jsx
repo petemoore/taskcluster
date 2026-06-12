@@ -16,7 +16,9 @@ import deleteAddressQuery from './deleteAddress.graphql';
   options: ({ match: { params } }) => ({
     fetchPolicy: 'network-only',
     variables: {
-      searchTerm: decodeURIComponent(params.notificationAddress),
+      filter: {
+        notificationAddress: decodeURIComponent(params.notificationAddress),
+      },
     },
   }),
 })
@@ -94,13 +96,9 @@ export default class ViewDenylistAddress extends Component {
       data,
       match: { params },
     } = this.props;
-    // This detail route looks up one exact address, but the only available server argument is `searchTerm`
-    // result may contain look-alike addresses. Select the exact match rather than trusting the first edge.
-    const targetAddress = decodeURIComponent(params.notificationAddress);
-    const matchedAddress = data?.listDenylistAddresses?.edges.find(
-      edge => edge.node.notificationAddress === targetAddress
-    )?.node;
-    const hasDenylistAddresses = Boolean(matchedAddress);
+    const hasDenylistAddresses = Boolean(
+      data?.listDenylistAddresses?.edges.length
+    );
 
     return (
       <Dashboard
@@ -125,7 +123,7 @@ export default class ViewDenylistAddress extends Component {
                 onDialogActionComplete={this.handleDialogActionComplete}
                 onDialogActionClose={this.handleDialogActionClose}
                 onDialogActionOpen={this.handleDialogActionOpen}
-                address={matchedAddress}
+                address={data.listDenylistAddresses.edges[0].node}
                 onAddressDelete={this.handleAddressDelete}
               />
             )}
