@@ -1,10 +1,11 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import helper from './helper.js';
+import _ from 'lodash';
 import testing from '@taskcluster/lib-testing';
 import taskcluster from '@taskcluster/client';
 import { Worker, WorkerPoolError, WorkerPoolStats } from '../src/data.js';
 
-helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
+helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
   helper.withDb(mock, skipping);
   helper.resetTables(mock, skipping);
 
@@ -21,7 +22,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
    * 17:55:16 worker is terminated for `terminateAfter` reasons
    *          (terminateAfter being set to exactly 30 minutes after requested)
    */
-  test('worker lifecycle data race', async () => {
+  test('worker lifecycle data race', async function() {
     const origTerminateAfter = Date.now() + 1800000;
     // First create a "requested worker"
     let w = Worker.fromApi({
@@ -63,7 +64,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     assert.equal(now.getTime() + 50000000, w.providerData.terminateAfter);
   });
 
-  test('worker pool error expire', async () => {
+  test('worker pool error expire', async function () {
     const err1 = WorkerPoolError.fromApi({
       errorId: 'e/id',
       workerPoolId: 'wp/id',
@@ -97,7 +98,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     assert(!removedError2);
   });
 
-  test('WorkerPoolStats', async () => {
+  test('WorkerPoolStats', async function () {
     const wps = new WorkerPoolStats('wp/id', {});
 
     wps.updateFromWorker(new Worker({
@@ -135,7 +136,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     });
   });
 
-  test('WorkerPoolStats tracks capacity by workerGroup', async () => {
+  test('WorkerPoolStats tracks capacity by workerGroup', async function () {
     const wps = new WorkerPoolStats('wp/id', {});
 
     // Add workers in us-west-2
@@ -190,7 +191,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     });
   });
 
-  test('WorkerPoolStats workerGroup with quarantined workers', async () => {
+  test('WorkerPoolStats workerGroup with quarantined workers', async function () {
     const wps = new WorkerPoolStats('wp/id', {});
 
     // Add a quarantined worker
@@ -222,8 +223,8 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     });
   });
 
-  suite('Worker.updateInstanceFields', () => {
-    test('preserves queue fields when undefined', () => {
+  suite('Worker.updateInstanceFields', function() {
+    test('preserves queue fields when undefined', function() {
       const worker = Worker.fromApi({
         workerPoolId: 'test/pool',
         workerGroup: 'test-group',
@@ -257,7 +258,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       assert.deepEqual(worker.providerData, { updated: true });
     });
 
-    test('allows explicit null for queue fields', () => {
+    test('allows explicit null for queue fields', function() {
       const worker = Worker.fromApi({});
       worker.firstClaim = new Date('2025-01-01');
 

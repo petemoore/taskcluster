@@ -1,6 +1,6 @@
 import request from 'superagent';
-import crypto from 'node:crypto';
-import assert from 'node:assert';
+import crypto from 'crypto';
+import assert from 'assert';
 import { load, testObjectName } from '../helper/index.js';
 
 /**
@@ -37,12 +37,12 @@ export const testSimpleDownloadMethod = ({
     (suiteDefinition || (() => {})).call(this);
 
     let backend;
-    setup(async () => {
+    setup(async function() {
       const backends = await load('backends');
       backend = backends.get(backendId);
     });
 
-    test('supports simple downloads', async () => {
+    test('supports simple downloads', async function() {
       const data = crypto.randomBytes(256);
       const name = testObjectName(prefix);
       const object = await makeObject({ name, data });

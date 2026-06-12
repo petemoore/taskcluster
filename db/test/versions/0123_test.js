@@ -1,15 +1,15 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import helper from '../helper.js';
 import testing from '@taskcluster/lib-testing';
 import taskcluster from '@taskcluster/client';
 
-const THIS_VERSION = parseInt(/.*\/0*(\d+)_test\.js/.exec(import.meta.url)[1], 10);
+const THIS_VERSION = parseInt(/.*\/0*(\d+)_test\.js/.exec(import.meta.url)[1]);
 const PREV_VERSION = THIS_VERSION - 1;
 
-suite(testing.suiteName(), () => {
+suite(testing.suiteName(), function() {
   helper.withDbForVersion();
 
-  test('migration deduplicates deadline rows and enforces task_id uniqueness', async () => {
+  test('migration deduplicates deadline rows and enforces task_id uniqueness', async function() {
     await testing.resetDb({ testDbUrl: helper.dbUrl });
     await helper.upgradeTo(PREV_VERSION);
 
@@ -57,7 +57,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('migration deduplicates rows with identical (created, deadline)', async () => {
+  test('migration deduplicates rows with identical (created, deadline)', async function() {
     await testing.resetDb({ testDbUrl: helper.dbUrl });
     await helper.upgradeTo(PREV_VERSION);
 
@@ -104,7 +104,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('downgrade restores the previous primary key', async () => {
+  test('downgrade restores the previous primary key', async function() {
     await testing.resetDb({ testDbUrl: helper.dbUrl });
     await helper.upgradeTo(THIS_VERSION);
     await helper.downgradeTo(PREV_VERSION);

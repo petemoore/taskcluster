@@ -1,16 +1,16 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import gql from 'graphql-tag';
 import testing from '@taskcluster/lib-testing';
 import helper from '../helper.js';
 
-helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
+helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
   helper.withDb(mock, skipping);
   helper.withClients(mock, skipping);
   helper.withServer(mock, skipping);
   helper.resetTables(mock, skipping);
 
-  suite('GraphQL Validation', () => {
-    test('max tokens in request', async () => {
+  suite('GraphQL Validation', function() {
+    test('max tokens in request', async function() {
       const client = helper.getHttpClient({ suppressErrors: true });
 
       try {
@@ -28,7 +28,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
 
       helper.expectMonitorError('PayloadTooLargeError');
     });
-    test('max queries in request', async () => {
+    test('max queries in request', async function() {
       const client = helper.getHttpClient({ suppressErrors: true });
 
       try {
@@ -44,7 +44,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
         assert.ok(/validation errors/.test(JSON.stringify(err.networkError.result)));
       }
     });
-    test('max depth in request', async () => {
+    test('max depth in request', async function() {
       const client = helper.getHttpClient({ suppressErrors: true });
 
       try {
@@ -60,14 +60,14 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
         assert.ok(/exceeds maximum operation depth/.test(JSON.stringify(err.networkError.result)));
       }
     });
-    test('circular fragments return a validation error', async () => {
+    test('circular fragments return a validation error', async function() {
       const client = helper.getHttpClient({ suppressErrors: true });
 
       try {
         await client.query({
           query: gql`
             query CircularFragment {
-              secrets {
+              secrets(filter: {}) {
                 ...FragA
               }
             }
