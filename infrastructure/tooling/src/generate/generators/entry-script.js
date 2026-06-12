@@ -1,4 +1,4 @@
-import path from 'node:path';
+import path from 'path';
 import { listServices, readRepoYAML, writeRepoFile, readRepoJSON } from '../../utils/index.js';
 
 const SERVICES = listServices();

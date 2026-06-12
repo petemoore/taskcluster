@@ -1,10 +1,10 @@
-import fs from 'node:fs';
-import { strict as assert } from 'node:assert';
+import fs from 'fs';
+import { strict as assert } from 'assert';
 import testing from '@taskcluster/lib-testing';
 
 import { newVersion, renumberVersions } from '../src/versions.js';
 
-suite(testing.suiteName(), () => {
+suite(testing.suiteName(), function() {
   test('new migration', async () => {
     const next1 = await newVersion({ runGit: false });
     const next2 = await newVersion({ runGit: false });

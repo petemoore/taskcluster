@@ -1,4 +1,5 @@
-import fs from 'node:fs';
+import fs from 'fs';
+import _ from 'lodash';
 import glob from 'glob';
 import { REPO_ROOT } from '../../utils/index.js';
 
@@ -14,13 +15,13 @@ export const tasks = [{
     let errors = "";
     let countErrors = 0;
 
-    for (const filename of markdowns) {
+    for (let filename of markdowns) {
       const data = fs.readFileSync(filename, 'utf8');
       let md = data.toString();
 
       //remove the markdown code blocks which may include python # comment
       // which can be confused with # markdown heading, as in, ui/docs/manual/using/s3-uploads.mdx
-      md = md.replace(/```[a-z]*[\s\S]*?```/g, "");
+      md = md.replace(/```[a-z]*[\s\S]*?\```/g, "");
       const hd = [];
 
       //hd[i] stores the number of headings with level i
