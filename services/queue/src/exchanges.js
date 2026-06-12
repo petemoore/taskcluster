@@ -1,8 +1,8 @@
 import { Exchanges } from '@taskcluster/lib-pulse';
-import assert from 'node:assert';
+import assert from 'assert';
 
 /** Declaration of exchanges offered by the queue */
-const exchanges = new Exchanges({
+let exchanges = new Exchanges({
   title: 'Queue AMQP Exchanges',
   projectName: 'taskcluster-queue',
   serviceName: 'queue',
@@ -62,7 +62,7 @@ const exchanges = new Exchanges({
 export default exchanges;
 
 /** Build common routing key construct for `exchanges.declare` */
-const buildCommonRoutingKey = (options) => {
+let buildCommonRoutingKey = function(options) {
   options = options || {};
   return [
     {
@@ -127,7 +127,7 @@ const buildCommonRoutingKey = (options) => {
 };
 
 /** Build common routing key construct for task-group-messages for `exchanges.declare` */
-const buildTaskGroupRoutingKey = (options) => {
+let buildTaskGroupRoutingKey = function(options) {
   options = options || {};
   return [
     {
@@ -158,32 +158,36 @@ const buildTaskGroupRoutingKey = (options) => {
 };
 
 /** Build an AMQP compatible message from a message */
-const commonMessageBuilder = (message) => {
+let commonMessageBuilder = function(message) {
   message.version = 1;
   return message;
 };
 
 /** Build a message from message */
-const commonRoutingKeyBuilder = (message, routing) => ({
-  taskId: message.status.taskId,
-  runId: message.runId,
-  workerGroup: message.workerGroup,
-  workerId: message.workerId,
-  provisionerId: message.status.provisionerId,
-  workerType: message.status.workerType,
-  schedulerId: message.status.schedulerId,
-  taskGroupId: message.status.taskGroupId,
-});
+let commonRoutingKeyBuilder = function(message, routing) {
+  return {
+    taskId: message.status.taskId,
+    runId: message.runId,
+    workerGroup: message.workerGroup,
+    workerId: message.workerId,
+    provisionerId: message.status.provisionerId,
+    workerType: message.status.workerType,
+    schedulerId: message.status.schedulerId,
+    taskGroupId: message.status.taskGroupId,
+  };
+};
 
 /** Build a message from message for task-group messages */
-const taskGroupRoutingKeyBuilder = (message, routing) => ({
-  schedulerId: message.schedulerId,
-  taskGroupId: message.taskGroupId,
-});
+let taskGroupRoutingKeyBuilder = function(message, routing) {
+  return {
+    schedulerId: message.schedulerId,
+    taskGroupId: message.taskGroupId,
+  };
+};
 
 /** Build list of routing keys to CC */
-const commonCCBuilder = (message, routes) => {
-  assert(Array.isArray(routes), 'Routes must be an array');
+let commonCCBuilder = function(message, routes) {
+  assert(routes instanceof Array, 'Routes must be an array');
   return routes.map(route => 'route.' + route);
 };
 

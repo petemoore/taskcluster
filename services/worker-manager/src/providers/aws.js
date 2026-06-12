@@ -7,9 +7,9 @@ import {
   TerminateInstancesCommand,
 } from '@aws-sdk/client-ec2';
 import taskcluster from '@taskcluster/client';
-import crypto from 'node:crypto';
-import fs from 'node:fs';
-import path from 'node:path';
+import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 import _ from 'lodash';
 import { CloudAPI } from './cloudapi.js';
 import { WorkerPool, Worker } from '../data.js';
@@ -39,7 +39,7 @@ export class AwsProvider extends Provider {
 
     const { Regions: regions } = await ec2.send(new DescribeRegionsCommand({}));
 
-    const requestTypes = {};
+    let requestTypes = {};
     this.ec2s = {};
     regions.forEach(r => {
       this.ec2s[r.RegionName] = new EC2Client({
@@ -60,6 +60,7 @@ export class AwsProvider extends Provider {
       intervalDefault: this.providerConfig.intervalDefault,
       intervalCapDefault: this.providerConfig.intervalCapDefault,
       timeout: 10 * 60 * 1000, // each cloud call should not take longer than 10 minutes
+      throwOnTimeout: true,
       monitor: this.monitor,
       providerId: this.providerId,
       errorHandler: ({ err, tries }) => {
@@ -114,7 +115,7 @@ export class AwsProvider extends Provider {
     const toSpawnPerConfig = Math.ceil(toSpawn / shuffledConfigs.length);
 
     let toSpawnCounter = toSpawn;
-    for await (const lc of shuffledConfigs) {
+    for await (let lc of shuffledConfigs) {
       const config = lc.configuration;
       if (toSpawnCounter <= 0) break; // eslint-disable-line
       // Make sure we don't get "The same resource type may not be specified
@@ -122,7 +123,7 @@ export class AwsProvider extends Provider {
       const TagSpecifications = config.launchConfig.TagSpecifications || [];
       let instanceTags = [];
       let volumeTags = [];
-      const otherTagSpecs = [];
+      let otherTagSpecs = [];
       TagSpecifications.forEach(ts => {
         if (ts.ResourceType === 'instance') {
           instanceTags = instanceTags.concat(ts.Tags);

@@ -1,10 +1,10 @@
 import testing from '@taskcluster/lib-testing';
 import helper from '../helper.js';
-import { strict as assert } from 'node:assert';
+import { strict as assert } from 'assert';
 
-const THIS_VERSION = parseInt(/.*\/0*(\d+)_test\.js/.exec(import.meta.url)[1], 10);
+const THIS_VERSION = parseInt(/.*\/0*(\d+)_test\.js/.exec(import.meta.url)[1]);
 
-suite(testing.suiteName(), () => {
+suite(testing.suiteName(), function() {
   helper.withDbForVersion();
 
   const taskId = 'WuonSu7CQDeZ0hh-cR_6Ag';
