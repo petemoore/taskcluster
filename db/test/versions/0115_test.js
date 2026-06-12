@@ -1,13 +1,13 @@
 import helper from '../helper.js';
 import testing from '@taskcluster/lib-testing';
 
-const THIS_VERSION = parseInt(/.*\/0*(\d+)_test\.js/.exec(import.meta.url)[1], 10);
+const THIS_VERSION = parseInt(/.*\/0*(\d+)_test\.js/.exec(import.meta.url)[1]);
 const PREV_VERSION = THIS_VERSION - 1;
 
-suite(testing.suiteName(), () => {
+suite(testing.suiteName(), function() {
   helper.withDbForVersion();
 
-  test('indexes added and removed', async () => {
+  test('indexes added and removed', async function() {
     await testing.resetDb({ testDbUrl: helper.dbUrl });
     await helper.upgradeTo(PREV_VERSION);
 

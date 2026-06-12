@@ -1,5 +1,5 @@
 import slugid from 'slugid';
-import assert from 'node:assert';
+import assert from 'assert';
 import Bucket from '../src/bucket.js';
 import debugFactory from 'debug';
 const debug = debugFactory('test:bucket_test');
@@ -7,7 +7,7 @@ import request from 'superagent';
 import helper from './helper.js';
 import testing from '@taskcluster/lib-testing';
 
-helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
+helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) {
   helper.withS3(mock, skipping);
 
   if (mock) {
@@ -18,14 +18,14 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
   }
 
   let bucket;
-  setup('load bucket', async () => {
+  setup('load bucket', async function() {
     if (!skipping()) {
       bucket = await helper.load('publicArtifactBucket');
     }
   });
 
   // Test that put to signed url works
-  test('createPutUrl', async () => {
+  test('createPutUrl', async function() {
     const key = slugid.v4();
     const url = await bucket.createPutUrl(key, {
       contentType: 'application/json',
@@ -45,32 +45,32 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
   };
 
   // Test we can delete an object
-  test('deleteObject', async () => {
+  test('deleteObject', async function() {
     const { key } = await uploadTestFile();
     await bucket.deleteObject(key);
   });
 
   // Test we can delete an object a non-existing object
-  test('deleteObject (non-existing object)', async () => {
+  test('deleteObject (non-existing object)', async function() {
     const key = slugid.v4();
     await bucket.deleteObject(key);
   });
 
   // Test we can delete multiple objects
-  test('deleteObjects', async () => {
+  test('deleteObjects', async function () {
     const { key: key1 } = await uploadTestFile();
     const { key: key2 } = await uploadTestFile();
 
     await bucket.deleteObjects([key1, key2]);
   });
-  test('deleteObjects quiet', async () => {
+  test('deleteObjects quiet', async function () {
     const { key: key1 } = await uploadTestFile();
     const { key: key2 } = await uploadTestFile();
 
     await bucket.deleteObjects([key1, key2], true);
   });
 
-  test('createGetUrl', async () => {
+  test('createGetUrl', async function() {
     const key = slugid.v4();
     const putUrl = await bucket.createPutUrl(key, {
       contentType: 'application/json',
@@ -88,7 +88,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     assert(res.body.message === 'Hello', 'wrong message');
   });
 
-  test('uses bucketCDN', async () => {
+  test('uses bucketCDN', async function() {
     const cfg = await helper.load('cfg');
 
     // Create bucket instance
@@ -104,7 +104,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     assert(urlWithSpaces === 'https://example.com/test%20with%20spaces');
   });
 
-  test('default endpoint', async () => {
+  test('default endpoint', async function() {
     const cfg = await helper.load('cfg');
 
     // Create bucket instance
@@ -117,7 +117,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     assert.equal(url, `https://${cfg.app.publicArtifactBucket}.s3.${cfg.aws.region}.amazonaws.com/testX`);
   });
 
-  test('handles slashes', async () => {
+  test('handles slashes', async function() {
     const cfg = await helper.load('cfg');
 
     // Create bucket instance
@@ -134,7 +134,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     assert.equal(url, `http://taskcluster/${cfg.app.publicArtifactBucket}/testX`);
   });
 
-  test('custom endpoint + forcePathStyle', async () => {
+  test('custom endpoint + forcePathStyle', async function() {
     const cfg = await helper.load('cfg');
     const customEndpoint = 'http://localhost:45678';
 

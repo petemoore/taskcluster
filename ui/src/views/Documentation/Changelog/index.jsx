@@ -44,7 +44,7 @@ const parseMarkdownIntoSections = markdown => {
         content = [];
       }
 
-      audience = titleCase(line.slice(4).toLowerCase());
+      audience = line.slice(4);
     } else {
       content.push(line);
     }
@@ -78,6 +78,10 @@ const FILTERS = ['version', 'from', 'to', 'q', 'all', 'audience'];
   },
   chip: {
     marginLeft: theme.spacing(2),
+    textTransform: 'lowercase',
+    'span::first-letter': {
+      textTransform: 'uppercase',
+    },
   },
   section: {
     '&.MuiGrid-item': {
@@ -101,10 +105,13 @@ export default class Changelog extends Component {
     super(props);
 
     this.sections = parseMarkdownIntoSections(ChangelogMd);
-    this.versions = [...new Set(this.sections.map(section => section.version))];
+    this.versions = [
+      ...new Set([...this.sections.map(section => section.version)]),
+    ].map(version => ({ label: version, value: version }));
+
     this.audiences = [
-      ...new Set(this.sections.map(section => section.audience)),
-    ].filter(Boolean);
+      ...new Set([...this.sections.map(section => section.audience)]),
+    ].map(audience => ({ label: titleCase(audience), value: audience }));
 
     const search = new URLSearchParams(this.props.location.search);
 
@@ -121,10 +128,7 @@ export default class Changelog extends Component {
   filteredSections = memoize(
     ({ version, from, to, q, all, audience }) => {
       return this.sections.filter(section => {
-        if (
-          audience &&
-          section.audience.toLowerCase() !== audience.toLowerCase()
-        ) {
+        if (audience && section.audience !== audience) {
           return false;
         }
 
@@ -192,7 +196,7 @@ export default class Changelog extends Component {
     const maybeHighlight = (text, q) =>
       q ? text.replace(new RegExp(`(${q})(?![^<>]*>)`, 'gi'), '**$1**') : text;
     const onToggleFilter = (key, value) => {
-      if (this.state[key].toLowerCase() === value.toLowerCase()) {
+      if (this.state[key] === value) {
         this.setState({ [key]: '' });
       } else {
         this.setState({ [key]: value });
@@ -205,12 +209,9 @@ export default class Changelog extends Component {
           <Grid item xs={4} key={key}>
             <Autocomplete
               options={this.versions}
+              getOptionLabel={option => option.label}
               freeSolo
-              value={this.state[key] || null}
               inputValue={this.state[key]}
-              onChange={(_event, value) =>
-                this.setState({ [key]: value || '' })
-              }
               onInputChange={(_event, value) => this.setState({ [key]: value })}
               renderInput={params => (
                 <TextField {...params} label={label} fullWidth />
@@ -229,12 +230,9 @@ export default class Changelog extends Component {
         <Grid item xs={4}>
           <Autocomplete
             options={this.audiences}
+            getOptionLabel={option => option.label}
             freeSolo
-            value={this.state.audience || null}
             inputValue={this.state.audience}
-            onChange={(_event, value) =>
-              this.setState({ audience: value || '' })
-            }
             onInputChange={(_event, value) =>
               this.setState({ audience: value })
             }

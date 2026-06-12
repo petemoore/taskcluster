@@ -1,5 +1,5 @@
-import { execSync } from 'node:child_process';
-import fs from 'node:fs';
+import { execSync } from 'child_process';
+import fs from 'fs';
 
 const readmePath = './README.md';
 const certsPath = './certificates.json';
