@@ -1,8 +1,8 @@
-import path from 'node:path';
-import os from 'node:os';
+import path from 'path';
+import os from 'os';
 import { rimraf } from 'rimraf';
 import mkdirp from 'mkdirp';
-import taskcluster from '@taskcluster/client';
+import taskcluster from 'taskcluster-client';
 import { TaskGraph, Lock, ConsoleRenderer, LogRenderer } from 'console-taskgraph';
 import { generateTasks } from './tasks/index.js';
 import { gitIsDirty, gitDescribe, REPO_ROOT } from '../utils/index.js';
@@ -11,8 +11,8 @@ class Base {
   constructor(cmdOptions) {
     this.cmdOptions = cmdOptions;
 
-    this.baseDir = cmdOptions.baseDir || '/tmp/taskcluster-builder-build';
-    this.logsDir = cmdOptions.logsDir || path.join(this.baseDir, 'logs');
+    this.baseDir = cmdOptions['baseDir'] || '/tmp/taskcluster-builder-build';
+    this.logsDir = cmdOptions['logsDir'] || path.join(this.baseDir, 'logs');
   }
 
   // credentials for the tasks
@@ -70,7 +70,7 @@ class Base {
     }
 
     // print messges from any of the targets
-    for (const t of target) {
+    for (let t of target) {
       if (context[t]) {
         console.log(context[t]);
       }
@@ -147,7 +147,7 @@ class Publish extends Base {
       // always build from scratch
       cache: false,
       // to be safe, set push=false for staging runs
-      push: !cmdOptions.staging,
+      push: cmdOptions.staging ? false : true,
       // always push to the "official" Taskcluster repo on publish
       dockerRepo: 'taskcluster/taskcluster',
       dockerRepoGenericWorker: 'taskcluster/generic-worker',
@@ -162,7 +162,7 @@ class Publish extends Base {
       const secrets = new taskcluster.Secrets({ rootUrl: process.env.TASKCLUSTER_PROXY_URL });
       const { secret } = await secrets.get(secretName);
 
-      for (const [name, value] of Object.entries(secret)) {
+      for (let [name, value] of Object.entries(secret)) {
         console.log(`..found value for ${name}`);
         process.env[name] = value;
       }
@@ -171,6 +171,7 @@ class Publish extends Base {
     const expectedVars = [];
     expectedVars.push('GH_TOKEN');
     if (!this.cmdOptions.staging) {
+      expectedVars.push('NPM_TOKEN');
       expectedVars.push('CRATESIO_TOKEN');
       expectedVars.push('PYPI_USERNAME');
       expectedVars.push('PYPI_PASSWORD');
@@ -186,6 +187,7 @@ class Publish extends Base {
 
     return {
       ghToken: process.env.GH_TOKEN,
+      npmToken: process.env.NPM_TOKEN,
       cratesioToken: process.env.CRATESIO_TOKEN,
       pypiUsername: process.env.PYPI_USERNAME,
       pypiPassword: process.env.PYPI_PASSWORD,

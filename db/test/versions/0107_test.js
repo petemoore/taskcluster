@@ -1,5 +1,5 @@
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 
-suite(testing.suiteName(), () => {
+suite(testing.suiteName(), function() {
   // add tests if necessary
 });

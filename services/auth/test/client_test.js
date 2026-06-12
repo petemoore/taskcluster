@@ -1,11 +1,11 @@
-import { strict as assert } from 'node:assert';
+import { strict as assert } from 'assert';
 import helper from './helper.js';
 import _ from 'lodash';
 import assume from 'assume';
-import testing from '@taskcluster/lib-testing';
-import taskcluster from '@taskcluster/client';
+import testing from 'taskcluster-lib-testing';
+import taskcluster from 'taskcluster-client';
 
-helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping) => {
+helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], function(mock, skipping) {
   helper.withDb(mock, skipping);
   helper.withCfg(mock, skipping);
   helper.withPulse(mock, skipping);
@@ -19,7 +19,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
     );
   };
 
-  teardown(async () => {
+  teardown(async function() {
     helper.onPulsePublish(); // don't fail to publish this time!
     helper.setupScopes();
     await helper.apiClient.deleteRole('anonymous');
@@ -79,9 +79,9 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
   });
 
   test('auth.createClient (no scopes)', async () => {
-    const expires = taskcluster.fromNow('1 hour');
-    const description = 'Test client...';
-    const client = await helper.apiClient.createClient(CLIENT_ID, {
+    let expires = taskcluster.fromNow('1 hour');
+    let description = 'Test client...';
+    let client = await helper.apiClient.createClient(CLIENT_ID, {
       expires, description,
     });
     assume(client.description).equals(description);
@@ -90,7 +90,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
     // Has identity scopes
     assume(client.expandedScopes).to.deeply.equal([]);
 
-    const client2 = await helper.apiClient.client(CLIENT_ID);
+    let client2 = await helper.apiClient.client(CLIENT_ID);
     assume(client2.description).equals(description);
     assume(client2.expires).equals(expires.toJSON());
     assume(client2).has.not.own('accessToken');
@@ -107,8 +107,8 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
   });
 
   test('auth.createClient (conflict)', async () => {
-    const expires = taskcluster.fromNow('1 hour');
-    const description = 'Test client...';
+    let expires = taskcluster.fromNow('1 hour');
+    let description = 'Test client...';
     await helper.apiClient.createClient(CLIENT_ID, {
       expires, description,
     });
@@ -122,10 +122,10 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
   });
 
   test('auth.createClient (with scopes)', async () => {
-    const expires = taskcluster.fromNow('1 hour');
-    const description = 'Test client...';
-    const scopes = ['scope1', 'myapi:*'];
-    const client = await helper.apiClient.createClient(CLIENT_ID, {
+    let expires = taskcluster.fromNow('1 hour');
+    let description = 'Test client...';
+    let scopes = ['scope1', 'myapi:*'];
+    let client = await helper.apiClient.createClient(CLIENT_ID, {
       expires, description, scopes,
     });
     assume(client.description).equals(description);
@@ -136,7 +136,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
     assume(client.expandedScopes).contains('scope1');
     assume(client.expandedScopes).contains('myapi:*');
 
-    const client2 = await helper.apiClient.client(CLIENT_ID);
+    let client2 = await helper.apiClient.client(CLIENT_ID);
     assume(client2.description).equals(description);
     assume(client2.expires).equals(expires.toJSON());
     assume(client2).has.not.own('accessToken');
@@ -192,9 +192,9 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
   });
 
   const createTestClient = async () => {
-    const expires = taskcluster.fromNow('1 hour');
-    const description = 'Test client...';
-    const scopes = ['scope1', 'myapi:*'];
+    let expires = taskcluster.fromNow('1 hour');
+    let description = 'Test client...';
+    let scopes = ['scope1', 'myapi:*'];
     const client = await helper.apiClient.createClient(CLIENT_ID, {
       expires, description, scopes,
     });
@@ -205,7 +205,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
 
   test('auth.resetAccessToken', async () => {
     const createdClient = await createTestClient();
-    const client = await helper.apiClient.resetAccessToken(CLIENT_ID);
+    let client = await helper.apiClient.resetAccessToken(CLIENT_ID);
     // lastModified and lastRotated are both updated..
     assume(new Date(client.lastModified).getTime())
       .is.greaterThan(new Date(createdClient.lastModified).getTime());
@@ -214,7 +214,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
     assume(client.accessToken).is.a('string');
     helper.assertPulseMessage('client-updated', m => m.payload.clientId === CLIENT_ID);
 
-    const client2 = await helper.apiClient.client(CLIENT_ID);
+    let client2 = await helper.apiClient.client(CLIENT_ID);
     assume(new Date(client2.lastRotated)).deeply.equals(new Date(client.lastRotated));
     assume(client2).has.not.own('accessToken');
   });
@@ -223,17 +223,17 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
     await createTestClient();
 
     // Fetch client
-    const r1 = await helper.apiClient.client(CLIENT_ID);
+    let r1 = await helper.apiClient.client(CLIENT_ID);
 
     // Sleep 4 seconds, forcing an update of lastUsed date in test config
     await testing.sleep(4000);
 
     // Reseting the accessToken causes a reload, which re-evaluates whether or
     // not to update the lastDateUsed
-    const client = await helper.apiClient.resetAccessToken(CLIENT_ID);
+    let client = await helper.apiClient.resetAccessToken(CLIENT_ID);
 
     // Create testClient
-    const testClient = new helper.TestClient({
+    let testClient = new helper.TestClient({
       rootUrl: helper.rootUrl,
       credentials: {
         clientId: CLIENT_ID,
@@ -244,7 +244,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
 
     await testing.poll(async () => {
       // Fetch client again and check that lastUsed was updated
-      const r2 = await helper.apiClient.client(CLIENT_ID);
+      let r2 = await helper.apiClient.client(CLIENT_ID);
       assume(new Date(r2.lastDateUsed).getTime()).greaterThan(
         new Date(r1.lastDateUsed).getTime(),
       );
@@ -253,7 +253,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
     await testClient.resource();
 
     // Fetch client again and check that lastUsed wasn't updated
-    const r3 = await helper.apiClient.client(CLIENT_ID);
+    let r3 = await helper.apiClient.client(CLIENT_ID);
     assume(new Date(r3.lastDateUsed).getTime()).equals(
       new Date(r3.lastDateUsed).getTime(),
     );
@@ -262,9 +262,9 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
   test('auth.updateClient (no scope changes)', async () => {
     await createTestClient();
 
-    const expires = new Date();
-    const description = 'Different test description...';
-    const client = await helper.apiClient.updateClient(CLIENT_ID, {
+    let expires = new Date();
+    let description = 'Different test description...';
+    let client = await helper.apiClient.updateClient(CLIENT_ID, {
       description, expires,
     });
     assume(client.description).equals(description);
@@ -278,7 +278,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
     assume(client.expandedScopes).contains('myapi:*');
     helper.assertPulseMessage('client-updated', m => m.payload.clientId === CLIENT_ID);
 
-    const client2 = await helper.apiClient.client(CLIENT_ID);
+    let client2 = await helper.apiClient.client(CLIENT_ID);
     assume(new Date(client2.lastModified)).deeply.equals(new Date(client.lastModified));
     assume(client2).has.not.own('accessToken');
     assume(client2.scopes).contains('scope1');
@@ -294,8 +294,8 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
       throw new Error('uhoh');
     });
 
-    const expires = new Date();
-    const description = 'Different test description...';
+    let expires = new Date();
+    let description = 'Different test description...';
     const apiClient = helper.apiClient.use({ retries: 0 });
     await assert.rejects(
       () => apiClient.updateClient(CLIENT_ID, { description, expires }),
@@ -313,10 +313,10 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
   test('auth.updateClient (with scope changes)', async () => {
     await createTestClient();
 
-    const expires = new Date();
-    const description = 'Third test description...';
-    const scopes = ['scope2', 'scope3'];
-    const client = await helper.apiClient.updateClient(CLIENT_ID, {
+    let expires = new Date();
+    let description = 'Third test description...';
+    let scopes = ['scope2', 'scope3'];
+    let client = await helper.apiClient.updateClient(CLIENT_ID, {
       description, expires, scopes,
     });
     assume(client.description).equals(description);
@@ -334,7 +334,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
     assume(client.expandedScopes).not.contains('myapi:*');
     helper.assertPulseMessage('client-updated', m => m.payload.clientId === CLIENT_ID);
 
-    const client2 = await helper.apiClient.client(CLIENT_ID);
+    let client2 = await helper.apiClient.client(CLIENT_ID);
     assume(new Date(client2.lastModified)).deeply.equals(new Date(client.lastModified));
     assume(client2).has.not.own('accessToken');
     assume(client2.scopes).not.contains('scope1');
@@ -412,7 +412,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
     monitor.manager.reset();
   });
 
-  const assumeScopesetsEqual = (ss1, ss2) => {
+  let assumeScopesetsEqual = (ss1, ss2) => {
     ss1.scopes.sort();
     ss2.scopes.sort();
     assume(ss1).deeply.equal(ss2);
@@ -430,7 +430,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
   });
 
   test('auth.expandScopes with non-expanding scopes', async () => {
-    const scopes = ['myapi:a', 'myapi:b'];
+    let scopes = ['myapi:a', 'myapi:b'];
     assume(await helper.apiClient.expandScopes({ scopes: scopes }))
       .to.deeply.equal({ scopes: scopes });
     assumeScopesetsEqual(await helper.apiClient.expandScopes({ scopes }), { scopes });
@@ -467,7 +467,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
   });
 
   test('auth.currentScopes with root credentials and authorizedScopes', async () => {
-    const auth = new helper.AuthClient({
+    let auth = new helper.AuthClient({
       rootUrl: helper.rootUrl,
       credentials: {
         clientId: 'static/taskcluster/root',
@@ -481,7 +481,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
 
   test('auth.currentScopes with temp credentials', async () => {
     await setAnonymousRole('auth:current-scopes');
-    const auth = new helper.AuthClient({
+    let auth = new helper.AuthClient({
       rootUrl: helper.rootUrl,
       credentials: taskcluster.createTemporaryCredentials({
         expiry: taskcluster.fromNow('10 min'),
@@ -498,7 +498,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
 
   test('auth.currentScopes with temp credentials and authorizedScopes', async () => {
     await setAnonymousRole('auth:current-scopes');
-    const auth = new helper.AuthClient({
+    let auth = new helper.AuthClient({
       rootUrl: helper.rootUrl,
       credentials: taskcluster.createTemporaryCredentials({
         expiry: taskcluster.fromNow('10 min'),
@@ -514,7 +514,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
       { scopes: ['assume:anonymous', 'myapi:x', 'auth:current-scopes'] });
   });
 
-  suite('auth.listClients', () => {
+  suite('auth.listClients', function() {
     const suffixes = ['/aa', '/bb', '/bb/1', '/bb/2', '/bb/3', '/bb/4', '/bb/5'];
 
     setup(async function() {
@@ -534,7 +534,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
         c => c.clientId.substr(CLIENT_ID.length)).sort();
 
     test('all clients', async () => {
-      const clients = await helper.apiClient.listClients();
+      let clients = await helper.apiClient.listClients();
       assume(gotSuffixes(clients)).to.deeply.equal(suffixes);
     });
 
@@ -556,7 +556,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
 
     test('limit / continuationToken', async () => {
       let clients = [];
-      const query = { limit: 1 };
+      let query = { limit: 1 };
 
       while (true) {
         const result = await helper.apiClient.listClients(query);
@@ -574,7 +574,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
 
     test('limit / continuationToken AND prefix filtering', async () => {
       let clients = [];
-      const query = {
+      let query = {
         limit: 1,
         prefix: CLIENT_ID + '/b',
       };

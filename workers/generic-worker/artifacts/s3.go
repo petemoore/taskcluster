@@ -12,9 +12,9 @@ import (
 	"path/filepath"
 
 	"github.com/taskcluster/httpbackoff/v3"
-	"github.com/taskcluster/taskcluster/v100/clients/client-go/tcqueue"
-	"github.com/taskcluster/taskcluster/v100/internal/mocktc/tc"
-	"github.com/taskcluster/taskcluster/v100/workers/generic-worker/gwconfig"
+	"github.com/taskcluster/taskcluster/v86/clients/client-go/tcqueue"
+	"github.com/taskcluster/taskcluster/v86/internal/mocktc/tc"
+	"github.com/taskcluster/taskcluster/v86/workers/generic-worker/gwconfig"
 )
 
 type S3Artifact struct {
@@ -28,9 +28,6 @@ type S3Artifact struct {
 	ContentPath     string
 	ContentEncoding string
 	ContentType     string
-	// ContentLength is the original file size in bytes, before any
-	// encoding (e.g. gzip). Sent to the queue for monitoring purposes.
-	ContentLength int64
 }
 
 // createTempFileForPUTBody gzip-compresses the file at Path and
@@ -63,7 +60,7 @@ func (s3Artifact *S3Artifact) createTempFileForPUTBody() string {
 func (s3Artifact *S3Artifact) ProcessResponse(resp any, logger Logger, serviceFactory tc.ServiceFactory, config *gwconfig.Config) (err error) {
 	response := resp.(*tcqueue.S3ArtifactResponse)
 
-	log.Printf("Uploading artifact %v from file %v with content encoding %q, mime type %q and expiry %v", s3Artifact.Name, s3Artifact.Path, s3Artifact.ContentEncoding, s3Artifact.ContentType, s3Artifact.Expires)
+	logger.Infof("Uploading artifact %v from file %v with content encoding %q, mime type %q and expiry %v", s3Artifact.Name, s3Artifact.Path, s3Artifact.ContentEncoding, s3Artifact.ContentType, s3Artifact.Expires)
 
 	// Artifacts declared in payload are copied to a temp file
 	// as task user to ensure they are readable by task user.
@@ -154,10 +151,9 @@ func (s3Artifact *S3Artifact) ProcessResponse(resp any, logger Logger, serviceFa
 
 func (s3Artifact *S3Artifact) RequestObject() any {
 	return &tcqueue.S3ArtifactRequest{
-		ContentType:   s3Artifact.ContentType,
-		ContentLength: s3Artifact.ContentLength,
-		Expires:       s3Artifact.Expires,
-		StorageType:   "s3",
+		ContentType: s3Artifact.ContentType,
+		Expires:     s3Artifact.Expires,
+		StorageType: "s3",
 	}
 }
 
@@ -166,12 +162,11 @@ func (s3Artifact *S3Artifact) ResponseObject() any {
 }
 
 func (s3Artifact *S3Artifact) String() string {
-	return fmt.Sprintf("S3 Artifact - Name: '%v', Path: '%v', Expires: %v, Content Encoding: '%v', MIME Type: '%v', Content Length: '%v'",
+	return fmt.Sprintf("S3 Artifact - Name: '%v', Path: '%v', Expires: %v, Content Encoding: '%v', MIME Type: '%v'",
 		s3Artifact.Name,
 		s3Artifact.Path,
 		s3Artifact.Expires,
 		s3Artifact.ContentEncoding,
 		s3Artifact.ContentType,
-		s3Artifact.ContentLength,
 	)
 }

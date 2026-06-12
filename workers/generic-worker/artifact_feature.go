@@ -10,11 +10,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/taskcluster/taskcluster/v100/internal/scopes"
-	"github.com/taskcluster/taskcluster/v100/workers/generic-worker/artifacts"
-	"github.com/taskcluster/taskcluster/v100/workers/generic-worker/fileutil"
-	"github.com/taskcluster/taskcluster/v100/workers/generic-worker/process"
-	"golang.org/x/sync/errgroup"
+	"github.com/taskcluster/taskcluster/v86/internal/scopes"
+	"github.com/taskcluster/taskcluster/v86/workers/generic-worker/artifacts"
+	"github.com/taskcluster/taskcluster/v86/workers/generic-worker/process"
 )
 
 type (
@@ -85,36 +83,31 @@ func (atf *ArtifactTaskFeature) Stop(err *ExecutionErrors) {
 	if !atf.startSuccessful {
 		return
 	}
-
 	task := atf.task
 	atf.FindArtifacts()
 	taskArtifacts := atf.artifacts
-
-	// Use errgroup to limit concurrent uploads to 10
-	// to hopefully avoid issues like the following:
-	// https://github.com/taskcluster/taskcluster/issues/8023
-	group := &errgroup.Group{}
-	group.SetLimit(10)
-
+	var wg sync.WaitGroup
 	uploadErrChan := make(chan *CommandExecutionError, len(taskArtifacts))
 	failChan := make(chan *CommandExecutionError, len(taskArtifacts))
-
 	for _, taskArtifact := range taskArtifacts {
-		group.Go(func() error {
+		wg.Add(1)
+		go func(artifact artifacts.TaskArtifact) {
+			defer wg.Done()
+
 			// Any attempt to upload a feature artifact should be skipped
 			// but not cause a failure, since e.g. a directory artifact
 			// could include one, non-maliciously, such as a top level
 			// public/ directory artifact that includes
 			// public/logs/live_backing.log inadvertently.
-			if feature := task.featureArtifacts[taskArtifact.Base().Name]; feature != "" {
-				task.Warnf("Not uploading artifact %v found in task.payload.artifacts section, since this will be uploaded later by %v", taskArtifact.Base().Name, feature)
-				return nil
+			if feature := task.featureArtifacts[artifact.Base().Name]; feature != "" {
+				task.Warnf("Not uploading artifact %v found in task.payload.artifacts section, since this will be uploaded later by %v", artifact.Base().Name, feature)
+				return
 			}
-			e := task.uploadArtifact(taskArtifact)
+			e := task.uploadArtifact(artifact)
 			if e != nil {
 				// we don't care about optional artifacts failing to upload
-				if taskArtifact.Base().Optional {
-					return nil
+				if artifact.Base().Optional {
+					return
 				}
 				uploadErrChan <- e
 			}
@@ -122,22 +115,20 @@ func (atf *ArtifactTaskFeature) Stop(err *ExecutionErrors) {
 			// artifact, but doesn't cover case that an artifact could not be
 			// found, and so an error artifact was uploaded. So we do that
 			// here:
-			switch a := taskArtifact.(type) {
+			switch a := artifact.(type) {
 			case *artifacts.ErrorArtifact:
 				// we don't care about optional artifacts failing to upload
 				if a.Optional {
-					return nil
+					return
 				}
 				fail := Failure(fmt.Errorf("%v: %v", a.Reason, a.Message))
 				failChan <- fail
 				task.Errorf("TASK FAILURE during artifact upload: %v", fail)
 			}
-			return nil
-		})
+		}(taskArtifact)
 	}
 
-	// errors are handled via channels so we can collect all of them
-	_ = group.Wait()
+	wg.Wait()
 	close(uploadErrChan)
 	close(failChan)
 
@@ -177,17 +168,16 @@ func (atf *ArtifactTaskFeature) FindArtifacts() {
 		if time.Time(base.Expires).IsZero() {
 			base.Expires = task.Definition.Expires
 		}
-		taskDir := task.TaskDir()
 		switch artifact.Type {
 		case "file":
-			payloadArtifacts = append(payloadArtifacts, resolve(base, "file", basePath, artifact.ContentType, artifact.ContentEncoding, task.pd, taskDir))
+			payloadArtifacts = append(payloadArtifacts, resolve(base, "file", basePath, artifact.ContentType, artifact.ContentEncoding, task.pd))
 		case "directory":
-			if errArtifact := resolve(base, "directory", basePath, artifact.ContentType, artifact.ContentEncoding, task.pd, taskDir); errArtifact != nil {
+			if errArtifact := resolve(base, "directory", basePath, artifact.ContentType, artifact.ContentEncoding, task.pd); errArtifact != nil {
 				payloadArtifacts = append(payloadArtifacts, errArtifact)
 				break
 			}
 			walkFn := func(path string, d os.DirEntry, incomingErr error) error {
-				subPath, err := filepath.Rel(taskDir, path)
+				subPath, err := filepath.Rel(taskContext.TaskDir, path)
 				if err != nil {
 					// this indicates a bug in the code
 					panic(err)
@@ -213,7 +203,7 @@ func (atf *ArtifactTaskFeature) FindArtifacts() {
 				// cause the task to fail, and the cause to be preserved in the
 				// error artifact.
 				case incomingErr != nil:
-					fullPath := fileutil.AbsFrom(taskDir, subPath)
+					fullPath := filepath.Join(taskContext.TaskDir, subPath)
 					payloadArtifacts = append(
 						payloadArtifacts,
 						&artifacts.ErrorArtifact{
@@ -224,17 +214,17 @@ func (atf *ArtifactTaskFeature) FindArtifacts() {
 						},
 					)
 				case d.IsDir():
-					if errArtifact := resolve(b, "directory", subPath, artifact.ContentType, artifact.ContentEncoding, task.pd, taskDir); errArtifact != nil {
+					if errArtifact := resolve(b, "directory", subPath, artifact.ContentType, artifact.ContentEncoding, task.pd); errArtifact != nil {
 						payloadArtifacts = append(payloadArtifacts, errArtifact)
 					}
 				default:
-					payloadArtifacts = append(payloadArtifacts, resolve(b, "file", subPath, artifact.ContentType, artifact.ContentEncoding, task.pd, taskDir))
+					payloadArtifacts = append(payloadArtifacts, resolve(b, "file", subPath, artifact.ContentType, artifact.ContentEncoding, task.pd))
 				}
 				return nil
 			}
 			// Any error returned here should already have been handled by
 			// walkFn, so should be safe to ignore.
-			_ = filepath.WalkDir(fileutil.AbsFrom(taskDir, basePath), walkFn)
+			_ = filepath.WalkDir(filepath.Join(taskContext.TaskDir, basePath), walkFn)
 		}
 		artifactsChan <- payloadArtifacts
 	}
@@ -271,8 +261,8 @@ func (atf *ArtifactTaskFeature) FindArtifacts() {
 // ErrorArtifact, otherwise if it exists as a file, as
 // "invalid-resource-on-worker" ErrorArtifact
 // TODO: need to also handle "too-large-file-on-worker"
-func resolve(base *artifacts.BaseArtifact, artifactType, path, contentType, contentEncoding string, pd *process.PlatformData, taskDir string) artifacts.TaskArtifact {
-	fullPath := fileutil.AbsFrom(taskDir, path)
+func resolve(base *artifacts.BaseArtifact, artifactType, path, contentType, contentEncoding string, pd *process.PlatformData) artifacts.TaskArtifact {
+	fullPath := filepath.Join(taskContext.TaskDir, path)
 	fileReader, err := os.Open(fullPath)
 	if err != nil {
 		// cannot read file/dir, create an error artifact
@@ -314,7 +304,7 @@ func resolve(base *artifacts.BaseArtifact, artifactType, path, contentType, cont
 		return nil
 	}
 
-	tempPath, err := copyToTempFileAsTaskUser(fullPath, pd, taskDir)
+	tempPath, err := copyToTempFileAsTaskUser(fullPath, pd)
 	if err != nil {
 		return &artifacts.ErrorArtifact{
 			BaseArtifact: base,
@@ -345,38 +335,26 @@ func resolve(base *artifacts.BaseArtifact, artifactType, path, contentType, cont
 		// originally based on https://github.com/evansd/whitenoise/blob/03f6ea846394e01cbfe0c730141b81eb8dd6e88a/whitenoise/compress.py#L21-L29
 		SkipCompressionExtensions := map[string]bool{
 			".7z":    true,
-			".br":    true,
-			".aab":   true,
-			".apk":   true,
 			".bz2":   true,
 			".deb":   true,
 			".dmg":   true,
 			".flv":   true,
 			".gif":   true,
 			".gz":    true,
-			".jar":   true,
 			".jpeg":  true,
 			".jpg":   true,
-			".lz":    true,
-			".lz4":   true,
-			".mz":    true,
 			".npz":   true,
-			".pkg":   true,
 			".png":   true,
 			".swf":   true,
-			".sz":    true,
 			".tbz":   true,
 			".tgz":   true,
-			".wasm":  true,
 			".webp":  true,
 			".whl":   true, // Python wheel are already zip file
 			".woff":  true,
 			".woff2": true,
-			".xpi":   true,
 			".xz":    true,
 			".zip":   true,
 			".zst":   true,
-			".zz":    true,
 		}
 		// When the file extension is blacklisted in SkipCompressionExtensions then "identity" should be used, otherwise "gzip".
 		if SkipCompressionExtensions[extension] {

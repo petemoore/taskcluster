@@ -36,7 +36,7 @@ export default class ErrorBox extends RedBoxError {
           </Typography>
         </CardContent>
       );
-    } catch (_err) {
+    } catch (err) {
       return (
         <CardContent>
           <Typography className={classes.redbox}>

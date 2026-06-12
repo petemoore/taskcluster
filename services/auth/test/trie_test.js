@@ -3,7 +3,7 @@ import _ from 'lodash';
 import ScopeSetBuilder from '../src/scopesetbuilder.js';
 import * as trie from '../src/trie.js';
 import trietestcases from './trietestcases.js';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 
 // This test suite was designed to test every conceivable combination of
 // inputs to the trie implementation, in an effort to suss out any hidden bugs
@@ -226,7 +226,7 @@ suite(testing.suiteName(), () => {
         if (pattern.endsWith('*')) {
           const remaining = patternMatch(pattern, input) ? input.slice(pattern.length - 1) : '*';
           if (input.endsWith('*')) {
-            newScopes = scopes.map(s => s.replace(/<\.\.>.*$/, remaining));
+            newScopes = scopes.map(s => s.replace(/\<\.\.\>.*$/, remaining));
           } else {
             newScopes = scopes.map(s => s.replace('<..>', remaining));
           }

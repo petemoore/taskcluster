@@ -109,18 +109,11 @@ type AuthDeleteClientFn = {
   client_id_in: string;
  }): Promise<void>;
 };
-/** @deprecated */
-type AuthExpireClientsDeprecatedFn = {
+type AuthExpireClientsFn = {
  (
  ): Promise<[{ expire_clients: number }]>;
  (params: {
  }): Promise<[{ expire_clients: number }]>;
-};
-type AuthExpireClientsReturnClientIdsFn = {
- (
- ): Promise<Array<{client_id: string}>>;
- (params: {
- }): Promise<Array<{client_id: string}>>;
 };
 /** @deprecated */
 type AuthGetAuditHistoryDeprecatedFn = {
@@ -939,12 +932,6 @@ type HooksGetHookFn = {
   hook_group_id_in: string;
   hook_id_in: string;
  }): Promise<Array<{hook_group_id: string, hook_id: string, metadata: JsonB, task: JsonB, bindings: JsonB, schedule: JsonB, encrypted_trigger_token: JsonB, encrypted_next_task_id: JsonB, next_scheduled_date: Date, trigger_schema: JsonB}>>;
-};
-type HooksGetHookGroupsFn = {
- (
- ): Promise<Array<{hook_group_id: string}>>;
- (params: {
- }): Promise<Array<{hook_group_id: string}>>;
 };
 type HooksGetHooksFn = {
  (
@@ -2136,8 +2123,7 @@ type QueueClaimTaskFn = {
   taken_until_in: Date;
  }): Promise<Array<{retries_left: number, runs: JsonB, taken_until: Date}>>;
 };
-/** @deprecated */
-type QueueCreateQueueArtifactDeprecatedFn = {
+type QueueCreateQueueArtifactFn = {
  (
    task_id_in: string,
    run_id_in: number,
@@ -2158,30 +2144,6 @@ type QueueCreateQueueArtifactDeprecatedFn = {
   present_in: boolean;
   expires_in: Date;
  }): Promise<Array<{task_id: string, run_id: number, name: string, storage_type: string, content_type: string, details: JsonB, present: boolean, expires: Date}>>;
-};
-type QueueCreateQueueArtifact2Fn = {
- (
-   task_id_in: string,
-   run_id_in: number,
-   name_in: string,
-   storage_type_in: string,
-   content_type_in: string,
-   details_in: JsonB,
-   present_in: boolean,
-   expires_in: Date,
-   content_length_in: any
- ): Promise<Array<{task_id: string, run_id: number, name: string, storage_type: string, content_type: string, details: JsonB, present: boolean, expires: Date, content_length: any}>>;
- (params: {
-  task_id_in: string;
-  run_id_in: number;
-  name_in: string;
-  storage_type_in: string;
-  content_type_in: string;
-  details_in: JsonB;
-  present_in: boolean;
-  expires_in: Date;
-  content_length_in: any;
- }): Promise<Array<{task_id: string, run_id: number, name: string, storage_type: string, content_type: string, details: JsonB, present: boolean, expires: Date, content_length: any}>>;
 };
 /** @deprecated */
 type QueueCreateQueueProvisionerDeprecatedFn = {
@@ -2308,52 +2270,7 @@ type QueueCreateTaskDeprecatedFn = {
   extra: JsonB;
  }): Promise<void>;
 };
-type QueueCreateTaskAtomicFn = {
- (
-   task_id: string,
-   task_queue_id: string,
-   scheduler_id: string,
-   project_id: string,
-   task_group_id: string,
-   dependencies: JsonB,
-   requires: TaskRequires,
-   routes: JsonB,
-   priority: TaskPriority,
-   retries: number,
-   created: Date,
-   deadline: Date,
-   expires: Date,
-   scopes: JsonB,
-   payload: JsonB,
-   metadata: JsonB,
-   tags: JsonB,
-   extra: JsonB,
-   deadline_delay_seconds_in: number
- ): Promise<void>;
- (params: {
-  task_id: string;
-  task_queue_id: string;
-  scheduler_id: string;
-  project_id: string;
-  task_group_id: string;
-  dependencies: JsonB;
-  requires: TaskRequires;
-  routes: JsonB;
-  priority: TaskPriority;
-  retries: number;
-  created: Date;
-  deadline: Date;
-  expires: Date;
-  scopes: JsonB;
-  payload: JsonB;
-  metadata: JsonB;
-  tags: JsonB;
-  extra: JsonB;
-  deadline_delay_seconds_in: number;
- }): Promise<void>;
-};
-/** @deprecated */
-type QueueCreateTaskProjidDeprecatedFn = {
+type QueueCreateTaskProjidFn = {
  (
    task_id: string,
    task_queue_id: string,
@@ -2583,18 +2500,6 @@ type QueueGetClaimedTasksByTaskQueueIdFn = {
   after_task_id_in?: string | null;
  }): Promise<Array<{task_id: string, task_queue_id: string, scheduler_id: string, project_id: string, task_group_id: string, dependencies: JsonB, requires: TaskRequires, routes: JsonB, priority: TaskPriority, retries: number, retries_left: number, created: Date, deadline: Date, expires: Date, scopes: JsonB, payload: JsonB, metadata: JsonB, tags: JsonB, extra: JsonB, runs: JsonB, taken_until: Date, run_id: number, worker_group: string, worker_id: string, claimed: Date}>>;
 };
-type QueueGetClaimedTasksByWorkerFn = {
- (
-   task_queue_id_in: string,
-   worker_group_in: string,
-   worker_id_in: string
- ): Promise<Array<{task_id: string, run_id: number}>>;
- (params: {
-  task_queue_id_in: string;
-  worker_group_in: string;
-  worker_id_in: string;
- }): Promise<Array<{task_id: string, run_id: number}>>;
-};
 type QueueGetDependentTasksFn = {
  (
    required_task_id_in: string,
@@ -2611,8 +2516,7 @@ type QueueGetDependentTasksFn = {
   page_offset_in?: number | null;
  }): Promise<Array<{dependent_task_id: string, requires: TaskRequires, satisfied: boolean}>>;
 };
-/** @deprecated */
-type QueueGetExpiredArtifactsForDeletionDeprecatedFn = {
+type QueueGetExpiredArtifactsForDeletionFn = {
  (
    expires_in: Date,
    page_size_in: number | null
@@ -2621,16 +2525,6 @@ type QueueGetExpiredArtifactsForDeletionDeprecatedFn = {
   expires_in: Date;
   page_size_in?: number | null;
  }): Promise<Array<{task_id: string, run_id: number, name: string, storage_type: string, content_type: string, details: JsonB, present: boolean, expires: Date}>>;
-};
-type QueueGetExpiredArtifactsForDeletion2Fn = {
- (
-   expires_in: Date,
-   page_size_in: number | null
- ): Promise<Array<{task_id: string, run_id: number, name: string, storage_type: string, content_type: string, details: JsonB, present: boolean, expires: Date, content_length: any}>>;
- (params: {
-  expires_in: Date;
-  page_size_in?: number | null;
- }): Promise<Array<{task_id: string, run_id: number, name: string, storage_type: string, content_type: string, details: JsonB, present: boolean, expires: Date, content_length: any}>>;
 };
 type QueueGetMultipleTasksFn = {
  (
@@ -2658,8 +2552,7 @@ type QueueGetPendingTasksByTaskQueueIdFn = {
   after_task_id_in?: string | null;
  }): Promise<Array<{task_id: string, task_queue_id: string, scheduler_id: string, project_id: string, task_group_id: string, dependencies: JsonB, requires: TaskRequires, routes: JsonB, priority: TaskPriority, retries: number, retries_left: number, created: Date, deadline: Date, expires: Date, scopes: JsonB, payload: JsonB, metadata: JsonB, tags: JsonB, extra: JsonB, runs: JsonB, taken_until: Date, run_id: number, inserted: Date}>>;
 };
-/** @deprecated */
-type QueueGetQueueArtifactDeprecatedFn = {
+type QueueGetQueueArtifactFn = {
  (
    task_id_in: string,
    run_id_in: number,
@@ -2670,18 +2563,6 @@ type QueueGetQueueArtifactDeprecatedFn = {
   run_id_in: number;
   name_in: string;
  }): Promise<Array<{task_id: string, run_id: number, name: string, storage_type: string, content_type: string, details: JsonB, present: boolean, expires: Date}>>;
-};
-type QueueGetQueueArtifact2Fn = {
- (
-   task_id_in: string,
-   run_id_in: number,
-   name_in: string
- ): Promise<Array<{task_id: string, run_id: number, name: string, storage_type: string, content_type: string, details: JsonB, present: boolean, expires: Date, content_length: any}>>;
- (params: {
-  task_id_in: string;
-  run_id_in: number;
-  name_in: string;
- }): Promise<Array<{task_id: string, run_id: number, name: string, storage_type: string, content_type: string, details: JsonB, present: boolean, expires: Date, content_length: any}>>;
 };
 /** @deprecated */
 type QueueGetQueueArtifactsDeprecatedFn = {
@@ -2700,8 +2581,7 @@ type QueueGetQueueArtifactsDeprecatedFn = {
   page_offset_in?: number | null;
  }): Promise<Array<{task_id: string, run_id: number, name: string, storage_type: string, content_type: string, details: JsonB, present: boolean, expires: Date}>>;
 };
-/** @deprecated */
-type QueueGetQueueArtifactsPaginatedDeprecatedFn = {
+type QueueGetQueueArtifactsPaginatedFn = {
  (
    task_id_in: string | null,
    run_id_in: number | null,
@@ -2720,26 +2600,6 @@ type QueueGetQueueArtifactsPaginatedDeprecatedFn = {
   after_run_id_in: number;
   after_name_in: string;
  }): Promise<Array<{task_id: string, run_id: number, name: string, storage_type: string, content_type: string, details: JsonB, present: boolean, expires: Date}>>;
-};
-type QueueGetQueueArtifactsPaginated2Fn = {
- (
-   task_id_in: string | null,
-   run_id_in: number | null,
-   expires_in: Date | null,
-   page_size_in: number | null,
-   after_task_id_in: string | null,
-   after_run_id_in: number,
-   after_name_in: string
- ): Promise<Array<{task_id: string, run_id: number, name: string, storage_type: string, content_type: string, details: JsonB, present: boolean, expires: Date, content_length: any}>>;
- (params: {
-  task_id_in?: string | null;
-  run_id_in?: number | null;
-  expires_in?: Date | null;
-  page_size_in?: number | null;
-  after_task_id_in?: string | null;
-  after_run_id_in: number;
-  after_name_in: string;
- }): Promise<Array<{task_id: string, run_id: number, name: string, storage_type: string, content_type: string, details: JsonB, present: boolean, expires: Date, content_length: any}>>;
 };
 /** @deprecated */
 type QueueGetQueueProvisionerDeprecatedFn = {
@@ -3165,28 +3025,6 @@ type QueueQueueArtifactsEntitiesScanDeprecatedFn = {
   page: number;
  }): Promise<Array<{partition_key: string, row_key: string, value: JsonB, version: number, etag: string}>>;
 };
-type QueueQueueChangeTaskGroupPriorityFn = {
- (
-   task_group_id_in: string,
-   new_priority_in: TaskPriority,
-   batch_size_in: number
- ): Promise<Array<{task_id: string, task_queue_id: string, scheduler_id: string, project_id: string, task_group_id: string, dependencies: JsonB, requires: TaskRequires, routes: JsonB, priority: TaskPriority, retries: number, retries_left: number, created: Date, deadline: Date, expires: Date, scopes: JsonB, payload: JsonB, metadata: JsonB, tags: JsonB, extra: JsonB, runs: JsonB, taken_until: Date, old_priority: TaskPriority}>>;
- (params: {
-  task_group_id_in: string;
-  new_priority_in: TaskPriority;
-  batch_size_in: number;
- }): Promise<Array<{task_id: string, task_queue_id: string, scheduler_id: string, project_id: string, task_group_id: string, dependencies: JsonB, requires: TaskRequires, routes: JsonB, priority: TaskPriority, retries: number, retries_left: number, created: Date, deadline: Date, expires: Date, scopes: JsonB, payload: JsonB, metadata: JsonB, tags: JsonB, extra: JsonB, runs: JsonB, taken_until: Date, old_priority: TaskPriority}>>;
-};
-type QueueQueueChangeTaskPriorityFn = {
- (
-   task_id_in: string,
-   new_priority_in: TaskPriority
- ): Promise<Array<{task_id: string, task_queue_id: string, scheduler_id: string, project_id: string, task_group_id: string, dependencies: JsonB, requires: TaskRequires, routes: JsonB, priority: TaskPriority, retries: number, retries_left: number, created: Date, deadline: Date, expires: Date, scopes: JsonB, payload: JsonB, metadata: JsonB, tags: JsonB, extra: JsonB, runs: JsonB, taken_until: Date, old_priority: TaskPriority}>>;
- (params: {
-  task_id_in: string;
-  new_priority_in: TaskPriority;
- }): Promise<Array<{task_id: string, task_queue_id: string, scheduler_id: string, project_id: string, task_group_id: string, dependencies: JsonB, requires: TaskRequires, routes: JsonB, priority: TaskPriority, retries: number, retries_left: number, created: Date, deadline: Date, expires: Date, scopes: JsonB, payload: JsonB, metadata: JsonB, tags: JsonB, extra: JsonB, runs: JsonB, taken_until: Date, old_priority: TaskPriority}>>;
-};
 type QueueQueueClaimedTaskDeleteFn = {
  (
    task_id_in: string,
@@ -3269,22 +3107,6 @@ type QueueQueuePendingTasksAddFn = {
   run_id_in: number;
   hint_id_in: string;
   expires_in: any;
- }): Promise<void>;
-};
-type QueueQueuePendingTasksAddForTaskFn = {
- (
-   task_queue_id_in: string,
-   priority_in: TaskPriority,
-   deadline_in: Date,
-   task_id_in: string,
-   run_id_in: number
- ): Promise<void>;
- (params: {
-  task_queue_id_in: string;
-  priority_in: TaskPriority;
-  deadline_in: Date;
-  task_id_in: string;
-  run_id_in: number;
  }): Promise<void>;
 };
 type QueueQueuePendingTasksCountFn = {
@@ -4393,18 +4215,11 @@ type SecretsDeleteSecretFn = {
   name_in: string;
  }): Promise<void>;
 };
-/** @deprecated */
-type SecretsExpireSecretsDeprecatedFn = {
+type SecretsExpireSecretsFn = {
  (
  ): Promise<[{ expire_secrets: number }]>;
  (params: {
  }): Promise<[{ expire_secrets: number }]>;
-};
-type SecretsExpireSecretsReturnNamesFn = {
- (
- ): Promise<Array<{name: string}>>;
- (params: {
- }): Promise<Array<{name: string}>>;
 };
 type SecretsGetSecretFn = {
  (
@@ -4679,14 +4494,6 @@ type WebServerAuthorizationCodesTableEntitiesScanDeprecatedFn = {
   page: number;
  }): Promise<Array<{partition_key: string, row_key: string, value: JsonB, version: number, etag: string}>>;
 };
-type WebServerConsumeAuthorizationCodeFn = {
- (
-   code_in: string
- ): Promise<Array<{code: string, client_id: string, redirect_uri: string, identity: string, identity_provider_id: string, expires: Date, client_details: JsonB}>>;
- (params: {
-  code_in: string;
- }): Promise<Array<{code: string, client_id: string, redirect_uri: string, identity: string, identity_provider_id: string, expires: Date, client_details: JsonB}>>;
-};
 type WebServerCreateAccessTokenFn = {
  (
    hashed_access_token_in: string,
@@ -4759,8 +4566,7 @@ type WebServerGetAccessTokenFn = {
   hashed_access_token_in: string;
  }): Promise<Array<{hashed_access_token: string, encrypted_access_token: JsonB, client_id: string, redirect_uri: string, identity: string, identity_provider_id: string, expires: Date, client_details: JsonB}>>;
 };
-/** @deprecated */
-type WebServerGetAuthorizationCodeDeprecatedFn = {
+type WebServerGetAuthorizationCodeFn = {
  (
    code_in: string
  ): Promise<Array<{code: string, client_id: string, redirect_uri: string, identity: string, identity_provider_id: string, expires: Date, client_details: JsonB}>>;
@@ -5300,8 +5106,7 @@ type WorkerManagerGetNonStoppedWorkersScannerDeprecatedFn = {
   page_offset_in?: number | null;
  }): Promise<Array<{worker_pool_id: string, worker_group: string, worker_id: string, provider_id: string, created: Date, expires: Date, state: string, provider_data: JsonB, capacity: number, last_modified: Date, last_checked: Date, secret: JsonB, etag: string, quarantine_until: Date, first_claim: Date, last_date_active: Date}>>;
 };
-/** @deprecated */
-type WorkerManagerGetNonStoppedWorkersWithLaunchConfigScannerDeprecatedFn = {
+type WorkerManagerGetNonStoppedWorkersWithLaunchConfigScannerFn = {
  (
    worker_pool_id_in: string | null,
    worker_group_in: string | null,
@@ -5319,30 +5124,6 @@ type WorkerManagerGetNonStoppedWorkersWithLaunchConfigScannerDeprecatedFn = {
   providers_filter_value_in?: string | null;
   page_size_in?: number | null;
   page_offset_in?: number | null;
- }): Promise<Array<{worker_pool_id: string, worker_group: string, worker_id: string, provider_id: string, created: Date, expires: Date, state: string, provider_data: JsonB, capacity: number, last_modified: Date, last_checked: Date, secret: JsonB, etag: string, launch_config_id: string, quarantine_until: Date, first_claim: Date, last_date_active: Date}>>;
-};
-type WorkerManagerGetNonStoppedWorkersWithLaunchConfigScannerAfterFn = {
- (
-   worker_pool_id_in: string | null,
-   worker_group_in: string | null,
-   worker_id_in: string | null,
-   providers_filter_cond_in: string | null,
-   providers_filter_value_in: string | null,
-   page_size_in: number | null,
-   after_worker_pool_id_in: string | null,
-   after_worker_group_in: string | null,
-   after_worker_id_in: string | null
- ): Promise<Array<{worker_pool_id: string, worker_group: string, worker_id: string, provider_id: string, created: Date, expires: Date, state: string, provider_data: JsonB, capacity: number, last_modified: Date, last_checked: Date, secret: JsonB, etag: string, launch_config_id: string, quarantine_until: Date, first_claim: Date, last_date_active: Date}>>;
- (params: {
-  worker_pool_id_in?: string | null;
-  worker_group_in?: string | null;
-  worker_id_in?: string | null;
-  providers_filter_cond_in?: string | null;
-  providers_filter_value_in?: string | null;
-  page_size_in?: number | null;
-  after_worker_pool_id_in?: string | null;
-  after_worker_group_in?: string | null;
-  after_worker_id_in?: string | null;
  }): Promise<Array<{worker_pool_id: string, worker_group: string, worker_id: string, provider_id: string, created: Date, expires: Date, state: string, provider_data: JsonB, capacity: number, last_modified: Date, last_checked: Date, secret: JsonB, etag: string, launch_config_id: string, quarantine_until: Date, first_claim: Date, last_date_active: Date}>>;
 };
 type WorkerManagerGetQueueWorkerWithWmDataFn = {
@@ -6309,7 +6090,7 @@ export interface DbFunctions {
   // Auth
   create_client: AuthCreateClientFn;
   delete_client: AuthDeleteClientFn;
-  expire_clients_return_client_ids: AuthExpireClientsReturnClientIdsFn;
+  expire_clients: AuthExpireClientsFn;
   get_client: AuthGetClientFn;
   get_clients: AuthGetClientsFn;
   get_combined_audit_history: AuthGetCombinedAuditHistoryFn;
@@ -6344,7 +6125,6 @@ export interface DbFunctions {
   delete_last_fires: HooksDeleteLastFiresFn;
   expire_last_fires: HooksExpireLastFiresFn;
   get_hook: HooksGetHookFn;
-  get_hook_groups: HooksGetHookGroupsFn;
   get_hooks: HooksGetHooksFn;
   get_hooks_queues: HooksGetHooksQueuesFn;
   get_last_fire: HooksGetLastFireFn;
@@ -6395,8 +6175,8 @@ export interface DbFunctions {
   cancel_task_group: QueueCancelTaskGroupFn;
   check_task_claim: QueueCheckTaskClaimFn;
   claim_task: QueueClaimTaskFn;
-  create_queue_artifact_2: QueueCreateQueueArtifact2Fn;
-  create_task_atomic: QueueCreateTaskAtomicFn;
+  create_queue_artifact: QueueCreateQueueArtifactFn;
+  create_task_projid: QueueCreateTaskProjidFn;
   delete_queue_artifact: QueueDeleteQueueArtifactFn;
   delete_queue_artifacts: QueueDeleteQueueArtifactsFn;
   delete_queue_provisioner: QueueDeleteQueueProvisionerFn;
@@ -6408,13 +6188,12 @@ export interface DbFunctions {
   expire_task_queues: QueueExpireTaskQueuesFn;
   expire_tasks: QueueExpireTasksFn;
   get_claimed_tasks_by_task_queue_id: QueueGetClaimedTasksByTaskQueueIdFn;
-  get_claimed_tasks_by_worker: QueueGetClaimedTasksByWorkerFn;
   get_dependent_tasks: QueueGetDependentTasksFn;
-  get_expired_artifacts_for_deletion_2: QueueGetExpiredArtifactsForDeletion2Fn;
+  get_expired_artifacts_for_deletion: QueueGetExpiredArtifactsForDeletionFn;
   get_multiple_tasks: QueueGetMultipleTasksFn;
   get_pending_tasks_by_task_queue_id: QueueGetPendingTasksByTaskQueueIdFn;
-  get_queue_artifact_2: QueueGetQueueArtifact2Fn;
-  get_queue_artifacts_paginated_2: QueueGetQueueArtifactsPaginated2Fn;
+  get_queue_artifact: QueueGetQueueArtifactFn;
+  get_queue_artifacts_paginated: QueueGetQueueArtifactsPaginatedFn;
   get_task_group_size: QueueGetTaskGroupSizeFn;
   get_task_group2: QueueGetTaskGroup2Fn;
   get_task_projid: QueueGetTaskProjidFn;
@@ -6427,8 +6206,6 @@ export interface DbFunctions {
   mark_task_ever_resolved: QueueMarkTaskEverResolvedFn;
   quarantine_queue_worker_with_last_date_active_and_details: QueueQuarantineQueueWorkerWithLastDateActiveAndDetailsFn;
   queue_artifact_present: QueueQueueArtifactPresentFn;
-  queue_change_task_group_priority: QueueQueueChangeTaskGroupPriorityFn;
-  queue_change_task_priority: QueueQueueChangeTaskPriorityFn;
   queue_claimed_task_delete: QueueQueueClaimedTaskDeleteFn;
   queue_claimed_task_get: QueueQueueClaimedTaskGetFn;
   queue_claimed_task_put: QueueQueueClaimedTaskPutFn;
@@ -6436,7 +6213,6 @@ export interface DbFunctions {
   queue_claimed_tasks_count: QueueQueueClaimedTasksCountFn;
   queue_pending_task_delete: QueueQueuePendingTaskDeleteFn;
   queue_pending_tasks_add: QueueQueuePendingTasksAddFn;
-  queue_pending_tasks_add_for_task: QueueQueuePendingTasksAddForTaskFn;
   queue_pending_tasks_count: QueueQueuePendingTasksCountFn;
   queue_pending_tasks_delete: QueueQueuePendingTasksDeleteFn;
   queue_pending_tasks_delete_expired: QueueQueuePendingTasksDeleteExpiredFn;
@@ -6466,7 +6242,7 @@ export interface DbFunctions {
 
   // Secrets
   delete_secret: SecretsDeleteSecretFn;
-  expire_secrets_return_names: SecretsExpireSecretsReturnNamesFn;
+  expire_secrets: SecretsExpireSecretsFn;
   get_secret: SecretsGetSecretFn;
   get_secrets: SecretsGetSecretsFn;
   insert_secrets_audit_history: SecretsInsertSecretsAuditHistoryFn;
@@ -6474,13 +6250,13 @@ export interface DbFunctions {
 
   // WebServer
   add_github_access_token: WebServerAddGithubAccessTokenFn;
-  consume_authorization_code: WebServerConsumeAuthorizationCodeFn;
   create_access_token: WebServerCreateAccessTokenFn;
   create_authorization_code: WebServerCreateAuthorizationCodeFn;
   expire_access_tokens: WebServerExpireAccessTokensFn;
   expire_authorization_codes: WebServerExpireAuthorizationCodesFn;
   expire_sessions: WebServerExpireSessionsFn;
   get_access_token: WebServerGetAccessTokenFn;
+  get_authorization_code: WebServerGetAuthorizationCodeFn;
   load_github_access_token: WebServerLoadGithubAccessTokenFn;
   session_add: WebServerSessionAddFn;
   session_load: WebServerSessionLoadFn;
@@ -6500,7 +6276,7 @@ export interface DbFunctions {
   expire_worker_pool_launch_configs: WorkerManagerExpireWorkerPoolLaunchConfigsFn;
   expire_worker_pools: WorkerManagerExpireWorkerPoolsFn;
   expire_workers: WorkerManagerExpireWorkersFn;
-  get_non_stopped_workers_with_launch_config_scanner_after: WorkerManagerGetNonStoppedWorkersWithLaunchConfigScannerAfterFn;
+  get_non_stopped_workers_with_launch_config_scanner: WorkerManagerGetNonStoppedWorkersWithLaunchConfigScannerFn;
   get_queue_worker_with_wm_data: WorkerManagerGetQueueWorkerWithWmDataFn;
   get_queue_workers_with_wm_data: WorkerManagerGetQueueWorkersWithWmDataFn;
   get_task_queue_wm_2: WorkerManagerGetTaskQueueWm2Fn;
@@ -6538,7 +6314,6 @@ export interface DeprecatedDbFunctions {
   clients_entities_modify: AuthClientsEntitiesModifyDeprecatedFn;
   clients_entities_remove: AuthClientsEntitiesRemoveDeprecatedFn;
   clients_entities_scan: AuthClientsEntitiesScanDeprecatedFn;
-  expire_clients: AuthExpireClientsDeprecatedFn;
   get_audit_history: AuthGetAuditHistoryDeprecatedFn;
   roles_entities_create: AuthRolesEntitiesCreateDeprecatedFn;
   roles_entities_load: AuthRolesEntitiesLoadDeprecatedFn;
@@ -6633,21 +6408,16 @@ export interface DeprecatedDbFunctions {
   azure_queue_put: QueueAzureQueuePutDeprecatedFn;
   azure_queue_put_extra: QueueAzureQueuePutExtraDeprecatedFn;
   azure_queue_update: QueueAzureQueueUpdateDeprecatedFn;
-  create_queue_artifact: QueueCreateQueueArtifactDeprecatedFn;
   create_queue_provisioner: QueueCreateQueueProvisionerDeprecatedFn;
   create_queue_worker: QueueCreateQueueWorkerDeprecatedFn;
   create_queue_worker_tqid: QueueCreateQueueWorkerTqidDeprecatedFn;
   create_queue_worker_type: QueueCreateQueueWorkerTypeDeprecatedFn;
   create_task: QueueCreateTaskDeprecatedFn;
-  create_task_projid: QueueCreateTaskProjidDeprecatedFn;
   create_task_queue: QueueCreateTaskQueueDeprecatedFn;
   create_task_tqid: QueueCreateTaskTqidDeprecatedFn;
   expire_queue_provisioners: QueueExpireQueueProvisionersDeprecatedFn;
   expire_queue_worker_types: QueueExpireQueueWorkerTypesDeprecatedFn;
-  get_expired_artifacts_for_deletion: QueueGetExpiredArtifactsForDeletionDeprecatedFn;
-  get_queue_artifact: QueueGetQueueArtifactDeprecatedFn;
   get_queue_artifacts: QueueGetQueueArtifactsDeprecatedFn;
-  get_queue_artifacts_paginated: QueueGetQueueArtifactsPaginatedDeprecatedFn;
   get_queue_provisioner: QueueGetQueueProvisionerDeprecatedFn;
   get_queue_provisioners: QueueGetQueueProvisionersDeprecatedFn;
   get_queue_worker: QueueGetQueueWorkerDeprecatedFn;
@@ -6726,7 +6496,6 @@ export interface DeprecatedDbFunctions {
   update_task_queue: QueueUpdateTaskQueueDeprecatedFn;
 
   // Secrets
-  expire_secrets: SecretsExpireSecretsDeprecatedFn;
   secrets_entities_create: SecretsSecretsEntitiesCreateDeprecatedFn;
   secrets_entities_load: SecretsSecretsEntitiesLoadDeprecatedFn;
   secrets_entities_modify: SecretsSecretsEntitiesModifyDeprecatedFn;
@@ -6744,7 +6513,6 @@ export interface DeprecatedDbFunctions {
   authorization_codes_table_entities_modify: WebServerAuthorizationCodesTableEntitiesModifyDeprecatedFn;
   authorization_codes_table_entities_remove: WebServerAuthorizationCodesTableEntitiesRemoveDeprecatedFn;
   authorization_codes_table_entities_scan: WebServerAuthorizationCodesTableEntitiesScanDeprecatedFn;
-  get_authorization_code: WebServerGetAuthorizationCodeDeprecatedFn;
   github_access_token_table_entities_create: WebServerGithubAccessTokenTableEntitiesCreateDeprecatedFn;
   github_access_token_table_entities_load: WebServerGithubAccessTokenTableEntitiesLoadDeprecatedFn;
   github_access_token_table_entities_modify: WebServerGithubAccessTokenTableEntitiesModifyDeprecatedFn;
@@ -6765,7 +6533,6 @@ export interface DeprecatedDbFunctions {
   get_non_stopped_workers_quntil: WorkerManagerGetNonStoppedWorkersQuntilDeprecatedFn;
   get_non_stopped_workers_quntil_providers: WorkerManagerGetNonStoppedWorkersQuntilProvidersDeprecatedFn;
   get_non_stopped_workers_scanner: WorkerManagerGetNonStoppedWorkersScannerDeprecatedFn;
-  get_non_stopped_workers_with_launch_config_scanner: WorkerManagerGetNonStoppedWorkersWithLaunchConfigScannerDeprecatedFn;
   get_queue_worker_with_wm_join: WorkerManagerGetQueueWorkerWithWmJoinDeprecatedFn;
   get_queue_worker_with_wm_join_2: WorkerManagerGetQueueWorkerWithWmJoin2DeprecatedFn;
   get_queue_workers_with_wm_join: WorkerManagerGetQueueWorkersWithWmJoinDeprecatedFn;

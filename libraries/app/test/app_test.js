@@ -1,22 +1,22 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import { App } from '../src/index.js';
 import request from 'superagent';
 import express from 'express';
 import isUUID from 'is-uuid';
-import testing from '@taskcluster/lib-testing';
-import path from 'node:path';
+import testing from 'taskcluster-lib-testing';
+import path from 'path';
 import mockFs from 'mock-fs';
 
 const __dirname = new URL('.', import.meta.url).pathname;
 const REPO_ROOT = path.join(__dirname, '../../../');
 
-suite(testing.suiteName(), () => {
+suite(testing.suiteName(), function() {
 
   // Test app creation
-  suite('app({port: 1459})', () => {
+  suite('app({port: 1459})', function() {
     let server;
 
-    suiteSetup(async () => {
+    suiteSetup(async function() {
       mockFs({
         [path.resolve(REPO_ROOT, 'version.json')]: JSON.stringify({ version: 'v99.99.99' }),
       });
@@ -25,10 +25,10 @@ suite(testing.suiteName(), () => {
       const fakeApi = {
         express(app) {
           const router = express.Router();
-          router.get('/test', (req, res) => {
+          router.get('/test', function(req, res) {
             res.status(200).send('Okay this works');
           });
-          router.get('/req-id', (req, res) => {
+          router.get('/req-id', function(req, res) {
             res.status(200).send(JSON.stringify({
               valueSet: req.traceId,
             }));
@@ -48,18 +48,18 @@ suite(testing.suiteName(), () => {
       });
     });
 
-    test('get /test', async () => {
+    test('get /test', async function() {
       const res = await request.get('http://localhost:1459/api/test/v1/test');
       assert(res.ok, 'Got response');
       assert.equal(res.text, 'Okay this works', 'Got the right text');
     });
 
-    test('hsts header', async () => {
+    test('hsts header', async function() {
       const res = await request.get('http://localhost:1459/api/test/v1/test');
       assert.equal(res.headers['strict-transport-security'], 'max-age=7776000000; includeSubDomains');
     });
 
-    test('trace ids', async () => {
+    test('trace ids', async function() {
       const res = await request
         .get('http://localhost:1459/api/test/v1/req-id')
         .set('x-taskcluster-trace-id', 'foo/123')
@@ -69,7 +69,7 @@ suite(testing.suiteName(), () => {
       assert.equal(body.valueSet, 'foo/123');
     });
 
-    test('trace ids (created when none passed in)', async () => {
+    test('trace ids (created when none passed in)', async function() {
       const res = await request
         .get('http://localhost:1459/api/test/v1/req-id')
         .buffer();
@@ -79,28 +79,28 @@ suite(testing.suiteName(), () => {
       assert(isUUID.v4(body.valueSet));
     });
 
-    test('/__version__', async () => {
+    test('/__version__', async function() {
       const res = await request.get('http://localhost:1459/__version__');
       assert(res.ok, 'Got response');
       assert.equal(res.body.version, 'v99.99.99', 'Got the right version');
       assert.equal(res.headers['content-type'], 'application/json; charset=utf-8');
     });
 
-    test('/__heartbeat__', async () => {
+    test('/__heartbeat__', async function() {
       const res = await request.get('http://localhost:1459/__heartbeat__');
       assert(res.ok, 'Got response');
       assert.equal(res.status, 200);
       assert.equal(res.headers['content-type'], 'application/json; charset=utf-8');
     });
 
-    test('/__lbheartbeat__', async () => {
+    test('/__lbheartbeat__', async function() {
       const res = await request.get('http://localhost:1459/__lbheartbeat__');
       assert(res.ok, 'Got response');
       assert.equal(res.status, 200);
       assert.equal(res.headers['content-type'], 'application/json; charset=utf-8');
     });
 
-    test('/not-found', async () => {
+    test('/not-found', async function() {
       try {
         await request.get('http://localhost:1459/api/test/v1/notfound');
       } catch (err) {
@@ -117,7 +117,7 @@ suite(testing.suiteName(), () => {
       throw new Error('expected exception not seen');
     });
 
-    test('graceful shutdown', async () => {
+    test('graceful shutdown', async function() {
       const conn = request.get('http://localhost:1459/__heartbeat__')
         .set('Connection', 'keep-alive');
 
@@ -132,10 +132,12 @@ suite(testing.suiteName(), () => {
       }
     });
 
-    teardown(() => {
+    teardown(function() {
       mockFs.restore();
     });
 
-    suiteTeardown(() => server.terminate());
+    suiteTeardown(function() {
+      return server.terminate();
+    });
   });
 });

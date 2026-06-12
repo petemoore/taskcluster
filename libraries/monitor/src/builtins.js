@@ -36,7 +36,7 @@ MonitorManager.register({
   description: 'A basic timer applied to a function.',
   fields: {
     name: 'The name of the handler.',
-    status: 'Whether or not the handler resolved successfully.',
+    status: 'Whether or not the handler resolved succesfully.',
     duration: 'The duration in ms of the function.',
   },
 });
@@ -166,9 +166,9 @@ MonitorManager.registerMetric('httpRequestsTotal', {
   description: 'Total number of HTTP requests',
   labels: {
     method: 'HTTP method',
-    name: 'API method name',
+    path: 'HTTP path',
     status: 'Response status code',
-    service: 'Service name',
+    service: 'Serice name',
   },
 });
 
@@ -179,22 +179,9 @@ MonitorManager.registerMetric('httpRequestDurationSeconds', {
   description: 'HTTP request duration in seconds',
   labels: {
     method: 'HTTP method',
-    name: 'API method name',
+    path: 'HTTP path',
     status: 'Response status code',
-    service: 'Service name',
+    service: 'Serice name',
   },
   buckets: [0.01, 0.05, 0.1, 0.5, 1, 5, 10],
-});
-
-MonitorManager.registerMetric('iterateDuration', {
-  name: 'iterate_duration_seconds',
-  type: 'histogram',
-  title: 'Background iteration duration',
-  description: 'Duration of a single background iteration loop',
-  labels: {
-    name: 'Name of the iterate loop',
-    status: 'Result: success or exception',
-  },
-  buckets: [1, 5, 10, 30, 60, 120, 300, 600, 1200, 1800, 3600, 6000],
-  global: true,
 });

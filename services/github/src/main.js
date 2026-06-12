@@ -5,18 +5,18 @@ import Handlers from './handlers/index.js';
 import Intree from './intree.js';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
-import taskcluster from '@taskcluster/client';
-import config from '@taskcluster/lib-config';
-import SchemaSet from '@taskcluster/lib-validate';
-import loader from '@taskcluster/lib-loader';
-import { MonitorManager } from '@taskcluster/lib-monitor';
-import libReferences from '@taskcluster/lib-references';
-import { App } from '@taskcluster/lib-app';
-import tcdb from '@taskcluster/db';
+import taskcluster from 'taskcluster-client';
+import config from 'taskcluster-lib-config';
+import SchemaSet from 'taskcluster-lib-validate';
+import loader from 'taskcluster-lib-loader';
+import { MonitorManager } from 'taskcluster-lib-monitor';
+import libReferences from 'taskcluster-lib-references';
+import { App } from 'taskcluster-lib-app';
+import tcdb from 'taskcluster-db';
 import githubAuth from './github-auth.js';
-import { Client, pulseCredentials } from '@taskcluster/lib-pulse';
+import { Client, pulseCredentials } from 'taskcluster-lib-pulse';
 import './monitor.js';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath } from 'url';
 
 const load = loader({
   cfg: {
@@ -119,40 +119,25 @@ const load = loader({
     }),
   },
 
-  hooksClient: {
-    requires: ['cfg'],
-    // This is a powerful Hooks client without scopes to use throughout the handlers
-    // Where it is acting on behalf of a repository, use this.hooksClient.use({authorizedScopes: scopes}).triggerHook
-    setup: ({ cfg }) => new taskcluster.Hooks({
-      rootUrl: cfg.taskcluster.rootUrl,
-      credentials: cfg.taskcluster.credentials,
-    }),
-  },
-
   api: {
     requires: [
       'cfg', 'monitor', 'schemaset', 'github', 'publisher', 'db', 'ajv', 'queueClient', 'intree'],
-    setup: ({ cfg, monitor, schemaset, github, publisher, db, ajv, queueClient, intree }) => {
-      const api = builder.build({
-        rootUrl: cfg.taskcluster.rootUrl,
-        context: {
-          publisher,
-          cfg,
-          github,
-          db,
-          ajv,
-          monitor: monitor.childMonitor('api-context'),
-          queueClient,
-          intree,
-          schemaset,
-        },
-        monitor: monitor.childMonitor('api'),
+    setup: ({ cfg, monitor, schemaset, github, publisher, db, ajv, queueClient, intree }) => builder.build({
+      rootUrl: cfg.taskcluster.rootUrl,
+      context: {
+        publisher,
+        cfg,
+        github,
+        db,
+        ajv,
+        monitor: monitor.childMonitor('api-context'),
+        queueClient,
+        intree,
         schemaset,
-      });
-
-      monitor.exposeMetrics('default');
-      return api;
-    },
+      },
+      monitor: monitor.childMonitor('api'),
+      schemaset,
+    }),
   },
 
   server: {
@@ -195,7 +180,6 @@ const load = loader({
       'publisher',
       'db',
       'queueClient',
-      'hooksClient',
     ],
     setup: async ({
       cfg,
@@ -208,7 +192,6 @@ const load = loader({
       publisher,
       db,
       queueClient,
-      hooksClient,
     }) =>
       new Handlers({
         rootUrl: cfg.taskcluster.rootUrl,
@@ -221,7 +204,7 @@ const load = loader({
         deprecatedInitialStatusQueueName: cfg.app.deprecatedInitialStatusQueue,
         resultStatusQueueName: cfg.app.resultStatusQueue,
         rerunQueueName: cfg.app.rerunQueue,
-        context: { cfg, github, schemaset, db, publisher, hooksClient },
+        context: { cfg, github, schemaset, db, publisher },
         pulseClient,
         queueClient,
       }),

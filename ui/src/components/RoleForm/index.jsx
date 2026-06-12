@@ -261,7 +261,7 @@ export default class RoleForm extends Component {
             tooltipProps={{ title: 'Save' }}
             requiresAuth
             disabled={loading || !isRoleDirty}
-            variant="circular"
+            variant="round"
             onClick={this.handleSaveRole}
             classes={{ root: classes.saveIcon }}>
             <ContentSaveIcon />
@@ -274,7 +274,7 @@ export default class RoleForm extends Component {
               }}
               onClick={this.handleSaveRole}
               className={classes.saveIcon}
-              variant="circular"
+              variant="round"
               tooltipProps={{ title: 'Save' }}
               disabled={loading || !isRoleDirty}
               classes={{ root: classes.saveIcon }}>

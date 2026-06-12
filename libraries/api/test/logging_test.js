@@ -1,13 +1,14 @@
 import request from 'superagent';
-import assert from 'node:assert';
+import assert from 'assert';
 import hawk from 'hawk';
 import { APIBuilder } from '../src/index.js';
 import helper, { monitorManager } from './helper.js';
+import _ from 'lodash';
 import libUrls from 'taskcluster-lib-urls';
-import testing from '@taskcluster/lib-testing';
-import { LEVELS } from '@taskcluster/lib-monitor';
+import testing from 'taskcluster-lib-testing';
+import { LEVELS } from 'taskcluster-lib-monitor';
 
-suite(testing.suiteName(), () => {
+suite(testing.suiteName(), function() {
   // Create test api
   const builder = new APIBuilder({
     title: 'Test Api',
@@ -36,7 +37,7 @@ suite(testing.suiteName(), () => {
         { AllOf: ['bb', 'dd'] },
       ],
     },
-  }, (req, res) => {
+  }, function(req, res) {
     res.reply({});
   });
 
@@ -48,7 +49,7 @@ suite(testing.suiteName(), () => {
     category: 'API Library',
     description: 'Place we can call to test something',
     scopes: null,
-  }, (req, res) => {
+  }, function(req, res) {
     res.reply({});
   });
 
@@ -66,7 +67,7 @@ suite(testing.suiteName(), () => {
       if: 'private',
       then: 'aa',
     },
-  }, async (req, res) => {
+  }, async function(req, res) {
     await req.authorize({ private: req.query.private === '1' });
     res.reply({});
   });
@@ -79,7 +80,7 @@ suite(testing.suiteName(), () => {
     category: 'API Library',
     description: 'Place we can call to test something',
     scopes: 'XXXX',
-  }, (req, res) => {
+  }, function(req, res) {
     res.reply({});
   });
 
@@ -94,11 +95,11 @@ suite(testing.suiteName(), () => {
     title: 'Bewit having endpoint',
     description: 'Place we can call to test something',
     scopes: null,
-  }, (req, res) => {
+  }, function(req, res) {
     res.reply({});
   });
 
-  test('successful api method is logged', async () => {
+  test('successful api method is logged', async function() {
     const url = libUrls.api(helper.rootUrl, 'test', 'v1', '/require-some-scopes');
     const { header } = hawk.client.header(url, 'GET', {
       credentials: { id: 'client-with-aa-bb-dd', key: 'ignored', algorithm: 'sha256' },
@@ -136,7 +137,7 @@ suite(testing.suiteName(), () => {
     }, 3, 100);
   });
 
-  test('scope-less api method is logged', async () => {
+  test('scope-less api method is logged', async function() {
     const url = libUrls.api(helper.rootUrl, 'test', 'v1', '/require-no-scopes');
     const { header } = hawk.client.header(url, 'GET', {
       credentials: { id: 'client-with-aa-bb-dd', key: 'ignored', algorithm: 'sha256' },
@@ -171,7 +172,7 @@ suite(testing.suiteName(), () => {
     }, 3, 100);
   });
 
-  test('optionally scope-less api method is logged without scopes', async () => {
+  test('optionally scope-less api method is logged without scopes', async function() {
     const url = libUrls.api(helper.rootUrl, 'test', 'v1', '/sometimes-require-no-scopes?private=0');
     const { header } = hawk.client.header(url, 'GET', {
       credentials: { id: 'client-with-aa-bb-dd', key: 'ignored', algorithm: 'sha256' },
@@ -212,7 +213,7 @@ suite(testing.suiteName(), () => {
     }, 3, 100);
   });
 
-  test('optionally scope-less api method is logged with scopes', async () => {
+  test('optionally scope-less api method is logged with scopes', async function() {
     const url = libUrls.api(helper.rootUrl, 'test', 'v1', '/sometimes-require-no-scopes?private=1');
     const { header } = hawk.client.header(url, 'GET', {
       credentials: { id: 'client-with-aa-bb-dd', key: 'ignored', algorithm: 'sha256' },
@@ -247,7 +248,7 @@ suite(testing.suiteName(), () => {
     }, 3, 100);
   });
 
-  test('unauthorized api method is logged', async () => {
+  test('unauthorized api method is logged', async function() {
     const url = libUrls.api(helper.rootUrl, 'test', 'v1', '/require-extra-scopes');
     const { header } = hawk.client.header(url, 'GET', {
       credentials: { id: 'client-with-aa-bb-dd', key: 'ignored', algorithm: 'sha256' },
@@ -286,7 +287,7 @@ suite(testing.suiteName(), () => {
     }, 3, 100);
   });
 
-  test('bewit is elided', async () => {
+  test('bewit is elided', async function() {
     const url = libUrls.api(helper.rootUrl, 'test', 'v1', '/bewitiful?bewit=Y2xpZW50LXdpdGgtYWEtYmItZGRcMTYwMjE3NTYxM1xyVUErZWE1TWxUaWlZR1Vaak5KbE5pTFhnNnhCbXdhRDFxbnozQU1HZ2hJPVw&foo=abc');
     await request.get(url);
 
@@ -319,7 +320,7 @@ suite(testing.suiteName(), () => {
     }, 3, 100);
   });
 
-  test('unknown query params are not logged', async () => {
+  test('unknown query params are not logged', async function() {
     const url = libUrls.api(helper.rootUrl, 'test', 'v1', '/bewitiful?bar=abc');
     const { header } = hawk.client.header(url, 'GET', {
       credentials: { id: 'client-with-aa-bb-dd', key: 'ignored', algorithm: 'sha256' },
@@ -358,7 +359,7 @@ suite(testing.suiteName(), () => {
     }, 3, 100);
   });
 
-  test('invalid query params are not logged', async () => {
+  test('invalid query params are not logged', async function() {
     const url = libUrls.api(helper.rootUrl, 'test', 'v1', '/bewitiful?foo=def');
     const { header } = hawk.client.header(url, 'GET', {
       credentials: { id: 'client-with-aa-bb-dd', key: 'ignored', algorithm: 'sha256' },

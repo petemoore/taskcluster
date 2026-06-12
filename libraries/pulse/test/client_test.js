@@ -4,16 +4,16 @@ import assume from 'assume';
 import debugModule from 'debug';
 import slugid from 'slugid';
 import helper from './helper.js';
-import { suiteName } from '@taskcluster/lib-testing';
+import { suiteName } from 'taskcluster-lib-testing';
 
-helper.secrets.mockSuite(suiteName(), ['pulse'], (mock, skipping) => {
+helper.secrets.mockSuite(suiteName(), ['pulse'], function(mock, skipping) {
   if (mock) {
     return; // Only test with real creds
   }
   let connectionString, credentials;
 
   // use a unique name for each test run, just to ensure nothing interferes
-  const unique = Date.now().toString();
+  const unique = new Date().getTime().toString();
   const exchangeName = `exchanges/test/${unique}`;
   const queueName = `queues/test/${unique}`;
   const routingKey = 'greetings';
@@ -21,7 +21,7 @@ helper.secrets.mockSuite(suiteName(), ['pulse'], (mock, skipping) => {
   const debug = debugModule('test');
   const monitor = helper.monitor;
 
-  setup(async () => {
+  setup(async function() {
     connectionString = helper.secrets.get('pulse').connectionString;
     credentials = connectionStringCredentials(connectionString);
   });
@@ -44,7 +44,7 @@ helper.secrets.mockSuite(suiteName(), ['pulse'], (mock, skipping) => {
     debug('publish complete');
   };
 
-  test('start and immediately stop', async () => {
+  test('start and immediately stop', async function() {
     let gotConnection = false;
     const client = new Client({
       credentials,
@@ -58,7 +58,7 @@ helper.secrets.mockSuite(suiteName(), ['pulse'], (mock, skipping) => {
     assume(gotConnection).to.equal(false);
   });
 
-  test('activeConnection', async () => {
+  test('activeConnection', async function() {
     const client = new Client({
       credentials,
       retirementDelay: 50,
@@ -81,7 +81,7 @@ helper.secrets.mockSuite(suiteName(), ['pulse'], (mock, skipping) => {
     assume(client.activeConnection).to.equal(undefined);
   });
 
-  test('recycle interval', async () => {
+  test('recycle interval', async function() {
     let recycles = 0;
     const client = new Client({
       credentials,
@@ -103,7 +103,7 @@ helper.secrets.mockSuite(suiteName(), ['pulse'], (mock, skipping) => {
     assume(recycles).is.gt(5);
   });
 
-  test('minReconnectionInterval', async () => {
+  test('minReconnectionInterval', async function() {
     let connections = 0;
     const oldConnect = amqplib.connect;
     amqplib.connect = async () => {
@@ -131,7 +131,7 @@ helper.secrets.mockSuite(suiteName(), ['pulse'], (mock, skipping) => {
     assume(connections).is.between(5, 15);
   });
 
-  test('start and stop after connection is established', async () => {
+  test('start and stop after connection is established', async function() {
     const client = new Client({
       credentials,
       retirementDelay: 50,
@@ -147,7 +147,7 @@ helper.secrets.mockSuite(suiteName(), ['pulse'], (mock, skipping) => {
     });
   });
 
-  test('start, fail, and then stop', async () => {
+  test('start, fail, and then stop', async function() {
     const client = new Client({
       credentials,
       retirementDelay: 50,
@@ -166,7 +166,7 @@ helper.secrets.mockSuite(suiteName(), ['pulse'], (mock, skipping) => {
     });
   });
 
-  test('withConnection', async () => {
+  test('withConnection', async function() {
     const client = new Client({
       credentials,
       retirementDelay: 50,
@@ -192,10 +192,10 @@ helper.secrets.mockSuite(suiteName(), ['pulse'], (mock, skipping) => {
     assume([gotConnection, finishedWithConnection]).to.eqls([true, true]);
   });
 
-  suite('withChannel', () => {
+  suite('withChannel', function() {
     let client;
 
-    setup(() => {
+    setup(function() {
       if (skipping()) {
         return;
       }
@@ -209,7 +209,7 @@ helper.secrets.mockSuite(suiteName(), ['pulse'], (mock, skipping) => {
       });
     });
 
-    teardown(async () => {
+    teardown(async function() {
       if (skipping()) {
         return;
       }
@@ -217,7 +217,7 @@ helper.secrets.mockSuite(suiteName(), ['pulse'], (mock, skipping) => {
       await client.stop();
     });
 
-    test('asserting a queue', async () => {
+    test('asserting a queue', async function() {
       const queueName = client.fullObjectName('queue', slugid.v4());
 
       await client.withChannel(async chan => {
@@ -233,7 +233,7 @@ helper.secrets.mockSuite(suiteName(), ['pulse'], (mock, skipping) => {
       assume(queueInfo.queue).to.equal(queueName);
     });
 
-    test('with an error', async () => {
+    test('with an error', async function() {
       const queueName = client.fullObjectName('queue', slugid.v4());
 
       let gotException;
@@ -261,7 +261,7 @@ helper.secrets.mockSuite(suiteName(), ['pulse'], (mock, skipping) => {
       assume(client.connections.length).to.equal(1);
     });
 
-    test('binding nonexistent exchange', async () => {
+    test('binding nonexistent exchange', async function() {
       const queueName = client.fullObjectName('queue', slugid.v4());
 
       await client.withChannel(async chan => {
@@ -288,7 +288,7 @@ helper.secrets.mockSuite(suiteName(), ['pulse'], (mock, skipping) => {
     });
   });
 
-  test('consumer (with failures)', async () => {
+  test('consumer (with failures)', async function() {
     const client = new Client({
       credentials,
       retirementDelay: 50,
