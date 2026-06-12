@@ -3,6 +3,7 @@ import { graphql, withApollo } from 'react-apollo';
 import { string } from 'prop-types';
 import Typography from '@material-ui/core/Typography';
 import dotProp from 'dot-prop-immutable';
+import escapeStringRegexp from 'escape-string-regexp';
 import Spinner from '../../../components/Spinner';
 import RolesTable from '../../../components/RolesTable';
 import ErrorPanel from '../../../components/ErrorPanel';
@@ -19,7 +20,16 @@ import { VIEW_ROLES_PAGE_SIZE } from '../../../utils/constants';
       rolesConnection: {
         limit: VIEW_ROLES_PAGE_SIZE,
       },
-      searchTerm: props.searchTerm || null,
+      filter: {
+        ...(props.searchTerm
+          ? {
+              roleId: {
+                $regex: escapeStringRegexp(props.searchTerm),
+                $options: 'i',
+              },
+            }
+          : null),
+      },
     },
   }),
 })
@@ -53,7 +63,16 @@ export default class Roles extends PureComponent {
           cursor,
           previousCursor,
         },
-        searchTerm: searchTerm || null,
+        filter: {
+          ...(searchTerm
+            ? {
+                roleId: {
+                  $regex: escapeStringRegexp(searchTerm),
+                  $options: 'i',
+                },
+              }
+            : null),
+        },
       },
       updateQuery(previousResult, { fetchMoreResult }) {
         const { edges, pageInfo } = fetchMoreResult.listRoleIds;
