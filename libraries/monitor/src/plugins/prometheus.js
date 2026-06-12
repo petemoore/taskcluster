@@ -1,5 +1,5 @@
-import assert from 'node:assert';
-import http from 'node:http';
+import assert from 'assert';
+import http from 'http';
 import { Counter, Gauge, Histogram, Summary, Registry as PromClientRegistry, Pushgateway } from 'prom-client';
 
 /**

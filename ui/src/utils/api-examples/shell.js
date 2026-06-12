@@ -38,11 +38,11 @@ export default function generateShellExample(
   // Build base command
   let command = `taskcluster api ${serviceName} ${methodName}`;
 
-  // Add path parameters (positional, not named flags)
+  // Add path parameters
   entry.args.forEach(arg => {
     const placeholder = getPlaceholderValue(arg);
 
-    command += ` "${placeholder}"`;
+    command += ` --${arg} "${placeholder}"`;
   });
 
   // Add query parameters if present
@@ -60,7 +60,7 @@ export default function generateShellExample(
       inputPayload = formatPayloadJson(payloadExample, 0);
     }
 
-    command += ` <<'EOF'\n${inputPayload}\nEOF`;
+    command += ` \\\n  --input - <<'EOF'\n${inputPayload}\nEOF`;
   }
 
   // Build output formatting hint

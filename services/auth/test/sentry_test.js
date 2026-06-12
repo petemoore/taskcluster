@@ -1,20 +1,20 @@
 import helper from './helper.js';
 import { SentryApiClient } from '../src/sentrymanager.js';
 import taskcluster from '@taskcluster/client';
-import assert from 'node:assert';
+import assert from 'assert';
 import testing from '@taskcluster/lib-testing';
 import nock from 'nock';
 
-suite('SentryApiClient', () => {
+suite('SentryApiClient', function() {
   const origin = 'https://sentry.example.com';
   const token = 'secret-token';
   let client;
 
-  setup(() => {
+  setup(function() {
     client = new SentryApiClient(origin, { token });
   });
 
-  teardown(() => {
+  teardown(function() {
     nock.cleanAll();
   });
 
@@ -24,7 +24,7 @@ suite('SentryApiClient', () => {
     },
   });
 
-  test('initializes the API surface auth uses', () => {
+  test('initializes the API surface auth uses', function() {
     assert.equal(typeof client.organizations.projects, 'function');
     assert.equal(typeof client.projects.keys, 'function');
     assert.equal(typeof client.projects.createKey, 'function');
@@ -32,7 +32,7 @@ suite('SentryApiClient', () => {
     assert.equal(typeof client.teams.createProject, 'function');
   });
 
-  test('uses bearer auth and parses organization projects', async () => {
+  test('uses bearer auth and parses organization projects', async function() {
     const sentry = sentryApi()
       .get('/api/0/organizations/taskcluster/projects/')
       .reply(200, [{ slug: 'project-one' }]);
@@ -41,7 +41,7 @@ suite('SentryApiClient', () => {
     assert.equal(true, sentry.isDone());
   });
 
-  test('parses project keys', async () => {
+  test('parses project keys', async function() {
     const sentry = sentryApi()
       .get('/api/0/projects/taskcluster/project-one/keys/')
       .reply(200, [{ id: 'key-one' }]);
@@ -50,7 +50,7 @@ suite('SentryApiClient', () => {
     assert.equal(true, sentry.isDone());
   });
 
-  test('creates projects with JSON bodies', async () => {
+  test('creates projects with JSON bodies', async function() {
     const project = { name: 'project-one', slug: 'project-one' };
     const sentry = sentryApi()
       .post('/api/0/teams/taskcluster/team-one/projects/', project)
@@ -63,7 +63,7 @@ suite('SentryApiClient', () => {
     assert.equal(true, sentry.isDone());
   });
 
-  test('creates client keys with JSON bodies', async () => {
+  test('creates client keys with JSON bodies', async function() {
     const sentry = sentryApi()
       .post('/api/0/projects/taskcluster/project-one/keys/', { name: 'key-one' })
       .reply(201, { id: 'key-one' });
@@ -75,7 +75,7 @@ suite('SentryApiClient', () => {
     assert.equal(true, sentry.isDone());
   });
 
-  test('deletes client keys', async () => {
+  test('deletes client keys', async function() {
     const sentry = sentryApi()
       .delete('/api/0/projects/taskcluster/project-one/keys/key-one/')
       .reply(204);
@@ -84,7 +84,7 @@ suite('SentryApiClient', () => {
     assert.equal(true, sentry.isDone());
   });
 
-  test('surfaces Sentry detail errors', async () => {
+  test('surfaces Sentry detail errors', async function() {
     const sentry = sentryApi()
       .get('/api/0/projects/taskcluster/missing/keys/')
       .reply(404, { detail: 'Project not found' });
@@ -96,7 +96,7 @@ suite('SentryApiClient', () => {
     assert.equal(true, sentry.isDone());
   });
 
-  test('surfaces HTTP status errors', async () => {
+  test('surfaces HTTP status errors', async function() {
     const sentry = sentryApi()
       .get('/api/0/projects/taskcluster/missing/keys/')
       .reply(400);
@@ -109,11 +109,11 @@ suite('SentryApiClient', () => {
   });
 });
 
-helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping) => {
+helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], function(mock, skipping) {
   if (!mock) {
     return; // We don't test this with real credentials for now!
   }
-  suite('regular SentryManager with fake client', () => {
+  suite('regular SentryManager with fake client', function() {
     helper.withCfg(mock, skipping);
     helper.withDb(mock, skipping);
     helper.withSentry(mock, skipping);
@@ -125,25 +125,25 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
     });
 
     test('purgeExpiredKeys', async () => {
-      const sentryManager = await helper.load('sentryManager', helper.overwrites);
+      let sentryManager = await helper.load('sentryManager', helper.overwrites);
 
       // There shouldn't be any keys that'll expire from this
       // As keys shouldn't have been any keys created 100 years ago
       // This tests that we don't just purge all keys, but only the ones expired.
-      const farInThePast = taskcluster.fromNow('- 100 years');
+      let farInThePast = taskcluster.fromNow('- 100 years');
       let expired = await sentryManager.purgeExpiredKeys(farInThePast);
       assert(expired === 0, 'Didn\'t expect any keys to expire!');
 
       // There should be keys expired, when we expire 7 days into the future
       // we should at least see the key from the test case above be expired
-      const aWeekFromNow = taskcluster.fromNow('7 days');
+      let aWeekFromNow = taskcluster.fromNow('7 days');
       expired = await sentryManager.purgeExpiredKeys(aWeekFromNow);
       assert(expired > 0, 'Expected at least one key to be expired');
     });
   });
 
-  suite('NullSentryManager', () => {
-    suiteSetup('zero out sentry config', () => {
+  suite('NullSentryManager', function() {
+    suiteSetup('zero out sentry config', function() {
       helper.load.cfg('app.sentry', {});
     });
     helper.withDb(mock, skipping);
@@ -159,7 +159,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
         err => err.statusCode === 404);
     });
 
-    test('purgeExpiredKeys', async () => {
+    test('purgeExpiredKeys', async function() {
       const sm = await helper.load('sentryManager');
       assert.strictEqual(await sm.purgeExpiredKeys(), 0);
     });

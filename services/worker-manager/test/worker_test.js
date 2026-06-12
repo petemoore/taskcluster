@@ -1,9 +1,10 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import testing from '@taskcluster/lib-testing';
 import helper from './helper.js';
+import _ from 'lodash';
 import { Worker } from '../src/data.js';
 
-helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
+helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
   helper.withDb(mock, skipping);
   helper.resetTables(mock, skipping);
 
@@ -20,8 +21,8 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     return worker.create(helper.db);
   };
 
-  suite('worker.update', () => {
-    test('worker.update', async () => {
+  suite('worker.update', function() {
+    test('worker.update', async function() {
       const worker = await createWorker();
       await worker.update(helper.db, worker => {
         worker.capacity = 2;
@@ -32,7 +33,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       assert.equal(worker.providerId, 'updated');
     });
 
-    test('worker.update (concurrent)', async () => {
+    test('worker.update (concurrent)', async function() {
       // worker.capacity defaults to 1
       const worker = await createWorker();
       await Promise.all([
