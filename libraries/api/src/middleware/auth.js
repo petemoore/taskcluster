@@ -1,7 +1,7 @@
 import hawk from 'hawk';
-import assert from 'node:assert';
+import assert from 'assert';
 import scopes from 'taskcluster-lib-scopes';
-import crypto from 'node:crypto';
+import crypto from 'crypto';
 import { cleanRouteAndParams } from '../utils.js';
 import ScopeExpressionTemplate from '../expressions.js';
 import { ErrorReply } from '../error-reply.js';
@@ -134,7 +134,8 @@ export const remoteAuthentication = ({ signatureValidator, entry }) => {
     // smart to let bewit overwrite header authentication.
     // But neither Azure or AWS tolerates two authentication schemes,
     // so this is probably a fair policy for now. We can always allow more.
-    if (req.headers?.authorization && req.query?.bewit) {
+    if (req.headers && req.headers.authorization &&
+        req.query && req.query.bewit) {
       return {
         status: 'auth-failed',
         message: 'Cannot use two authentication schemes at once ' +

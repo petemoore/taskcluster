@@ -51,6 +51,7 @@ export default class App extends Component {
 
   cache = new InMemoryCache({
     fragmentMatcher: this.fragmentMatcher,
+    /* eslint-disable no-underscore-dangle */
     dataIdFromObject: object => {
       switch (object.__typename) {
         case 'TaskStatus': {
@@ -67,6 +68,7 @@ export default class App extends Component {
         }
       }
     },
+    /* eslint-enable no-underscore-dangle */
   });
 
   persistence = new CachePersistor({
@@ -99,7 +101,7 @@ export default class App extends Component {
       connectionParams: async () => {
         const user = await this.authController.getUser();
 
-        if (user?.credentials) {
+        if (user && user.credentials) {
           return {
             Authorization: `Bearer ${btoa(JSON.stringify(user.credentials))}`,
           };
@@ -113,26 +115,24 @@ export default class App extends Component {
    * context.noAuthorizationHeader; the latter can be set on
    * a request as an argument to `client.query({..})`.
    */
-  authLink = setContext(
-    async (_request, { noAuthorizationHeader, headers }) => {
-      if (noAuthorizationHeader) {
-        return {};
-      }
-
-      const user = await this.authController.getUser();
-
-      if (!user?.credentials) {
-        return {};
-      }
-
-      return {
-        headers: {
-          ...headers,
-          Authorization: `Bearer ${btoa(JSON.stringify(user.credentials))}`,
-        },
-      };
+  authLink = setContext(async (request, { noAuthorizationHeader, headers }) => {
+    if (noAuthorizationHeader) {
+      return {};
     }
-  );
+
+    const user = await this.authController.getUser();
+
+    if (!user || !user.credentials) {
+      return {};
+    }
+
+    return {
+      headers: {
+        ...headers,
+        Authorization: `Bearer ${btoa(JSON.stringify(user.credentials))}`,
+      },
+    };
+  });
 
   apolloClient = new ApolloClient({
     cache: this.cache,
@@ -177,10 +177,7 @@ export default class App extends Component {
       // Data Source Name (DSN), a configuration required by the Sentry SDK
       initSentry({
         dsn: window.env.SENTRY_DSN,
-        // autoSessionTracking was removed in Sentry v8+; disable
-        // session tracking by filtering out the BrowserSession integration.
-        integrations: defaults =>
-          defaults.filter(i => i.name !== 'BrowserSession'),
+        autoSessionTracking: false,
       });
     }
 
@@ -262,7 +259,7 @@ export default class App extends Component {
                     error={error}
                     subscriptionError={subscriptionError}
                     key={
-                      auth.user?.credentials
+                      auth.user && auth.user.credentials
                         ? auth.user.credentials.clientId
                         : ''
                     }

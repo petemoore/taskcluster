@@ -1,5 +1,5 @@
 import base from '../../index.js';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath } from 'url';
 import debugFactory from 'debug';
 const debug = debugFactory('base:test:bin:app.js');
 
@@ -7,7 +7,7 @@ const debug = debugFactory('base:test:bin:app.js');
 let global_state = 0;
 
 /** Launch a simple test app */
-const launch = () => {
+const launch = function() {
   // Create a simple app we can use for testing
   const app = base.app({
     port: Number(process.argv[2]) || 62827,
@@ -17,19 +17,19 @@ const launch = () => {
   });
 
   // Respond 'Hello World' for /test
-  app.get('/test', (req, res) => {
+  app.get('/test', function(req, res) {
     res.status(200).send('Hello World');
   });
 
   // Respond request count in process for /request-count
-  app.get('/request-count', (req, res) => {
+  app.get('/request-count', function(req, res) {
     global_state += 1;
     res.status(200).send('Count: ' + global_state);
   });
 
   // Kill process in crash case for testing
   if (process.argv[2] === 'CRASH') {
-    setTimeout(() => {
+    setTimeout(function() {
       process.exit(1);
     }, 1000);
   }
@@ -41,9 +41,9 @@ const launch = () => {
 // If is executed run launch
 // If this file is executed launch component from first argument
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  launch().then(() => {
+  launch().then(function() {
     debug('Launched app.js successfully');
-  }).catch((err) => {
+  }).catch(function(err) {
     debug('Failed to start app.js, err: %s, as JSON: %j', err, err, err.stack);
     process.exit(1);
   });
