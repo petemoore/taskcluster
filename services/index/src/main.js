@@ -13,7 +13,7 @@ import SchemaSet from '@taskcluster/lib-validate';
 import { App } from '@taskcluster/lib-app';
 import libReferences from '@taskcluster/lib-references';
 import { Client, pulseCredentials } from '@taskcluster/lib-pulse';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath } from 'url';
 
 // Create component loader
 export const load = loader({
@@ -135,7 +135,7 @@ export const load = loader({
   handlers: {
     requires: ['queue', 'queueEvents', 'cfg', 'monitor', 'pulseClient', 'db'],
     setup: async ({ queue, queueEvents, cfg, monitor, pulseClient, db }) => {
-      const handlers = new Handlers({
+      let handlers = new Handlers({
         queue: queue,
         queueEvents: queueEvents,
         credentials: cfg.pulse,

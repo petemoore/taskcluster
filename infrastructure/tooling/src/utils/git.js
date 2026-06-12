@@ -1,7 +1,7 @@
-import util from 'node:util';
-import { execFile } from 'node:child_process';
-import fs from 'node:fs';
-import assert from 'node:assert';
+import util from 'util';
+import { execFile } from 'child_process';
+import fs from 'fs';
+import assert from 'assert';
 const exec = util.promisify(execFile);
 
 /**
@@ -75,20 +75,14 @@ export const gitRemoteRev = async ({ dir, remote, ref, utils }) => {
 };
 
 /**
- * Call `git status --porcelain` in repoDir.
- */
-export const gitStatus = async ({ dir }) => {
-  const opts = { cwd: dir };
-  return (await exec('git', ['status', '--porcelain'], opts))
-    .stdout.split(/\n/)
-    .filter(l => l !== '');
-};
-
-/**
  * Call `git status --porcelain` in repoDir and return true if anything appears.
  */
 export const gitIsDirty = async ({ dir }) => {
-  return (await gitStatus({ dir })).length > 0;
+  const opts = { cwd: dir };
+  const status = (await exec('git', ['status', '--porcelain'], opts))
+    .stdout.split(/\n/)
+    .filter(l => l !== '');
+  return status.length > 0;
 };
 
 /**

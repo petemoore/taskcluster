@@ -172,8 +172,13 @@ export default class ClientForm extends Component {
   };
 
   handleSaveClient = () => {
-    const { clientId, scopeText, description, expires, deleteOnExpiration } =
-      this.state;
+    const {
+      clientId,
+      scopeText,
+      description,
+      expires,
+      deleteOnExpiration,
+    } = this.state;
     const scopes = splitLines(scopeText);
     const client = {
       expires,
@@ -357,7 +362,7 @@ export default class ClientForm extends Component {
             tooltipProps={{ title: 'Save' }}
             requiresAuth
             disabled={loading || !isClientDirty}
-            variant="circular"
+            variant="round"
             onClick={this.handleSaveClient}
             classes={{ root: classes.saveIcon }}>
             <ContentSaveIcon />
@@ -365,7 +370,7 @@ export default class ClientForm extends Component {
         ) : (
           <Fragment>
             <Button
-              variant="circular"
+              variant="round"
               onClick={this.handleSaveClient}
               spanProps={{
                 className: classNames(classes.fab, classes.saveClientSpan),

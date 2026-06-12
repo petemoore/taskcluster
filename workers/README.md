@@ -9,6 +9,7 @@ Generic-worker runs on several platforms, with several engines, and is written i
 ## Table of Contents
 
 <!-- TOC BEGIN -->
+* [Docker Worker](docker-worker#readme)
 * [Generic Worker](generic-worker#readme)
 <!-- TOC END -->
 
