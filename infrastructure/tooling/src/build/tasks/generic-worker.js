@@ -1,5 +1,5 @@
 import glob from 'glob';
-import path from 'node:path';
+import path from 'path';
 import { ensureTask, execCommand, REPO_ROOT } from '../../utils/index.js';
 
 export default ({ tasks, cmdOptions, credentials, baseDir, logsDir }) => {

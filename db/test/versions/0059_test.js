@@ -1,12 +1,12 @@
 import _ from 'lodash';
 import helper from '../helper.js';
-import assert from 'node:assert';
+import assert from 'assert';
 import testing from '@taskcluster/lib-testing';
 import { UNDEFINED_COLUMN } from '@taskcluster/lib-postgres';
 
-const THIS_VERSION = parseInt(/.*\/0*(\d+)_test\.js/.exec(import.meta.url)[1], 10);
+const THIS_VERSION = parseInt(/.*\/0*(\d+)_test\.js/.exec(import.meta.url)[1]);
 
-suite(testing.suiteName(), () => {
+suite(testing.suiteName(), function() {
 
   // A helper to make it easier to create tasks with dummy values within queries
   const makeFieldsForCreation = (opts) => {
@@ -77,7 +77,7 @@ suite(testing.suiteName(), () => {
     concurrentCheck: async client => {
       // get number of rows to infer next task id
       const countRes = await client.query('select count(*) from tasks');
-      const nextTaskId = parseInt(countRes.rows[0].count, 10) + 1;
+      const nextTaskId = parseInt(countRes.rows[0].count) + 1;
 
       // check that get_task function works with items that may not yet have
       // task_queue_id during an upgrade
