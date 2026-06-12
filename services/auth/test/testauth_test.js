@@ -1,6 +1,6 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import helper from './helper.js';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 
 const credentials = {
   clientId: 'tester',
@@ -12,17 +12,17 @@ const badcreds = {
   accessToken: 'wrong',
 };
 
-suite(testing.suiteName(), () => {
-  helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping) => {
+suite(testing.suiteName(), function() {
+  helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], function(mock, skipping) {
     helper.withDb(mock, skipping);
     helper.withCfg(mock, skipping);
     helper.withPulse(mock, skipping);
     helper.withServers(mock, skipping);
     helper.resetTables(mock, skipping);
 
-    const testAuth = (name, { config, requiredScopes, clientScopes, errorCode }) => {
+    let testAuth = (name, { config, requiredScopes, clientScopes, errorCode }) => {
       test(name, async () => {
-        const auth = new helper.AuthClient(config);
+        let auth = new helper.AuthClient(config);
         await auth.testAuthenticate({ requiredScopes, clientScopes }).then(() => {
           assert(!errorCode, 'Request was successful, but expected an error ' +
                              'with code: ' + errorCode);
@@ -100,16 +100,16 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  helper.secrets.mockSuite('testAuthGet', ['azure', 'gcp'], (mock, skipping) => {
+  helper.secrets.mockSuite('testAuthGet', ['azure', 'gcp'], function(mock, skipping) {
     helper.withDb(mock, skipping);
     helper.withCfg(mock, skipping);
     helper.withPulse(mock, skipping);
     helper.withServers(mock, skipping);
     helper.resetTables(mock, skipping);
 
-    const testAuthGet = (name, { config, errorCode }) => {
+    let testAuthGet = (name, { config, errorCode }) => {
       test(name, async () => {
-        const auth = new helper.AuthClient(config);
+        let auth = new helper.AuthClient(config);
         await auth.testAuthenticateGet().then(() => {
           assert(!errorCode, 'Request was successful, but expected an error ' +
                              'with code: ' + errorCode);

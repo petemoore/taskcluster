@@ -1,5 +1,5 @@
-import assert from 'node:assert';
-import testing from '@taskcluster/lib-testing';
+import assert from 'assert';
+import testing from 'taskcluster-lib-testing';
 import Strategy from '../src/login/strategies/mozilla-auth0.js';
 import sinon from 'sinon';
 import PersonAPI from '../src/login/clients/PersonAPI.js';
@@ -139,7 +139,7 @@ suite(testing.suiteName(), () => {
     strategy.fetchAccessToken = () => {
       return {
         accessToken: 'fakeToken',
-        expires: Date.now() + 60 * 1000,
+        expires: new Date().getTime() + 60 * 1000,
       };
     };
   });
@@ -149,59 +149,59 @@ suite(testing.suiteName(), () => {
   });
 
   suite('userFromIdentity', () => {
-    test('LDAP and LDAP groups', async () => {
+    test('LDAP and LDAP groups', async function () {
       const user = await strategy.userFromIdentity('mozilla-auth0/ad|Mozilla-LDAP|tcperson');
       assert.equal(user.identity, 'mozilla-auth0/ad|Mozilla-LDAP|tcperson');
       assert.deepEqual(user.roles, ['mozilla-group:taskcluster']);
     });
 
-    test('LDAP and HRIS groups', async () => {
+    test('LDAP and HRIS groups', async function () {
       const user = await strategy.userFromIdentity('mozilla-auth0/ad|Mozilla-LDAP|torperson');
       assert.equal(user.identity, 'mozilla-auth0/ad|Mozilla-LDAP|torperson');
       assert.deepEqual(user.roles, ['mozilla-hris:office-tor']);
     });
 
-    test('LDAP and Mozillians groups', async () => {
+    test('LDAP and Mozillians groups', async function () {
       const user = await strategy.userFromIdentity('mozilla-auth0/ad|Mozilla-LDAP|mozillian');
       assert.equal(user.identity, 'mozilla-auth0/ad|Mozilla-LDAP|mozillian');
       assert.deepEqual(user.roles, ['mozillians-group:foxy']);
     });
 
-    test('GitHub', async () => {
+    test('GitHub', async function () {
       const user = await strategy.userFromIdentity('mozilla-auth0/github|1234');
       assert.equal(user.identity, 'mozilla-auth0/github|1234');
       assert.deepEqual(user.roles, []);
     });
 
-    test('GitHub inactive', async () => {
+    test('GitHub inactive', async function () {
       const user = await strategy.userFromIdentity('mozilla-auth0/github|9999');
       assert.equal(user, undefined);
     });
 
-    test('Firefox Accounts', async () => {
+    test('Firefox Accounts', async function () {
       const user = await strategy.userFromIdentity('mozilla-auth0/oauth2|firefoxaccounts|abcdef');
       assert.equal(user.identity, 'mozilla-auth0/oauth2|firefoxaccounts|abcdef');
       assert.deepEqual(user.roles, []);
     });
 
-    test('Email (with a slash)', async () => {
+    test('Email (with a slash)', async function () {
       const user = await strategy.userFromIdentity('mozilla-auth0/email|slashy!2Fslashy');
       assert.equal(user.identity, 'mozilla-auth0/email|slashy!2Fslashy');
       assert.deepEqual(user.roles, []);
     });
 
-    test('profile without identities should not have no roles', async () => {
+    test('profile without identities should not have no roles', async function () {
       const user = await strategy.userFromIdentity('mozilla-auth0/oauth2|firefoxaccounts|012345abcdef');
       assert.deepEqual(user.roles, []);
     });
   });
 
   suite('access token expiration', () => {
-    test('token should be requested once', async () => {
+    test('token should be requested once', async function() {
       let calls = 0;
       sinon.stub(strategy, 'fetchAccessToken').callsFake(() => {
         calls++;
-        return { accessToken: `a_${calls}`, expires: Date.now() + 24 * 60 * 60 * 1000 };
+        return { accessToken: `a_${calls}`, expires: new Date().getTime() + 24 * 60 * 60 * 1000 };
       });
 
       await strategy.userFromIdentity('mozilla-auth0/ad|Mozilla-LDAP|tcperson');
@@ -209,11 +209,11 @@ suite(testing.suiteName(), () => {
 
       assert.equal(calls, 1);
     });
-    test('token should be re-fetched after expiry', async () => {
+    test('token should be re-fetched after expiry', async function() {
       let calls = 0;
       sinon.stub(strategy, 'fetchAccessToken').callsFake(() => {
         calls++;
-        return { accessToken: `b_${calls}`, expires: Date.now() + 9 * 60 * 1000 };
+        return { accessToken: `b_${calls}`, expires: new Date().getTime() + 9 * 60 * 1000 };
       });
 
       await strategy.userFromIdentity('mozilla-auth0/ad|Mozilla-LDAP|tcperson');

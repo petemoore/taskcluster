@@ -4,7 +4,7 @@ title: Task Notifications
 order: 80
 ---
 
-import SiteSpecific from '@taskcluster/ui/components/SiteSpecific';
+import SiteSpecific from 'taskcluster-ui/components/SiteSpecific';
 
 There are two ways to have Taskcluster send notifications on your behalf.
 
@@ -22,11 +22,11 @@ The second method is to call the Taskcluster-Notify service directly.  The API
 definitions are available on the [reference
 page](/docs/reference/core/notify/api). The API is available
 through the
-[Taskcluster-Proxy](/docs/reference/workers/generic-worker/features#feature-taskclusterproxy)
+[Taskcluster-Proxy](/docs/reference/workers/docker-worker/docs/features#feature-taskclusterproxy-)
 if you're working from within a task.
 
 ```js
-import taskcluster from '@taskcluster/client';
+import taskcluster from 'taskcluster-client';
 async function notify() {
     # specify a baseUrl via the taskcluster proxy
     var notify = new taskcluster.Notify({baseUrl: 'http://taskcluster/notify/v1'});

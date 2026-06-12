@@ -1,8 +1,8 @@
-import { globalAgent } from 'node:http';
-import taskcluster from '@taskcluster/client';
+import { globalAgent } from 'http';
+import taskcluster from 'taskcluster-client';
 import taskcreator from '../src/taskcreator.js';
 
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 
 import builder from '../src/api.js';
 import loadMain from '../src/main.js';
@@ -35,7 +35,7 @@ helper.withDb = (mock, skipping) => {
  * helper.creator.shouldFail to make the TaskCreator fail.
  * Call this before withServer.
  */
-helper.withTaskCreator = (mock, skipping) => {
+helper.withTaskCreator = function(mock, skipping) {
   suiteSetup(async () => {
     if (skipping()) {
       return;
@@ -47,7 +47,7 @@ helper.withTaskCreator = (mock, skipping) => {
     helper.load.inject('taskcreator', helper.creator);
   });
 
-  setup(() => {
+  setup(function() {
     helper.creator.fireCalls = [];
     helper.creator.shouldFail = false;
     helper.creator.shouldNotProduceTask = false;
@@ -68,7 +68,7 @@ helper.withPulse = (mock, skipping) => {
 helper.withServer = (mock, skipping) => {
   let webServer;
 
-  suiteSetup(async () => {
+  suiteSetup(async function() {
     if (skipping()) {
       return;
     }
@@ -103,11 +103,11 @@ helper.withServer = (mock, skipping) => {
     webServer = await helper.load('server');
   });
 
-  setup(() => {
+  setup(function() {
     helper.scopes();
   });
 
-  suiteTeardown(async () => {
+  suiteTeardown(async function() {
     if (webServer) {
       await webServer.terminate();
       webServer = null;
@@ -116,7 +116,7 @@ helper.withServer = (mock, skipping) => {
 };
 
 helper.resetTables = (mock, skipping) => {
-  setup('reset tables', async () => {
+  setup('reset tables', async function() {
     await testing.resetTables({ tableNames: [
       'hooks',
       'hooks_queues',

@@ -1,5 +1,6 @@
-import importlib
+from __future__ import division, print_function
 import unittest
+import importlib
 
 
 class ImportTest(unittest.TestCase):

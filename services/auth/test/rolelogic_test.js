@@ -1,10 +1,10 @@
 import helper from './helper.js';
 import _ from 'lodash';
-import taskcluster from '@taskcluster/client';
+import taskcluster from 'taskcluster-client';
 import mocha from 'mocha';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 
-helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping) => {
+helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], function(mock, skipping) {
   helper.withDb(mock, skipping);
   helper.withCfg(mock, skipping);
   helper.withPulse(mock, skipping);
@@ -32,28 +32,28 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
    * Due to the nature of these test we can't expect them to work if two
    * instances of these test cases runs at the same time.
    */
-  const test = (title, t) => {
+  let test = (title, t) => {
     mocha.test(title, async function() {
       // Some of these tests can be a bit slow, especially without in-memory entities
       this.timeout(10 * 60 * 1000);
 
       // Ensure all roles and clients from the test are deleted
-      for (const c of t.clients) {
+      for (let c of t.clients) {
         await helper.apiClient.deleteClient(c.clientId);
       }
-      for (const r of t.roles) {
+      for (let r of t.roles) {
         await helper.apiClient.deleteRole(r.roleId);
       }
 
       // Create all roles and clients
-      for (const c of t.clients) {
+      for (let c of t.clients) {
         await helper.apiClient.createClient(c.clientId, {
           description: 'client for test case: ' + title,
           expires: taskcluster.fromNowJSON('2 hours'),
           scopes: c.scopes,
         });
       }
-      for (const r of t.roles) {
+      for (let r of t.roles) {
         await helper.apiClient.createRole(r.roleId, {
           description: 'role for test case: ' + title,
           scopes: r.scopes,
@@ -63,9 +63,9 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
       // Run tests for all clients
       let err = '';
       await Promise.all(t.clients.map(async (c) => {
-        const client = await helper.apiClient.client(c.clientId);
-        const missing = _.difference(c.includes, client.expandedScopes);
-        const forbidden = _.intersection(c.exludes, client.expandedScopes);
+        let client = await helper.apiClient.client(c.clientId);
+        let missing = _.difference(c.includes, client.expandedScopes);
+        let forbidden = _.intersection(c.exludes, client.expandedScopes);
         if (missing.length !== 0 || forbidden.length !== 0) {
           err += 'Test failed: ' + JSON.stringify(t, null, 2) + '\n';
           err += 'Client: ' + JSON.stringify(client, null, 2) + '\n';
@@ -82,10 +82,10 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
       }));
 
       // delete all roles and clients from the tests
-      for (const c of t.clients) {
+      for (let c of t.clients) {
         await helper.apiClient.deleteClient(c.clientId);
       }
-      for (const r of t.roles) {
+      for (let r of t.roles) {
         await helper.apiClient.deleteRole(r.roleId);
       }
 

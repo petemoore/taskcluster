@@ -1,23 +1,23 @@
 import helper from './helper.js';
-import assert from 'node:assert';
+import assert from 'assert';
 import MockDate from 'mockdate';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 import { GithubCheckOutput, GithubCheck, getTimeDifference } from '../src/handlers/utils.js';
 import { CHECK_RUN_STATES } from '../src/constants.js';
 
 /**
  * Tests of installation syncing
  */
-helper.secrets.mockSuite(testing.suiteName(), [], () => {
-  setup(async () => {
+helper.secrets.mockSuite(testing.suiteName(), [], function() {
+  setup(async function () {
     MockDate.set('2000-05-05T12:12:12.000Z');
   });
 
-  teardown(() => {
+  teardown(function () {
     MockDate.reset();
   });
 
-  test('GithubCheckOutput', () => {
+  test('GithubCheckOutput', function() {
     const gco = new GithubCheckOutput({ title: 'a', summary: 'b', text: 'c', annotations: [] });
 
     // 60000 max - 'a'.length - 'b'.length - 'c'.length = '[]'.length (json)
@@ -41,7 +41,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], () => {
     assert.equal(0, gco.getRemainingMaxSize());
   });
 
-  test('GithubCheck', () => {
+  test('GithubCheck', function() {
     const gc = new GithubCheck({
       check_run_id: 1,
       status: CHECK_RUN_STATES.QUEUED,
@@ -107,7 +107,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], () => {
     }, gc.getRerequestPayload());
   });
 
-  test('Get Time Difference', () => {
+  test('Get Time Difference', function() {
 
     const START_TIMESTAMP = new Date('2024-07-16T18:23:18.118Z');
     const END_TIMESTAMP_MILLISECONDS = new Date('2024-07-16T18:23:18.128Z');

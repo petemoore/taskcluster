@@ -1,4 +1,4 @@
-import { Exchanges } from '@taskcluster/lib-pulse';
+import { Exchanges } from 'taskcluster-lib-pulse';
 import { splitWorkerPoolId } from './util.js';
 
 const exchanges = new Exchanges({
@@ -17,7 +17,7 @@ const exchanges = new Exchanges({
 
 export default exchanges;
 
-const buildCommonRoutingKey = (options) => {
+let buildCommonRoutingKey = (options) => {
   return [
     {
       name: 'routingKeyKind',
@@ -66,9 +66,11 @@ const buildCommonRoutingKey = (options) => {
   ];
 };
 
-const commonMessageBuilder = (message) => message;
+let commonMessageBuilder = function(message) {
+  return message;
+};
 
-const commonRoutingKeyBuilder = (message, routing) => {
+let commonRoutingKeyBuilder = function(message, routing) {
   const mapping = {
     workerGroup: message.workerGroup,
     providerId: message.providerId,

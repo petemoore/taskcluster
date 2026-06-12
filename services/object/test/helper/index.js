@@ -1,8 +1,8 @@
-import { strict as assert } from 'node:assert';
-import taskcluster from '@taskcluster/client';
+import { strict as assert } from 'assert';
+import taskcluster from 'taskcluster-client';
 import loadMain from '../../src/main.js';
 import builder from '../../src/api.js';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 import { BACKEND_TYPES } from '../../src/backends/index.js';
 import { MIDDLEWARE_TYPES } from '../../src/middleware/index.js';
 import { TestBackend } from '../../src/backends/test.js';
@@ -27,7 +27,7 @@ const helper = {
   testPutUrlUpload,
 };
 
-suiteSetup(async () => {
+suiteSetup(async function() {
   load.inject('profile', 'test');
   load.inject('process', 'test');
 });
@@ -70,7 +70,7 @@ helper.withBackends = (mock, skipping) => {
     { backendId: 'testBackend', when: 'all' },
   ];
 
-  suiteSetup('withBackends', async () => {
+  suiteSetup('withBackends', async function() {
     if (skipping()) {
       return;
     }
@@ -78,7 +78,7 @@ helper.withBackends = (mock, skipping) => {
     load.save();
 
     // add the 'test' backend type only for testing
-    BACKEND_TYPES.test = TestBackend;
+    BACKEND_TYPES['test'] = TestBackend;
 
     await load('cfg');
     load.cfg('middleware', [
@@ -100,31 +100,31 @@ helper.withBackends = (mock, skipping) => {
     };
   });
 
-  setup('withBackends', async () => {
+  setup('withBackends', async function() {
     // reset to default
     await helper.setBackendConfig();
   });
 
-  suiteTeardown('withBackends', async () => {
+  suiteTeardown('withBackends', async function() {
     if (skipping()) {
       return;
     }
 
     load.restore();
-    delete BACKEND_TYPES.test;
+    delete BACKEND_TYPES['test'];
     delete helper.setBackendConfig;
     _backends = null;
   });
 };
 
 helper.withMiddleware = (mock, skipping, config) => {
-  suiteSetup('withMiddleware', async () => {
+  suiteSetup('withMiddleware', async function() {
     if (skipping()) {
       return;
     }
 
     // add the 'test' middleware type only for testing
-    MIDDLEWARE_TYPES.test = TestMiddleware;
+    MIDDLEWARE_TYPES['test'] = TestMiddleware;
 
     await load('cfg');
     load.cfg('middleware', config || [
@@ -132,15 +132,15 @@ helper.withMiddleware = (mock, skipping, config) => {
     ]);
   });
 
-  suiteTeardown('withMiddleware', async () => {
-    delete MIDDLEWARE_TYPES.test;
+  suiteTeardown('withMiddleware', async function() {
+    delete MIDDLEWARE_TYPES['test'];
   });
 };
 
 helper.withServer = (mock, skipping) => {
   let webServer;
 
-  suiteSetup('withServer', async () => {
+  suiteSetup('withServer', async function() {
     if (skipping()) {
       return;
     }
@@ -172,7 +172,7 @@ helper.withServer = (mock, skipping) => {
     webServer = await load('server');
   });
 
-  suiteTeardown(async () => {
+  suiteTeardown(async function() {
     if (skipping()) {
       return;
     }
@@ -189,7 +189,7 @@ helper.withDb = (mock, skipping) => {
 };
 
 helper.resetTables = (mock, skipping) => {
-  setup('reset tables', async () => {
+  setup('reset tables', async function() {
     await testing.resetTables({
       tableNames: ['objects', 'object_hashes'],
     });

@@ -2,8 +2,8 @@ import subject from '../src/index.js';
 import assume from 'assume';
 import debugFactory from 'debug';
 const debug = debugFactory('iterate-test');
-import { MonitorManager } from '@taskcluster/lib-monitor';
-import testing from '@taskcluster/lib-testing';
+import { MonitorManager } from 'taskcluster-lib-monitor';
+import testing from 'taskcluster-lib-testing';
 
 const possibleEvents = [
   'started',
@@ -21,7 +21,7 @@ class IterateEvents {
     this.iterator = iterator;
     this.expectedOrder = expectedOrder;
     this.orderOfEmission = [];
-    for (const x of possibleEvents) {
+    for (let x of possibleEvents) {
       iterator.on(x, () => {
         this.orderOfEmission.push(x);
       });
@@ -70,7 +70,7 @@ suite(testing.suiteName(), () => {
     });
   };
 
-  test('should be able to start and stop', runWithFakeTime(async () => {
+  test('should be able to start and stop', runWithFakeTime(async function() {
     let iterations = 0;
 
     const i = new subject({
@@ -105,7 +105,7 @@ suite(testing.suiteName(), () => {
     });
   }));
 
-  test('should stop after current iteration completes', runWithFakeTime(async () => {
+  test('should stop after current iteration completes', runWithFakeTime(async function() {
     const i = new subject({
       name: 'foo',
       monitor,
@@ -124,10 +124,10 @@ suite(testing.suiteName(), () => {
     assume(monitor.manager.messages.length).atleast(5);
     assume(monitor.manager.messages[0].Type).equals('monitor.periodic');
 
-    assume(Date.now()).atleast(500);
+    assume(+new Date()).atleast(500);
   }));
 
-  test('should stop in the midst of waitTime', runWithFakeTime(async () => {
+  test('should stop in the midst of waitTime', runWithFakeTime(async function() {
     const i = new subject({
       name: 'foo',
       monitor,
@@ -144,10 +144,10 @@ suite(testing.suiteName(), () => {
     await testing.sleep(1000);
     await i.stop();
 
-    assume(Date.now()).between(1000, 1100);
+    assume(+new Date()).between(1000, 1100);
   }));
 
-  test('should stop after correct number of iterations', runWithFakeTime(async () => {
+  test('should stop after correct number of iterations', runWithFakeTime(async function() {
     let iterations = 0;
 
     const i = new subject({
@@ -174,7 +174,7 @@ suite(testing.suiteName(), () => {
     assume(i.keepGoing).is.not.ok();
   }));
 
-  test('should emit error when iteration watchdog expires', runWithFakeTime(async () => {
+  test('should emit error when iteration watchdog expires', runWithFakeTime(async function() {
     const i = new subject({
       name: 'foo',
       monitor,
@@ -198,7 +198,7 @@ suite(testing.suiteName(), () => {
     assume(err).matches(/watchdog exceeded/);
   }));
 
-  test('should emit error when overall iteration limit is hit', runWithFakeTime(async () => {
+  test('should emit error when overall iteration limit is hit', runWithFakeTime(async function() {
     const i = new subject({
       name: 'foo',
       monitor,
@@ -226,7 +226,7 @@ suite(testing.suiteName(), () => {
     assume(err).matches(/Iteration exceeded maximum time allowed/);
   }));
 
-  test('should emit iteration-failure when async handler fails', runWithFakeTime(async () => {
+  test('should emit iteration-failure when async handler fails', runWithFakeTime(async function() {
     const i = new subject({
       name: 'foo',
       monitor,
@@ -249,7 +249,7 @@ suite(testing.suiteName(), () => {
     assume(sawEvent).is.ok();
   }));
 
-  test('should emit iteration-failure when sync handler fails', runWithFakeTime(async () => {
+  test('should emit iteration-failure when sync handler fails', runWithFakeTime(async function() {
     const i = new subject({
       name: 'foo',
       monitor,
@@ -272,7 +272,7 @@ suite(testing.suiteName(), () => {
     assume(sawEvent).is.ok();
   }));
 
-  test('should emit iteration-failure when iteration is too quick', runWithFakeTime(async () => {
+  test('should emit iteration-failure when iteration is too quick', runWithFakeTime(async function() {
     const i = new subject({
       name: 'foo',
       monitor,
@@ -295,7 +295,7 @@ suite(testing.suiteName(), () => {
     assume(iterFailed).is.ok();
   }));
 
-  test('should emit error after too many failures', runWithFakeTime(async () => {
+  test('should emit error after too many failures', runWithFakeTime(async function() {
     const i = new subject({
       name: 'foo',
       monitor,
@@ -318,7 +318,7 @@ suite(testing.suiteName(), () => {
     assume(err).matches(/uhoh/);
   }));
 
-  test('should emit correct events for single iteration', runWithFakeTime(async () => {
+  test('should emit correct events for single iteration', runWithFakeTime(async function() {
     const i = new subject({
       name: 'foo',
       monitor,
@@ -343,7 +343,7 @@ suite(testing.suiteName(), () => {
     events.assert();
   }));
 
-  test('should emit correct events with maxIterations', runWithFakeTime(async () => {
+  test('should emit correct events with maxIterations', runWithFakeTime(async function() {
     const i = new subject({
       name: 'foo',
       monitor,
@@ -372,7 +372,7 @@ suite(testing.suiteName(), () => {
 
   suite('event emission ordering', () => {
 
-    test('should be correct with maxFailures and maxIterations', runWithFakeTime(async () => {
+    test('should be correct with maxFailures and maxIterations', runWithFakeTime(async function() {
       const i = new subject({
         name: 'foo',
         monitor,
@@ -401,7 +401,7 @@ suite(testing.suiteName(), () => {
       events.assert();
     }));
 
-    test('should be correct with maxFailures only', runWithFakeTime(async () => {
+    test('should be correct with maxFailures only', runWithFakeTime(async function() {
       const i = new subject({
         name: 'foo',
         monitor,
@@ -429,7 +429,7 @@ suite(testing.suiteName(), () => {
       events.assert();
     }));
 
-    test('should be correct when handler takes too little time', runWithFakeTime(async () => {
+    test('should be correct when handler takes too little time', runWithFakeTime(async function() {
       const i = new subject({
         name: 'foo',
         monitor,
@@ -457,7 +457,7 @@ suite(testing.suiteName(), () => {
       events.assert();
     }));
 
-    test('should be correct when handler takes too long (incremental watchdog)', runWithFakeTime(async () => {
+    test('should be correct when handler takes too long (incremental watchdog)', runWithFakeTime(async function() {
       const i = new subject({
         name: 'foo',
         monitor,
@@ -485,7 +485,7 @@ suite(testing.suiteName(), () => {
       events.assert();
     }));
 
-    test('should be correct when handler takes too long (overall time)', runWithFakeTime(async () => {
+    test('should be correct when handler takes too long (overall time)', runWithFakeTime(async function() {
       const i = new subject({
         name: 'foo',
         monitor,
@@ -512,7 +512,7 @@ suite(testing.suiteName(), () => {
       events.assert();
     }));
 
-    test('should be correct with mixed results', runWithFakeTime(async () => {
+    test('should be correct with mixed results', runWithFakeTime(async function() {
       let iterations = 0;
 
       const i = new subject({

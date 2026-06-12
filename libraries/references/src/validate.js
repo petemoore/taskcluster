@@ -1,5 +1,5 @@
 import regexEscape from 'regex-escape';
-import { URL } from 'node:url';
+import { URL } from 'url';
 import libUrls from 'taskcluster-lib-urls';
 
 /**
@@ -10,16 +10,6 @@ const UNREFERENCED_SCHEMAS = [
   // schemas used in documentation
   { service: 'github', schema: 'v1/taskcluster-github-config.json#' },
   { service: 'github', schema: 'v1/taskcluster-github-config.v1.json#' },
-
-  // schemas for webhook endpoint (server-side only, not published to clients)
-  { service: 'github', schema: 'v1/github-webhook-event.json#' },
-  { service: 'github', schema: 'v1/webhook-pull-request-payload.json#' },
-  { service: 'github', schema: 'v1/webhook-push-payload.json#' },
-  { service: 'github', schema: 'v1/webhook-issue-comment-payload.json#' },
-  { service: 'github', schema: 'v1/webhook-release-payload.json#' },
-  { service: 'github', schema: 'v1/webhook-installation-payload.json#' },
-  { service: 'github', schema: 'v1/webhook-check-run-payload.json#' },
-  { service: 'github', schema: 'v1/webhook-ping-payload.json#' },
 
   // schemas for an unpublished, deprecated API methods
   { service: 'index', schema: 'v1/list-namespaces-request.json#' },
@@ -37,6 +27,7 @@ const UNREFERENCED_SCHEMAS = [
   { service: 'generic-worker', schema: 'insecure_posix.json#' },
   { service: 'generic-worker', schema: 'multiuser_windows.json#' },
   { service: 'generic-worker', schema: 'multiuser_posix.json#' },
+  { service: 'generic-worker', schema: 'docker_posix.json#' },
   { service: 'docker-worker', schema: 'v1/payload.json#' },
 ];
 
@@ -91,7 +82,7 @@ export const validate = (references) => {
   // (capture group 1 === prefix up to and including service name)
   const schemaPattern = new RegExp(`(^${regexEscape(references.rootUrl)}\/schemas\/[^\/]*\/).*\\.json#`);
 
-  for (const { filename, content } of references.schemas) {
+  for (let { filename, content } of references.schemas) {
     if (!content.$id) {
       problems.push(`schema ${filename} has no $id`);
     } else if (!schemaPattern.test(content.$id)) {
@@ -108,7 +99,7 @@ export const validate = (references) => {
   }
 
   const metadataMetaschema = libUrls.schema(references.rootUrl, 'common', 'metadata-metaschema.json#');
-  for (const { filename, content } of references.references) {
+  for (let { filename, content } of references.references) {
     if (!content.$schema) {
       problems.push(`reference ${filename} has no $schema`);
     } else if (!references.getSchema(content.$schema, { skipValidation: true })) {
@@ -125,7 +116,7 @@ export const validate = (references) => {
   // if that was OK, check references in all schemas
 
   if (!problems.length) {
-    for (const { filename, content } of references.schemas) {
+    for (let { filename, content } of references.schemas) {
       const idUrl = new URL(content.$id, references.rootUrl);
 
       const match = schemaPattern.exec(content.$id);
@@ -156,7 +147,7 @@ export const validate = (references) => {
   if (!problems.length) {
     const ajv = references.makeAjv({ skipValidation: true });
 
-    for (const { filename, content } of references.schemas) {
+    for (let { filename, content } of references.schemas) {
       try {
         ajv.validateSchema(content);
       } catch (err) {
@@ -171,7 +162,7 @@ export const validate = (references) => {
       }
     }
 
-    for (const { filename, content } of references.references) {
+    for (let { filename, content } of references.references) {
       try {
         ajv.validate(content.$schema, content);
       } catch (err) {
@@ -190,7 +181,7 @@ export const validate = (references) => {
   // Check for some common errors in schemas
 
   if (!problems.length) {
-    for (const { filename, content } of references.schemas) {
+    for (let { filename, content } of references.schemas) {
       recurseJSON(content, {
         object: (value, path) => {
           // ignore this for objects named `properties` (as api-reference-v0.yml, for
@@ -225,7 +216,7 @@ export const validate = (references) => {
   if (!problems.length) {
     const metaschemaUrl = libUrls.schema(references.rootUrl, 'common', 'metaschema.json#');
     // check that a schema link is relative to the service
-    for (const { filename, content } of references.references) {
+    for (let { filename, content } of references.references) {
       const checkRelativeSchema = (name, serviceName, schemaName, i) => {
         if (schemaName.match(/^\/|^[a-z]*:|^\.\./)) {
           problems.push(`${filename}: entries[${i}].${name} is not relative to the service`);
@@ -292,7 +283,7 @@ export const validate = (references) => {
       });
     };
 
-    for (const { content } of references.references) {
+    for (let { content } of references.references) {
       const metadata = references.getSchema(content.$schema, { skipValidation: true }).metadata;
       if (metadata.name === 'api') {
         content.entries.forEach(({ input, output }) => {
@@ -317,13 +308,13 @@ export const validate = (references) => {
 
     // allow some un-referenced schemas that may be referenced from documentation or
     // kept for historical purposes
-    for (const { service, schema } of UNREFERENCED_SCHEMAS) {
+    for (let { service, schema } of UNREFERENCED_SCHEMAS) {
       recurse(libUrls.schema(references.rootUrl, service, schema));
     }
 
     // look for schemas that were not seen..
     const commonPrefix = libUrls.schema(references.rootUrl, 'common', '');
-    for (const { content } of references.schemas) {
+    for (let { content } of references.schemas) {
       if (content.$id.startsWith(commonPrefix)) {
         continue;
       }

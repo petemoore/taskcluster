@@ -1,25 +1,25 @@
 import '../../prelude.js';
-import loader from '@taskcluster/lib-loader';
-import taskcluster from '@taskcluster/client';
-import { App } from '@taskcluster/lib-app';
-import { MonitorManager } from '@taskcluster/lib-monitor';
-import config from '@taskcluster/lib-config';
-import SchemaSet from '@taskcluster/lib-validate';
-import libReferences from '@taskcluster/lib-references';
+import loader from 'taskcluster-lib-loader';
+import taskcluster from 'taskcluster-client';
+import { App } from 'taskcluster-lib-app';
+import { MonitorManager } from 'taskcluster-lib-monitor';
+import config from 'taskcluster-lib-config';
+import SchemaSet from 'taskcluster-lib-validate';
+import libReferences from 'taskcluster-lib-references';
 import exchanges from './exchanges.js';
 import builder from './api.js';
 import { Estimator } from './estimator.js';
-import { Client, pulseCredentials } from '@taskcluster/lib-pulse';
-import tcdb from '@taskcluster/db';
+import { Client, pulseCredentials } from 'taskcluster-lib-pulse';
+import tcdb from 'taskcluster-db';
 import { Provisioner } from './provisioner.js';
 import { Providers } from './providers/index.js';
 import { WorkerScanner } from './worker-scanner.js';
 import { WorkerPool, WorkerPoolError, Worker, WorkerPoolLaunchConfig } from './data.js';
 import { LaunchConfigSelector } from './launch-config-selector.js';
 import './monitor.js';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath } from 'url';
 
-const load = loader({
+let load = loader({
   cfg: {
     requires: ['profile'],
     setup: ({ profile }) => config({
@@ -55,7 +55,7 @@ const load = loader({
     setup: ({ cfg, monitor, db }, ownName) => {
       return monitor.childMonitor('expireWorkerPools').oneShot(ownName, async () => {
         const expired = await WorkerPool.expire({ db, monitor });
-        for (const workerPoolId of expired) {
+        for (let workerPoolId of expired) {
           monitor.info(`deleted expired worker pool ${workerPoolId}`);
         }
       });
@@ -67,7 +67,7 @@ const load = loader({
     setup: ({ cfg, monitor, db }, ownName) => {
       return monitor.childMonitor('expireLaunchConfigs').oneShot(ownName, async () => {
         const expired = await WorkerPoolLaunchConfig.expire({ db, monitor });
-        for (const launchConfigId of expired) {
+        for (let launchConfigId of expired) {
           monitor.info(`deleted expired worker pool launch config ${launchConfigId}`);
         }
       });
@@ -150,24 +150,19 @@ const load = loader({
       providers,
       publisher,
       notify,
-    }) => {
-      const api = builder.build({
-        rootUrl: cfg.taskcluster.rootUrl,
-        context: {
-          cfg,
-          db,
-          monitor: monitor.childMonitor('api-context'),
-          providers,
-          publisher,
-          notify,
-        },
-        monitor: monitor.childMonitor('api'),
-        schemaset,
-      });
-
-      monitor.exposeMetrics('default');
-      return api;
-    },
+    }) => builder.build({
+      rootUrl: cfg.taskcluster.rootUrl,
+      context: {
+        cfg,
+        db,
+        monitor: monitor.childMonitor('api-context'),
+        providers,
+        publisher,
+        notify,
+      },
+      monitor: monitor.childMonitor('api'),
+      schemaset,
+    }),
   },
 
   server: {
@@ -226,8 +221,8 @@ const load = loader({
   },
 
   workerScanner: {
-    requires: ['cfg', 'monitor', 'providers', 'db', 'azureProviderIds', 'estimator'],
-    setup: async ({ cfg, monitor, providers, db, azureProviderIds, estimator }, ownName) => {
+    requires: ['cfg', 'monitor', 'providers', 'db', 'azureProviderIds'],
+    setup: async ({ cfg, monitor, providers, db, azureProviderIds }, ownName) => {
       const scanMonitor = monitor.childMonitor('worker-scanner');
       const workerScanner = new WorkerScanner({
         ownName,
@@ -239,7 +234,6 @@ const load = loader({
           value: azureProviderIds,
         },
         db,
-        estimator,
       });
       await workerScanner.initiate();
       scanMonitor.exposeMetrics('scan');
@@ -248,8 +242,8 @@ const load = loader({
   },
 
   workerScannerAzure: {
-    requires: ['cfg', 'monitor', 'providers', 'db', 'azureProviderIds', 'estimator'],
-    setup: async ({ cfg, monitor, providers, db, azureProviderIds, estimator }, ownName) => {
+    requires: ['cfg', 'monitor', 'providers', 'db', 'azureProviderIds'],
+    setup: async ({ cfg, monitor, providers, db, azureProviderIds }, ownName) => {
       const scanMonitor = monitor.childMonitor('worker-scanner');
       const workerScanner = new WorkerScanner({
         ownName,
@@ -261,7 +255,6 @@ const load = loader({
           value: azureProviderIds,
         },
         db,
-        estimator,
       });
       await workerScanner.initiate();
       scanMonitor.exposeMetrics('scan');

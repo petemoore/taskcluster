@@ -120,11 +120,9 @@ export default class Hooks extends Client {
   }
   /* eslint-disable max-len */
   // This endpoint will trigger the creation of a task from a hook definition.
-  // The HTTP payload must match the hook's `triggerSchema`.  If it does, it is
+  // The HTTP payload must match the hooks `triggerSchema`.  If it does, it is
   // provided as the `payload` property of the JSON-e context used to render the
   // task template.
-  // Optionally, a `taskId` can be provided in the payload which the hook task
-  // will use. It must be unique and follow the slugid format.
   /* eslint-enable max-len */
   triggerHook(...args) {
     this.validate(this.triggerHook.entry, args);
@@ -151,11 +149,9 @@ export default class Hooks extends Client {
   }
   /* eslint-disable max-len */
   // This endpoint triggers a defined hook with a valid token.
-  // The HTTP payload must match the hook's `triggerSchema`.  If it does, it is
+  // The HTTP payload must match the hooks `triggerSchema`.  If it does, it is
   // provided as the `payload` property of the JSON-e context used to render the
   // task template.
-  // Optionally, a `taskId` can be provided in the payload which the hook task
-  // will use. It must be unique and follow the slugid format.
   /* eslint-enable max-len */
   triggerHookWithToken(...args) {
     this.validate(this.triggerHookWithToken.entry, args);

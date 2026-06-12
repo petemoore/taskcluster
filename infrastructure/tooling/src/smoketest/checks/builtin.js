@@ -1,4 +1,4 @@
-import taskcluster from '@taskcluster/client';
+import taskcluster from 'taskcluster-client';
 
 export const scopeExpression = {
   AllOf: [
@@ -23,7 +23,7 @@ export const tasks = [];
       'target-built-in/' + taskType,
     ],
     run: async (requirements, utils) => {
-      const task = {
+      let task = {
         provisionerId: 'built-in',
         workerType: taskType,
         created: (new Date()).toJSON(),
@@ -37,13 +37,13 @@ export const tasks = [];
         },
         payload: {},
       };
-      const taskId = taskcluster.slugid();
+      let taskId = taskcluster.slugid();
       utils.status({ message: 'built-in/' + taskType + ' taskId: ' + taskId });
-      const queue = new taskcluster.Queue(taskcluster.fromEnvVars());
+      let queue = new taskcluster.Queue(taskcluster.fromEnvVars());
       await queue.createTask(taskId, task);
-      const pollForStatusStart = new Date();
-      while ((Date.now() - pollForStatusStart) < 120000) {
-        const status = await queue.status(taskId);
+      let pollForStatusStart = new Date();
+      while ((new Date() - pollForStatusStart) < 120000) {
+        let status = await queue.status(taskId);
         if (status.status.state === 'pending' || status.status.state === 'running') {
           utils.status({
             message: 'Polling built-in/' + taskType + ' task. Current status: ' + status.status.state,

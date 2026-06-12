@@ -1,16 +1,16 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import helper from './helper.js';
 import assume from 'assume';
-import taskcluster from '@taskcluster/client';
-import testing from '@taskcluster/lib-testing';
+import taskcluster from 'taskcluster-client';
+import testing from 'taskcluster-lib-testing';
 
-helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping) => {
+helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], function(mock, skipping) {
   helper.withCfg(mock, skipping);
   helper.withDb(mock, skipping);
   helper.withPulse(mock, skipping);
   helper.withServers(mock, skipping);
 
-  suite('charlene creates permanent credentials for a test runner', () => {
+  suite('charlene creates permanent credentials for a test runner', function() {
     suiteSetup(async function() {
       if (skipping()) {
         this.skip();
@@ -28,7 +28,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
       travisTests;
 
     test('add a client for the identity provider', async () => {
-      const idp = await helper.apiClient.createClient('test-users', {
+      let idp = await helper.apiClient.createClient('test-users', {
         description: 'Test users identity provider',
         expires: taskcluster.fromNow('2 hours'),
         scopes: [
@@ -83,7 +83,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
     });
 
     test('charlene creates permanent credentials for her tests', async () => {
-      const travisClient = await charlene.createClient('test-users/charlene/travis-tests', {
+      let travisClient = await charlene.createClient('test-users/charlene/travis-tests', {
         description: 'Permacred created by test',
         expires: taskcluster.fromNow('3 hours'), // N.B. longer than temp creds
         scopes: [
@@ -119,7 +119,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
     });
 
     test('charlene grants role2 and removes role1', async () => {
-      const newClient = await charlene.updateClient('test-users/charlene/travis-tests', {
+      let newClient = await charlene.updateClient('test-users/charlene/travis-tests', {
         description: 'Permacred created by test',
         expires: taskcluster.fromNow('3 hours'),
         scopes: [
@@ -170,7 +170,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
       });
     });
 
-    test('A disabled travis-tests client can\'t do things anymore', async () => {
+    test('A disabled travis-tests client can\'t do things anymore', async function() {
       // give the user a scope we can use as a probe
       await helper.apiClient.updateClient('test-users/charlene/travis-tests', {
         description: 'Permacred created by test',

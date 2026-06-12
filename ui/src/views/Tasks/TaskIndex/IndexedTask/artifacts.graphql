@@ -11,7 +11,6 @@ query IndexEntry($taskId: ID!, $entryConnection: PageConnection, $skip: Boolean!
       node {
         name
         contentType
-        contentLength
       }
     }
   }

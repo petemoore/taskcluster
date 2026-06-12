@@ -1,9 +1,9 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import SchemaSet from '../src/index.js';
 import debugFactory from 'debug';
 const debug = debugFactory('test');
 import libUrls from 'taskcluster-lib-urls';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 
 suite(testing.suiteName(), () => {
   const rootUrl = libUrls.testRootUrl();
@@ -20,35 +20,35 @@ suite(testing.suiteName(), () => {
   });
 
   test('load json', () => {
-    const error = validate(
+    let error = validate(
       { value: 42 },
       libUrls.schema(rootUrl, 'whatever', '/v1/test-schema.json#'));
     assert.equal(error, null);
   });
 
   test('load yml', () => {
-    const error = validate(
+    let error = validate(
       { value: 42 },
       libUrls.schema(rootUrl, 'whatever', '/v1/yml-test-schema#'));
     assert.equal(error, null);
   });
 
   test('sub-schemas', () => {
-    const error = validate(
+    let error = validate(
       42,
       libUrls.schema(rootUrl, 'whatever', '/v1/test-schema.json#/properties/value'));
     assert.equal(error, null);
   });
 
   test('load yaml', () => {
-    const error = validate(
+    let error = validate(
       { value: 42 },
       libUrls.schema(rootUrl, 'whatever', '/v1/yaml-test-schema#'));
     assert.equal(error, null);
   });
 
   test('$ref', () => {
-    const error = validate({
+    let error = validate({
       referenceWithDotDot: { value: 42 },
       localReference: { value: 42 },
       tid: new Date().toJSON(),
@@ -57,8 +57,8 @@ suite(testing.suiteName(), () => {
   });
 
   test('default values are inserted', () => {
-    const json = { value: 42 };
-    const error = validate(
+    let json = { value: 42 };
+    let error = validate(
       json,
       libUrls.schema(rootUrl, 'whatever', '/v1/default-schema'));
     assert.equal(error, null);
@@ -67,8 +67,8 @@ suite(testing.suiteName(), () => {
   });
 
   test('default values aren\'t overridden', () => {
-    const json = { value: 42, optionalValue: 'already-here' };
-    const error = validate(
+    let json = { value: 42, optionalValue: 'already-here' };
+    let error = validate(
       json,
       libUrls.schema(rootUrl, 'whatever', '/v1/default-schema'));
     assert.equal(error, null);
@@ -77,8 +77,8 @@ suite(testing.suiteName(), () => {
   });
 
   test('default values with array and objects', () => {
-    const json = {};
-    const error = validate(
+    let json = {};
+    let error = validate(
       json,
       libUrls.schema(rootUrl, 'whatever', '/v1/default-array-obj-schema'));
     assert.equal(error, null);
@@ -94,14 +94,14 @@ suite(testing.suiteName(), () => {
       serviceName: 'whatever',
     });
     const v = await s.validator(libUrls.testRootUrl());
-    const error = v(
+    let error = v(
       { value: 43 },
       libUrls.schema(rootUrl, 'whatever', '/v1/yml-test-schema#'));
     assert.equal(error, null);
   });
 
   test('rejects poorly formed object', () => {
-    const error = validate(
+    let error = validate(
       { value: 43 },
       libUrls.schema(rootUrl, 'whatever', '/v1/test-schema#'));
     debug(error);
@@ -109,7 +109,7 @@ suite(testing.suiteName(), () => {
   });
 
   test('messages for large schema are nice', () => {
-    const error = validate(
+    let error = validate(
       {},
       libUrls.schema(rootUrl, 'whatever', '/v1/big-schema#'));
     debug(error);
@@ -117,14 +117,14 @@ suite(testing.suiteName(), () => {
   });
 
   test('automatic id', () => {
-    const error = validate(
+    let error = validate(
       { value: 42 },
       libUrls.schema(rootUrl, 'whatever', '/v1/auto-named-schema#'));
     assert.equal(error, null);
   });
 
   test('message specifies absolute schema URL', () => {
-    const error = validate(
+    let error = validate(
       { value: 42, unwanted_value: 1729 },
       libUrls.schema(rootUrl, 'whatever', '/v1/default-schema'));
     assert.notEqual(error, null);
@@ -132,7 +132,7 @@ suite(testing.suiteName(), () => {
   });
 
   test('message specifies unwanted additional property', () => {
-    const error = validate(
+    let error = validate(
       { value: 42, unwanted_value: 1729 },
       libUrls.schema(rootUrl, 'whatever', '/v1/default-schema'));
     assert.notEqual(error, null);

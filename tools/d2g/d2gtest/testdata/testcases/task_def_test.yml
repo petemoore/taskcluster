@@ -66,25 +66,13 @@ testSuite:
         source: https://community-tc.services.mozilla.com/tasks/create
       payload:
         command:
-        - - docker
-          - run
-          - -t
-          - --name
-          - taskcontainer
-          - --memory-swap
-          - "-1"
-          - --pids-limit
-          - "-1"
-          - --pull=never
-          - --log-driver=none
-          - --add-host=localhost.localdomain:127.0.0.1
-          - --device=/dev/kvm
-          - --env-file
-          - env.list
-          - ubuntu:latest
-          - /bin/bash
-          - -c
-          - for ((i=1;i<=600;i++)); do echo $i; sleep 1; done
+        - - /usr/bin/env
+          - bash
+          - -cx
+          - docker run -t --name taskcontainer --memory-swap -1 --pids-limit -1 --add-host=localhost.localdomain:127.0.0.1
+            --device=/dev/kvm -e RUN_ID -e TASKCLUSTER_INSTANCE_TYPE -e TASKCLUSTER_ROOT_URL
+            -e TASKCLUSTER_WORKER_LOCATION -e TASK_GROUP_ID -e TASK_ID ubuntu:latest
+            /bin/bash -c 'for ((i=1;i<=600;i++)); do echo $i; sleep 1; done'
         features:
           backingLog: true
           liveLog: true
@@ -93,6 +81,10 @@ testSuite:
           backing: public/logs/live_backing.log
           live: public/logs/live.log
         maxRunTime: 630
+        onExitStatus:
+          retry:
+          - 125
+          - 128
         osGroups:
         - docker
         taskclusterProxyInterface: docker-bridge
@@ -177,25 +169,13 @@ testSuite:
         source: https://community-tc.services.mozilla.com/tasks/create
       payload:
         command:
-        - - docker
-          - run
-          - -t
-          - --name
-          - taskcontainer
-          - --memory-swap
-          - "-1"
-          - --pids-limit
-          - "-1"
-          - --pull=never
-          - --log-driver=none
-          - --add-host=localhost.localdomain:127.0.0.1
-          - --device=/dev/kvm
-          - --env-file
-          - env.list
-          - ubuntu:latest
-          - /bin/bash
-          - -c
-          - for ((i=1;i<=600;i++)); do echo $i; sleep 1; done
+        - - /usr/bin/env
+          - bash
+          - -cx
+          - docker run -t --name taskcontainer --memory-swap -1 --pids-limit -1 --add-host=localhost.localdomain:127.0.0.1
+            --device=/dev/kvm -e RUN_ID -e TASKCLUSTER_INSTANCE_TYPE -e TASKCLUSTER_ROOT_URL
+            -e TASKCLUSTER_WORKER_LOCATION -e TASK_GROUP_ID -e TASK_ID ubuntu:latest
+            /bin/bash -c 'for ((i=1;i<=600;i++)); do echo $i; sleep 1; done'
         features:
           backingLog: true
           liveLog: true
@@ -204,6 +184,10 @@ testSuite:
           backing: public/logs/live_backing.log
           live: public/logs/live.log
         maxRunTime: 630
+        onExitStatus:
+          retry:
+          - 125
+          - 128
         osGroups:
         - docker
         taskclusterProxyInterface: docker-bridge
@@ -291,25 +275,13 @@ testSuite:
         source: https://community-tc.services.mozilla.com/tasks/create
       payload:
         command:
-        - - docker
-          - run
-          - -t
-          - --name
-          - taskcontainer
-          - --memory-swap
-          - "-1"
-          - --pids-limit
-          - "-1"
-          - --pull=never
-          - --log-driver=none
-          - --add-host=localhost.localdomain:127.0.0.1
-          - --device=/dev/kvm
-          - --env-file
-          - env.list
-          - ubuntu:latest
-          - /bin/bash
-          - -c
-          - for ((i=1;i<=600;i++)); do echo $i; sleep 1; done
+        - - /usr/bin/env
+          - bash
+          - -cx
+          - docker run -t --name taskcontainer --memory-swap -1 --pids-limit -1 --add-host=localhost.localdomain:127.0.0.1
+            --device=/dev/kvm -e RUN_ID -e TASKCLUSTER_INSTANCE_TYPE -e TASKCLUSTER_ROOT_URL
+            -e TASKCLUSTER_WORKER_LOCATION -e TASK_GROUP_ID -e TASK_ID ubuntu:latest
+            /bin/bash -c 'for ((i=1;i<=600;i++)); do echo $i; sleep 1; done'
         features:
           backingLog: true
           liveLog: true
@@ -318,6 +290,10 @@ testSuite:
           backing: public/logs/live_backing.log
           live: public/logs/live.log
         maxRunTime: 630
+        onExitStatus:
+          retry:
+          - 125
+          - 128
         osGroups:
         - docker
         taskclusterProxyInterface: docker-bridge

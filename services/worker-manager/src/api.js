@@ -1,8 +1,8 @@
-import { APIBuilder, paginateResults } from '@taskcluster/lib-api';
+import { APIBuilder, paginateResults } from 'taskcluster-lib-api';
 import slug from 'slugid';
-import assert from 'node:assert';
+import assert from 'assert';
 import { ApiError, Provider } from './providers/provider.js';
-import { UNIQUE_VIOLATION } from '@taskcluster/lib-postgres';
+import { UNIQUE_VIOLATION } from 'taskcluster-lib-postgres';
 import { WorkerPool, WorkerPoolError, Worker, WorkerPoolStats } from './data.js';
 import { createCredentials, joinWorkerPoolId, sanitizeRegisterWorkerPayload } from './util.js';
 
@@ -18,13 +18,13 @@ export const AUDIT_ENTRY_TYPE = Object.freeze({
  * @type {APIBuilder<{
  *  cfg: object;
  *  providers: import('./providers/index.js').Providers;
- *  db: import('@taskcluster/lib-postgres').Database;
- *  monitor: import('@taskcluster/lib-monitor').Monitor;
- *  notify: object; // TODO import('@taskcluster/client').Notify;
- *  publisher: import('@taskcluster/lib-pulse').PulsePublisher; // TODO add generic type
+ *  db: import('taskcluster-lib-postgres').Database;
+ *  monitor: import('taskcluster-lib-monitor').Monitor;
+ *  notify: object; // TODO import('taskcluster-client').Notify;
+ *  publisher: import('taskcluster-lib-pulse').PulsePublisher; // TODO add generic type
  * }>}
  */
-const builder = new APIBuilder({
+let builder = new APIBuilder({
   title: 'Worker Manager Service',
   description: [
     'This service manages workers, including provisioning for dynamic worker pools.',
@@ -110,8 +110,8 @@ builder.declare({
     'Retrieve a list of providers that are available for worker pools.',
   ].join('\n'),
 }, function(req, res) {
-  const start = req.query.continuationToken ? parseInt(req.query.continuationToken, 10) : 0;
-  const limit = req.query.limit ? parseInt(req.query.limit, 10) : 100;
+  const start = req.query.continuationToken ? parseInt(req.query.continuationToken) : 0;
+  const limit = req.query.limit ? parseInt(req.query.limit) : 100;
 
   const providers = Object.entries(this.cfg.providers).map(([providerId, { providerType }]) => ({
     providerId,
@@ -692,7 +692,7 @@ builder.declare({
     this.db.fns.get_worker_pool_error_titles(workerPoolId || null),
     this.db.fns.get_worker_pool_error_codes(workerPoolId || null),
     this.db.fns.get_worker_pool_error_worker_pools(workerPoolId || null),
-    workerPoolId ? this.db.fns.get_worker_pool_error_launch_configs(workerPoolId, null) : [],
+    this.db.fns.get_worker_pool_error_launch_configs(workerPoolId || null, null),
   ]);
 
   for (const row of daily) {
@@ -801,8 +801,8 @@ declareWithTrailingColon({
   res.reply(worker.serializable({ removeQueueData: true }));
 });
 
-const cleanCreatePayload = payload => {
-  if (payload.providerInfo?.staticSecret) {
+let cleanCreatePayload = payload => {
+  if (payload.providerInfo && payload.providerInfo.staticSecret) {
     payload.providerInfo.staticSecret = '(OMITTED)';
   }
   return payload;
@@ -992,40 +992,6 @@ builder.declare({
 
 builder.declare({
   method: 'get',
-  route: '/workers/:workerPoolId/:workerGroup/:workerId/should-terminate',
-  name: 'shouldWorkerTerminate',
-  title: 'Should worker terminate',
-  category: 'Workers',
-  output: 'should-worker-terminate-response.yml',
-  stability: APIBuilder.stability.experimental,
-  scopes: 'worker-manager:should-worker-terminate:<workerPoolId>/<workerGroup>/<workerId>',
-  description: [
-    'Informs if worker should terminate or keep working.',
-    'Worker might no longer be needed based on the set of factors:',
-    ' - current capacity of the worker pool',
-    ' - amount of pending and claimed tasks',
-    ' - launch configuration changes',
-    '',
-    'Decision is made during provision or scanning loop based on above mentioned conditions.',
-  ].join('\n'),
-}, async function(req, res) {
-  const { workerPoolId, workerGroup, workerId } = req.params;
-  const worker = await Worker.get(this.db, { workerPoolId, workerGroup, workerId });
-
-  if (!worker) {
-    return res.reportError('ResourceNotFound', 'Worker not found', {});
-  }
-
-  const decision = worker.providerData.shouldTerminate;
-  if (decision) {
-    return res.reply({ terminate: decision.terminate, reason: decision.reason });
-  }
-
-  return res.reply({ terminate: false, reason: 'none' });
-});
-
-builder.declare({
-  method: 'get',
   route: '/workers/:workerPoolId(*)',
   query: {
     ...paginateResults.query,
@@ -1071,7 +1037,7 @@ builder.declare({
   });
 });
 
-const cleanPayload = payload => {
+let cleanPayload = payload => {
   payload = '(OMITTED)';
   return payload;
 };
@@ -1096,7 +1062,7 @@ builder.declare({
     'some proof of its identity, and that proof varies by provider type.',
   ].join('\n'),
 }, async function(req, res) {
-  const { workerPoolId, providerId, workerGroup, workerId, workerIdentityProof, systemBootTime } = req.body;
+  const { workerPoolId, providerId, workerGroup, workerId, workerIdentityProof } = req.body;
 
   // carefully check each value provided, since we have not yet validated the
   // worker's "proof"
@@ -1168,30 +1134,6 @@ builder.declare({
   }
   assert(expires, 'registerWorker did not return expires');
   assert(expires > new Date(), 'registerWorker returned expires in the past');
-
-  // Record provision and startup duration sub-metrics when systemBootTime is provided.
-  // These break down the existing workerRegistrationDuration into:
-  //   workerProvisionDuration = systemBootTime - worker.created (VM provisioning)
-  //   workerStartupDuration = now - systemBootTime (worker startup)
-  if (systemBootTime) {
-    const bootTimeMs = new Date(systemBootTime).getTime();
-    const createdMs = worker.created?.getTime?.();
-    const nowMs = Date.now();
-
-    if (Number.isFinite(bootTimeMs) && Number.isFinite(createdMs)) {
-      const labels = { workerPoolId, providerId, workerGroup };
-
-      const provisionSeconds = (bootTimeMs - createdMs) / 1000;
-      if (provisionSeconds >= 0) {
-        this.monitor.metric.workerProvisionDuration(provisionSeconds, labels);
-      }
-
-      const startupSeconds = (nowMs - bootTimeMs) / 1000;
-      if (startupSeconds >= 0) {
-        this.monitor.metric.workerStartupDuration(startupSeconds, labels);
-      }
-    }
-  }
 
   // We use these fields from inside the worker rather than
   // what was passed in because that is the thing we have verified
@@ -1319,7 +1261,7 @@ builder.declare({
 
   const result = {
     workers: workers.map(worker => {
-      const entry = {
+      let entry = {
         workerGroup: worker.workerGroup,
         workerId: worker.workerId,
         firstClaim: worker.firstClaim?.toJSON(),
@@ -1399,7 +1341,7 @@ builder.declare({
     'This endpoint is used to check on backing services this service',
     'depends on.',
   ].join('\n'),
-}, (_req, res) => {
+}, function(_req, res) {
   // TODO: add implementation
   res.reply({});
 });

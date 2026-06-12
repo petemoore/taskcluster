@@ -1,8 +1,8 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import QueueService from './queueservice.js';
-import Iterate from '@taskcluster/lib-iterate';
+import Iterate from 'taskcluster-lib-iterate';
 import { Task } from './data.js';
-import { sleep, splitTaskQueueId } from './utils.js';
+import { sleep } from './utils.js';
 
 /**
  * Facade that handles resolution of claims by takenUntil, using the advisory
@@ -59,11 +59,11 @@ class ClaimResolver {
     this.iterator = new Iterate({
       name: options.ownName,
       maxFailures: 10,
-      waitTime: 0,
+      waitTime: this.pollingDelay,
       monitor: this.monitor,
       maxIterationTime: 600 * 1000,
       handler: async () => {
-        const loops = [];
+        let loops = [];
         for (let i = 0; i < this.parallelism; i++) {
           loops.push(this.poll());
         }
@@ -89,7 +89,7 @@ class ClaimResolver {
 
   /** Poll for messages and handle them in a loop */
   async poll() {
-    const messages = await this.queueService.pollClaimQueue(this.count);
+    let messages = await this.queueService.pollClaimQueue();
     let failed = 0;
 
     await Promise.all(messages.map(async (message) => {
@@ -103,9 +103,9 @@ class ClaimResolver {
       }
     }));
 
-    // If we emptied the queue, back off
-    if (messages.length < this.count) {
-      await sleep(this.pollingDelay);
+    // If there were no messages, back off for a bit.
+    if (messages.length === 0) {
+      await sleep(2000);
     }
 
     this.monitor.log.queuePoll({
@@ -132,7 +132,7 @@ class ClaimResolver {
     // before reaching remove() below.  In either case, we will publish
     // messages about it, in keeping with the at-least-once semantics of
     // TC's messages.
-    const run = task.runs[runId];
+    let run = task.runs[runId];
 
     // If run isn't resolved to exception with 'claim-expired', we had
     // concurrency and we're done.
@@ -143,43 +143,31 @@ class ClaimResolver {
       return remove();
     }
 
-    const status = task.status();
+    let status = task.status();
 
-    // Publish message about task exception. We deliberately throw on
-    // publish failure to honor the resolver's at-least-once semantics
-    // (see comment above): NACK + redelivery re-runs handleMessage which
-    // re-attempts the publish.
+    // Publish message about task exception
     await this.publisher.taskException({
       status: status,
       runId: runId,
-      task: { tags: task.tags || {} },
       workerGroup: run.workerGroup,
       workerId: run.workerId,
     }, task.routes);
     this.monitor.log.taskException({ taskId, runId });
 
-    const metricLabels = splitTaskQueueId(task.taskQueueId);
-    this.monitor.metric.exceptionTasks(1, {
-      ...metricLabels,
-      reasonResolved: run.reasonResolved,
-    });
-
     // If a newRun was created and it is a retry with state pending then we
     // better publish messages about it
-    const newRun = task.runs[runId + 1];
+    let newRun = task.runs[runId + 1];
     if (newRun &&
         task.runs.length - 1 === runId + 1 &&
         newRun.state === 'pending' &&
         newRun.reasonCreated === 'retry') {
-      // queue_pending_tasks insert is now atomic inside check_task_claim
-      // (db v124). The publish is intentionally NOT wrapped in try/catch
-      // here: failing the handler triggers redelivery so we re-attempt
-      // publication, preserving at-least-once semantics for resolvers.
-      await this.publisher.taskPending({
-        status: status,
-        runId: runId + 1,
-        task: { tags: task.tags || {} },
-      }, task.routes);
+      await Promise.all([
+        this.queueService.putPendingMessage(task, runId + 1),
+        this.publisher.taskPending({
+          status: status,
+          runId: runId + 1,
+        }, task.routes),
+      ]);
       this.monitor.log.taskPending({ taskId, runId: runId + 1 });
     } else {
       // Update dependencyTracker

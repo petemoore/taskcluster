@@ -28,9 +28,8 @@ export default ({ type, serviceName, apiVersion }) => {
 
   if (!refEntry) {
     throw new Error(
-      `No reference document found of type ${type} for service ${serviceName} ${
-        apiVersion || '(no version)'
-      }`
+      `No reference document found of type ${type} for service ${serviceName} ${apiVersion ||
+        '(no version)'}`
     );
   }
 
