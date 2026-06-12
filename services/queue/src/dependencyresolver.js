@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import Iterate from '@taskcluster/lib-iterate';
 import { sleep } from './utils.js';
 
@@ -67,7 +67,7 @@ class DependencyResolver {
 
   /** Poll for messages and handle them in a loop */
   async _pollResolvedTasks() {
-    const messages = await this.queueService.pollResolvedQueue(this.count);
+    let messages = await this.queueService.pollResolvedQueue(this.count);
     let failed = 0;
     await Promise.all(messages.map(async (m) => {
       // Don't let a single task error break the loop, it'll be retried later

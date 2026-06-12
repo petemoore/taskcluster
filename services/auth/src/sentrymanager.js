@@ -2,7 +2,7 @@ import _ from 'lodash';
 import taskcluster from '@taskcluster/client';
 import debugFactory from 'debug';
 const debug = debugFactory('app:sentry');
-import assert from 'node:assert';
+import assert from 'assert';
 import got from 'got';
 
 class SentryApiClient {
@@ -85,16 +85,16 @@ class SentryApiClient {
 
 const pattern = /^ managed \(expires-at:([0-9TZ:.-]+)\)$/;
 const parseKeys = (keys, prefix) => {
-  const results = [];
-  for (const k of keys) {
+  let results = [];
+  for (let k of keys) {
     if (!_.startsWith(k.label, prefix)) {
       continue;
     }
-    const match = pattern.exec(k.label.substring(prefix.length));
+    let match = pattern.exec(k.label.substring(prefix.length));
     if (!match) {
       continue;
     }
-    const expires = new Date(match[1]);
+    let expires = new Date(match[1]);
     if (isNaN(expires)) {
       continue;
     }
@@ -188,8 +188,8 @@ class SentryManager {
     key = _.last(parseKeys(keys, this._keyPrefix)); // last is most recent
     if (!key || key.expires < taskcluster.fromNow('25 hours')) {
       // Create new key that expires in 48 hours
-      const expires = taskcluster.fromNow('48 hours');
-      const k = await this._sentry.projects.createKey(
+      let expires = taskcluster.fromNow('48 hours');
+      let k = await this._sentry.projects.createKey(
         this._organization, project, {
           name: this._keyPrefix + ` managed (expires-at:${expires.toJSON()})`,
         });
@@ -207,15 +207,15 @@ class SentryManager {
   /** Remove old expired keys, returns number of keys deleted */
   async purgeExpiredKeys(now = new Date()) {
     // Get a list of all projects from this organization
-    const projects = await this._sentry.organizations.projects(this._organization);
+    let projects = await this._sentry.organizations.projects(this._organization);
 
     let deleted = 0;
     await Promise.all(projects.map(async (p) => {
       // List all keys for each project
-      const keys = await this._sentry.projects.keys(this._organization, p.slug);
+      let keys = await this._sentry.projects.keys(this._organization, p.slug);
 
       // Find expired keys
-      const expiredKeys = parseKeys(keys, this._keyPrefix).filter(key => {
+      let expiredKeys = parseKeys(keys, this._keyPrefix).filter(key => {
         return key.expires < now;
       });
 

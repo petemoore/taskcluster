@@ -6,8 +6,8 @@ export default {
     SLACK_CHANNEL: 'slack-channel',
   },
   Query: {
-    listDenylistAddresses(parent, { connection, searchTerm }, { loaders }) {
-      return loaders.listDenylistAddresses.load({ connection, searchTerm });
+    listDenylistAddresses(parent, { connection, filter }, { loaders }) {
+      return loaders.listDenylistAddresses.load({ connection, filter });
     },
   },
   Mutation: {
