@@ -1,8 +1,8 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import _ from 'lodash';
 import taskcluster from '@taskcluster/client';
-import fs from 'node:fs/promises';
-import path from 'node:path';
+import fs from 'fs/promises';
+import path from 'path';
 import { UNIQUE_VIOLATION } from '@taskcluster/lib-postgres';
 
 const __dirname = new URL('.', import.meta.url).pathname;
@@ -16,11 +16,11 @@ const __dirname = new URL('.', import.meta.url).pathname;
  * , where description will be amended with a section explaining that this
  * client is static and can't be modified at runtime.
  */
-export const syncStaticClients = async (db, clients = []) => {
+export const syncStaticClients = async function(db, clients = []) {
   const staticScopes = JSON.parse(await fs.readFile(path.join(__dirname, 'static-scopes.json'), 'utf8'));
 
   // Validate input for sanity (we hardly need perfect validation here...)
-  assert(Array.isArray(clients), 'Expected clients to be am array');
+  assert(clients instanceof Array, 'Expected clients to be am array');
   for (const client of clients) {
     assert(typeof client.clientId === 'string', 'expected clientId to be a string');
     assert(typeof client.accessToken === 'string', 'expected accessToken to be a string');
@@ -30,7 +30,7 @@ export const syncStaticClients = async (db, clients = []) => {
     if (client.clientId.startsWith('static/taskcluster')) {
       assert(!client.scopes, 'scopes are not allowed in configuration for static/taskcluster clients');
     } else {
-      assert(Array.isArray(client.scopes), 'expected scopes to be an array of strings');
+      assert(client.scopes instanceof Array, 'expected scopes to be an array of strings');
       assert(typeof client.description === 'string', 'expected description to be a string');
       assert(client.scopes.every(s => typeof s === 'string'), 'scopes must be strings');
     }
@@ -81,7 +81,7 @@ export const syncStaticClients = async (db, clients = []) => {
   const done = []; // list of clientIds we've already synchronized
   const rows = await db.fns.get_clients('static/', null, null);
 
-  for (const row of rows) {
+  for (let row of rows) {
     // Find target we should modify the client match
     const target = clients.find(c => c.clientId === row.client_id);
     // If client doesn't exist we delete it
@@ -119,7 +119,7 @@ export const syncStaticClients = async (db, clients = []) => {
   const newClients = clients.filter(c => !done.includes(c.clientId));
 
   // Create new clients
-  for (const target of newClients) {
+  for (let target of newClients) {
     try {
       await db.fns.create_client(
         target.clientId,

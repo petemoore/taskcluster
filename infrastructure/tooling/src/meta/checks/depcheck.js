@@ -1,4 +1,4 @@
-import { Worker, isMainThread, parentPort } from 'node:worker_threads';
+import { Worker, isMainThread, parentPort } from 'worker_threads';
 import _ from 'lodash';
 import { gitLsFiles, readRepoFile, readRepoJSON } from '../../utils/index.js';
 import * as acorn from 'acorn-loose';
@@ -22,7 +22,7 @@ if (isMainThread) {
     run: async (requirements, utils) => {
       return new Promise((resolve, reject) => {
         const worker = new Worker(__filename, {});
-        worker.on('message', ({ err, message }) => {
+        worker.on('message', function ({ err, message }) {
           err ? reject(err) : utils.status({ message });
         });
         worker.on('error', reject);
@@ -45,11 +45,6 @@ if (isMainThread) {
     // Local imports are less tricky to get right and if broken will fail in tests so we don't
     // bother doing extra work to assert they exist here
     if (packageName.startsWith('.')) {
-      return;
-    }
-
-    // `node:` prefixed imports are always builtin modules
-    if (packageName.startsWith('node:')) {
       return;
     }
 
@@ -78,18 +73,18 @@ if (isMainThread) {
         if (node.source.type !== 'Literal') {
           return;
         }
-        const packageName = node.source.value;
+        let packageName = node.source.value;
         return checkImport(file, section, packageName, deps, used);
       },
       ImportDeclaration(node) {
         if (node.source.type !== 'Literal') {
           return;
         }
-        const packageName = node.source.value;
+        let packageName = node.source.value;
         return checkImport(file, section, packageName, deps, used);
       },
       CallExpression(node) {
-        if (node.callee?.name !== 'require') {
+        if (!node.callee || node.callee.name !== 'require') {
           return;
         }
 
@@ -98,7 +93,7 @@ if (isMainThread) {
           return;
         }
 
-        const packageName = node.arguments[0].value;
+        let packageName = node.arguments[0].value;
         return checkImport(file, section, packageName, deps, used);
       },
     });
