@@ -14,6 +14,7 @@ import {
  * Generate a Python example for an API endpoint
  *
  * @param {string} serviceName - Service name (e.g., 'queue')
+ * @param {string} apiVersion - API version (e.g., 'v1')
  * @param {object} entry - API entry metadata
  * @param {boolean} isAsync - Generate async or sync version
  * @param {object} payloadExample - Example payload object (optional)
@@ -21,6 +22,7 @@ import {
  */
 export default function generatePythonExample(
   serviceName,
+  apiVersion,
   entry,
   isAsync,
   payloadExample = null
@@ -80,8 +82,8 @@ ${serviceName} = ${tcModule}.${className}({'rootUrl': '${PLACEHOLDERS.rootUrl}'}
 
       apiCall = `${payloadCode}
         result = await ${serviceName}.${entry.name}(${params.join(
-          ', '
-        )}, payload)`;
+        ', '
+      )}, payload)`;
     } else {
       apiCall = `# Call the API method
         result = await ${serviceName}.${entry.name}(${params.join(', ')})`;

@@ -1,11 +1,11 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import testing from '@taskcluster/lib-testing';
 
-suite(testing.suiteName(), () => {
-  test('sleep', async () => {
-    const start = Date.now();
+suite(testing.suiteName(), function() {
+  test('sleep', async function() {
+    const start = new Date().getTime();
     await testing.sleep(10);
-    const end = Date.now();
+    const end = new Date().getTime();
     // as long as it waited 5ms or more we'll call it good..
     assert(end - start > 5, 'did not wait long enough');
   });
@@ -23,13 +23,13 @@ suite(testing.suiteName(), () => {
     };
   };
 
-  test('poll (success)', async () => {
+  test('poll (success)', async function() {
     const poll = pollFunc();
     await testing.poll(poll, 4, 5);
     assert.equal(countDown, 0);
   });
 
-  test('poll (too-few iterations)', async () => {
+  test('poll (too-few iterations)', async function() {
     const poll = pollFunc();
     try {
       await testing.poll(poll, 3, 5);

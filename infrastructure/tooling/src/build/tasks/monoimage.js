@@ -11,7 +11,7 @@ import {
   REPO_ROOT,
 } from '../../utils/index.js';
 
-import path from 'node:path';
+import path from 'path';
 import { rimraf } from 'rimraf';
 import mkdirp from 'mkdirp';
 
@@ -87,7 +87,7 @@ const generateMonoimageTasks = ({ tasks, baseDir, cmdOptions, credentials, logsD
 
       utils.step({ title: `Building Docker Image ${tag}` });
 
-      const versionJson = requirements['docker-flow-version'];
+      let versionJson = requirements['docker-flow-version'];
       let command = ['docker', 'build'];
       if (!cmdOptions.cache) {
         command.push('--no-cache');
@@ -196,7 +196,7 @@ const generateMonoimageTasks = ({ tasks, baseDir, cmdOptions, credentials, logsD
     ],
     run: async (requirements, utils) => {
       const tag = requirements[`monoimage-docker-image`];
-      const provides = { 'monoimage-push': tag };
+      const provides = { [`monoimage-push`]: tag };
 
       if (!cmdOptions.push) {
         return utils.skip({ provides });
@@ -237,7 +237,7 @@ const generateMonoimageTasks = ({ tasks, baseDir, cmdOptions, credentials, logsD
     ],
     run: async (requirements, utils) => {
       const tag = requirements[`monoimage-devel-docker-image`];
-      const provides = { 'monoimage-devel-push': tag };
+      const provides = { [`monoimage-devel-push`]: tag };
 
       if (!cmdOptions.push) {
         return utils.skip(provides);
