@@ -44,16 +44,16 @@ export default {
     },
   },
   HookGroup: {
-    hooks({ hookGroupId }, args, { loaders }) {
-      return loaders.hooks.load({ hookGroupId });
+    hooks({ hookGroupId }, { filter }, { loaders }) {
+      return loaders.hooks.load({ hookGroupId, filter });
     },
   },
   Query: {
-    hookGroups(parent, { hookGroupId }, { loaders }) {
-      return loaders.hookGroups.load({ hookGroupId });
+    hookGroups(parent, { filter }, { loaders }) {
+      return loaders.hookGroups.load({ filter });
     },
-    hooks(parent, { hookGroupId }, { loaders }) {
-      return loaders.hooks.load({ hookGroupId });
+    hooks(parent, { hookGroupId, filter }, { loaders }) {
+      return loaders.hooks.load({ hookGroupId, filter });
     },
     hook(parent, { hookGroupId, hookId }, { loaders }) {
       return loaders.hook.load({ hookGroupId, hookId });
@@ -61,8 +61,8 @@ export default {
     hookStatus(parent, { hookGroupId, hookId }, { loaders }) {
       return loaders.hookStatus.load({ hookGroupId, hookId });
     },
-    hookLastFires(parent, { hookGroupId, hookId, connection, options }, { loaders }) {
-      return loaders.hookLastFires.load({ hookGroupId, hookId, connection, options });
+    hookLastFires(parent, { hookGroupId, hookId, filter, connection, options }, { loaders }) {
+      return loaders.hookLastFires.load({ hookGroupId, hookId, filter, connection, options });
     },
   },
   Mutation: {

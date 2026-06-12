@@ -1,6 +1,6 @@
 import request from 'superagent';
-import crypto from 'node:crypto';
-import assert from 'node:assert';
+import crypto from 'crypto';
+import assert from 'assert';
 import { load, testObjectName } from '../helper/index.js';
 
 /**
@@ -43,13 +43,13 @@ export const testGetUrlDownloadMethod = ({
     (suiteDefinition || (() => {})).call(this);
 
     let backend;
-    setup(async () => {
+    setup(async function() {
       const backends = await load('backends');
       backend = backends.get(backendId);
     });
 
     [true, false].forEach(gzipped => {
-      test(`supports getUrl downloads (Content-Encoding: ${gzipped ? "gzip" : "identity"})`, async () => {
+      test(`supports getUrl downloads (Content-Encoding: ${gzipped ? "gzip" : "identity"})`, async function() {
         const data = crypto.randomBytes(256);
         const name = testObjectName(prefix);
         const object = await makeObject({ name, data, hashes: { sha256, sha512 }, gzipped });

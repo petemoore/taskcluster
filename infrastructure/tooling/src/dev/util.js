@@ -1,4 +1,4 @@
-import { URL } from 'node:url';
+import { URL } from 'url';
 
 // Generate a postgres connection URL suitable for use in the configuration and
 // passing to @taskcluster/lib-postgres.  Note that this will not work directly

@@ -1,12 +1,12 @@
 import { Exchanges } from '@taskcluster/lib-pulse';
 import _ from 'lodash';
-import assert from 'node:assert';
+import assert from 'assert';
 import { PUBLISHERS } from './constants.js';
 
 /** Build common routing key construct for `exchanges.declare` */
-const commonRoutingKey = (options) => {
+const commonRoutingKey = function(options) {
   options = options || {};
-  const routingKey = [
+  let routingKey = [
     {
       name: 'routingKeyKind',
       summary: 'Identifier for the routing-key kind. This is ' +
@@ -44,7 +44,7 @@ const commonRoutingKey = (options) => {
   return routingKey;
 };
 
-const commonMessageBuilder = (msg) => {
+const commonMessageBuilder = function(msg) {
   msg.version = 1;
   return msg;
 };
@@ -56,7 +56,7 @@ const commonCCBuilder = (message, routes) => {
 };
 
 /** Declaration of exchanges offered by the github */
-const exchanges = new Exchanges({
+let exchanges = new Exchanges({
   serviceName: 'github',
   projectName: 'taskcluster-github',
   apiVersion: 'v1',

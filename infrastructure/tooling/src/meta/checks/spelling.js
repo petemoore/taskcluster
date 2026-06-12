@@ -1,6 +1,7 @@
-import util from 'node:util';
-import { execFile } from 'node:child_process';
+import util from 'util';
+import { execFile } from 'child_process';
 const execFileAsync = util.promisify(execFile);
+import _ from 'lodash';
 
 export const tasks = [{
   title: 'Proper spelling and capitalization of Taskcluster',
@@ -15,7 +16,7 @@ export const tasks = [{
       "[tT]askclsuter",
       "[tT]asksluter",
     ];
-    for (const pattern of Taskcluster) {
+    for (let pattern of Taskcluster) {
       try {
         const res = await execFileAsync('git', ['grep', pattern, '--', './*', ':!.yarn']);
         // if the grep succeeded, then something matched
