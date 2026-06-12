@@ -1,13 +1,13 @@
-import assert from 'node:assert';
-import fs from 'node:fs';
+import assert from 'assert';
+import fs from 'fs';
 import { getCommonSchemas } from '../src/common-schemas.js';
 import { makeSerializable } from '../src/serializable.js';
 import mockFs from 'mock-fs';
 import References from '../src/index.js';
 import testing from '@taskcluster/lib-testing';
 
-suite(testing.suiteName(), () => {
-  teardown(() => {
+suite(testing.suiteName(), function() {
+  teardown(function() {
     mockFs.restore();
   });
 
@@ -18,13 +18,13 @@ suite(testing.suiteName(), () => {
     });
   };
 
-  test('getSchema', async () => {
+  test('getSchema', async function() {
     assert.equal(
       (await getReferences()).getSchema('/schemas/common/manifest-v3.json#').$id,
       '/schemas/common/manifest-v3.json#');
   });
 
-  test('fromService', async () => {
+  test('fromService', async function() {
     // mock SchemaSet from @taskcluster/lib-validate
     const schemaset = {
       abstractSchemas() {
@@ -49,14 +49,14 @@ suite(testing.suiteName(), () => {
     assert(references.schemas.some(s => s.content.$id === 'somefile.json#'));
   });
 
-  test('makeSerializable', async () => {
+  test('makeSerializable', async function() {
     const references = await getReferences();
     assert.deepEqual(
       references.makeSerializable(),
       makeSerializable({ references }));
   });
 
-  test('writes uri-structured', async () => {
+  test('writes uri-structured', async function() {
     mockFs({});
     const references = new References({
       references: [
@@ -103,12 +103,12 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('empty references pass validation', () => {
+  test('empty references pass validation', function() {
     const references = new References({ references: [], schemas: [] });
     references.validate();
   });
 
-  test('bogus references fail validation', () => {
+  test('bogus references fail validation', function() {
     const references = new References({ references: [], schemas: [
       { filename: 'bogus.json', content: {} },
     ] });

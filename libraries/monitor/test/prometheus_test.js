@@ -1,4 +1,5 @@
-import assert from 'node:assert';
+import assert from 'assert';
+import _ from 'lodash';
 import request from 'superagent';
 import nock from 'nock';
 import MonitorManager from '../src/monitormanager.js';
@@ -44,7 +45,7 @@ MonitorManager.registerMetric('testingGlobalCounter', {
 
 const TEST_PORT = 39090;
 
-suite(testing.suiteName(), () => {
+suite(testing.suiteName(), function() {
   const configDefaults = {
     serviceName: 'testing-service',
     level: 'debug',
@@ -64,11 +65,11 @@ suite(testing.suiteName(), () => {
     },
   };
 
-  suiteTeardown(async () => {
+  suiteTeardown(async function() {
     nock.cleanAll();
   });
 
-  test('starts server and responds to metrics', async () => {
+  test('starts server and responds to metrics', async function() {
     const monitor = MonitorManager.setup(configDefaults);
     monitor.exposeMetrics();
     monitor.metric.testingServiceTestCounter(1);
@@ -82,7 +83,7 @@ suite(testing.suiteName(), () => {
     await monitor.terminate();
   });
 
-  test('server ignores other urls and methods', async () => {
+  test('server ignores other urls and methods', async function () {
     const monitor = MonitorManager.setup(configDefaults);
     monitor.exposeMetrics();
     await assert.rejects(
@@ -96,7 +97,7 @@ suite(testing.suiteName(), () => {
     await monitor.terminate();
   });
 
-  test('global metrics propagate to non-default registries on exposeMetrics', async () => {
+  test('global metrics propagate to non-default registries on exposeMetrics', async function() {
     const monitor = MonitorManager.setup({
       ...configDefaults,
       prometheusConfig: { server: { port: TEST_PORT } },
@@ -118,7 +119,7 @@ suite(testing.suiteName(), () => {
     }
   });
 
-  test('global metrics appear in default registry', async () => {
+  test('global metrics appear in default registry', async function() {
     const monitor = MonitorManager.setup({
       ...configDefaults,
       prometheusConfig: { server: { port: TEST_PORT } },
@@ -135,7 +136,7 @@ suite(testing.suiteName(), () => {
     }
   });
 
-  test('push gateway successfully sends metrics', async () => {
+  test('push gateway successfully sends metrics', async function() {
     const pushGateway = nock('http://push-gateway.test:9091')
       .put('/metrics/job/push-test-job/instance/test-instance', (body) => {
         return body.includes('http_requests_total') &&

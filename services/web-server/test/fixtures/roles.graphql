@@ -1,5 +1,5 @@
-query Roles {
-  roles {
+query Roles($filter: JSON){
+  roles(filter: $filter){
     roleId,
     scopes
   }
