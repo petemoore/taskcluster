@@ -156,7 +156,7 @@ export default class ViewHook extends Component {
     this.setState({ snackbar: { message, variant, open } });
   };
 
-  handleSnackbarClose = (_event, reason) => {
+  handleSnackbarClose = (event, reason) => {
     if (reason === 'clickaway') {
       return;
     }
@@ -181,7 +181,7 @@ export default class ViewHook extends Component {
       snackbar,
       exchangesDictionary,
     } = this.state;
-    const error = data?.error || err;
+    const error = (data && data.error) || err;
     const hookLastFires = data?.hookLastFires?.edges
       ?.map(({ node }) => node)
       .sort((a, b) => new Date(b.taskCreateTime) - new Date(a.taskCreateTime));
@@ -201,13 +201,15 @@ export default class ViewHook extends Component {
         </Breadcrumbs>
         <ErrorPanel fixed error={error} />
         {isNewHook ? (
-          <HookForm
-            isNewHook
-            dialogError={dialogError}
-            actionLoading={actionLoading}
-            onCreateHook={this.handleCreateHook}
-            exchangesDictionary={exchangesDictionary}
-          />
+          <Fragment>
+            <HookForm
+              isNewHook
+              dialogError={dialogError}
+              actionLoading={actionLoading}
+              onCreateHook={this.handleCreateHook}
+              exchangesDictionary={exchangesDictionary}
+            />
+          </Fragment>
         ) : (
           <Fragment>
             {!data.hook && data.loading && <Spinner loading />}

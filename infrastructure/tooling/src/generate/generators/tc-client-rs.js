@@ -1,4 +1,4 @@
-import path from 'node:path';
+import path from 'path';
 import { writeRepoFile, REPO_ROOT } from '../../utils/index.js';
 import mkdirp from 'mkdirp';
 import { rimraf } from 'rimraf';
@@ -97,7 +97,7 @@ pub fn ${t.name}_signed_url(${define_args(with_ttl(with_self(t.args)))}) -> Resu
 const generateServiceClient = (className, reference) => {
   const methods = [];
 
-  for (const entry of reference.entries) {
+  for (let entry of reference.entries) {
     if (entry.type !== 'function') {
       continue;
     }
@@ -184,7 +184,7 @@ const generateServiceClient = (className, reference) => {
     }
 
     if (entry.description) {
-      const ds = entry.description.trim().split('\n');
+      let ds = entry.description.trim().split('\n');
       if (entry.title) {
         ds.unshift('');
         ds.unshift(entry.title);
@@ -230,7 +230,7 @@ const generateModFile = apis => {
   const mods = [];
   const uses = [];
 
-  for (const [className, { referenceKind }] of Object.entries(apis)) {
+  for (let [className, { referenceKind }] of Object.entries(apis)) {
     if (referenceKind !== 'api') {
       continue;
     }
@@ -246,7 +246,7 @@ export const tasks = [{
   requires: ['apis'],
   provides: ['target-taskcluster-client-rust'],
   run: async (requirements, utils) => {
-    const apis = requirements.apis;
+    const apis = requirements['apis'];
     const moduleDir = path.join(REPO_ROOT, 'clients', 'client-rust', 'client', 'src', 'generated');
 
     // clean up the clients directory to eliminate any "leftovers"
@@ -257,7 +257,7 @@ export const tasks = [{
     utils.status({ message: 'mod.rs' });
     await writeRsFile(path.join(moduleDir, 'mod.rs'), generateModFile(apis));
 
-    for (const [className, { reference, referenceKind }] of Object.entries(apis)) {
+    for (let [className, { reference, referenceKind }] of Object.entries(apis)) {
       if (referenceKind !== 'api') {
         continue;
       }

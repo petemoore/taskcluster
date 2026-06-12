@@ -132,7 +132,7 @@ export default class WMLaunchConfigs extends Component {
       workerPool,
       highlightedLaunchConfigId
     ) => {
-      if (!launchConfigsConnection?.edges) {
+      if (!launchConfigsConnection || !launchConfigsConnection.edges) {
         return launchConfigsConnection;
       }
 
@@ -223,7 +223,7 @@ export default class WMLaunchConfigs extends Component {
         workerPool,
         highlightedLaunchConfigId,
       ]) => {
-        if (!launchConfigsConnection?.edges) {
+        if (!launchConfigsConnection || !launchConfigsConnection.edges) {
           return 'empty';
         }
 
@@ -243,7 +243,7 @@ export default class WMLaunchConfigs extends Component {
    */
   sortConnection = memoize(
     (enrichedConnection, sortBy, sortDirection) => {
-      if (!enrichedConnection?.edges || !sortBy) {
+      if (!enrichedConnection || !enrichedConnection.edges || !sortBy) {
         return enrichedConnection;
       }
 
@@ -276,7 +276,7 @@ export default class WMLaunchConfigs extends Component {
     },
     {
       serializer: ([enrichedConnection, sortBy, sortDirection]) => {
-        if (!enrichedConnection?.edges) {
+        if (!enrichedConnection || !enrichedConnection.edges) {
           return `empty-${sortBy}-${sortDirection}`;
         }
 
@@ -338,7 +338,10 @@ export default class WMLaunchConfigs extends Component {
     const { node: launchConfig } = row;
     const wpMaxCapacity = workerPool?.config?.maxCapacity ?? 'n/a';
     const launchConfigId =
-      launchConfig?.launchConfigId || Math.random().toString(36).substring(2);
+      launchConfig?.launchConfigId ||
+      Math.random()
+        .toString(36)
+        .substring(2);
     const initialWeight =
       launchConfig.configuration?.workerManager?.initialWeight ?? 1;
     const maxCapacity =
@@ -453,8 +456,8 @@ export default class WMLaunchConfigs extends Component {
   render() {
     const { data, match, location, classes } = this.props;
     const { sortBy, sortDirection, selectedLaunchConfig } = this.state;
-    const loading = !data?.WorkerPoolLaunchConfigs || data.loading;
-    const error = data?.error;
+    const loading = !data || !data.WorkerPoolLaunchConfigs || data.loading;
+    const error = data && data.error;
     const workerPoolId = decodeURIComponent(match.params.workerPoolId ?? '');
     const errorsStats = data?.WorkerManagerErrorsStats?.totals ?? {};
     const workerPoolStats = data?.WorkerPoolStats;

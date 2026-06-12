@@ -14,13 +14,16 @@ import generateRustExample from './rust';
 import generateShellExample from './shell';
 import generatePayloadExample from './payload-generator';
 
+// Default version - should match the current Taskcluster version
+const DEFAULT_VERSION = '93';
 // Import references for schema lookup
 let references = [];
 
 try {
   // Try to import references - will be available after yarn generate
+  // eslint-disable-next-line global-require
   references = require('../../../../generated/references.json');
-} catch (_e) {
+} catch (e) {
   // References not available - examples will use placeholder payloads
 }
 
@@ -47,9 +50,16 @@ function getSchemaContent(schemaId) {
  * @param {string} serviceName - Service name (e.g., 'queue', 'auth')
  * @param {string} apiVersion - API version (e.g., 'v1')
  * @param {object} entry - API entry metadata from references.json
+ * @param {string} version - Taskcluster version (e.g., '93')
  * @returns {string|null} Code example or null if not found
  */
-function generateSingleExample(language, serviceName, apiVersion, entry) {
+function generateSingleExample(
+  language,
+  serviceName,
+  apiVersion,
+  entry,
+  version = DEFAULT_VERSION
+) {
   // Generate payload example if entry has input schema
   let payloadExample = null;
 
@@ -66,15 +76,38 @@ function generateSingleExample(language, serviceName, apiVersion, entry) {
   const generators = {
     curl: () =>
       generateCurlExample(serviceName, apiVersion, entry, payloadExample),
-    go: () => generateGoExample(serviceName, entry, payloadExample),
+    go: () =>
+      generateGoExample(
+        serviceName,
+        apiVersion,
+        entry,
+        version,
+        payloadExample
+      ),
     python: () =>
-      generatePythonExample(serviceName, entry, false, payloadExample),
+      generatePythonExample(
+        serviceName,
+        apiVersion,
+        entry,
+        false,
+        payloadExample
+      ),
     pythonAsync: () =>
-      generatePythonExample(serviceName, entry, true, payloadExample),
-    node: () => generateNodeExample(serviceName, entry, payloadExample),
-    web: () => generateWebExample(serviceName, entry, payloadExample),
-    rust: () => generateRustExample(serviceName, entry, payloadExample),
-    shell: () => generateShellExample(serviceName, entry, payloadExample),
+      generatePythonExample(
+        serviceName,
+        apiVersion,
+        entry,
+        true,
+        payloadExample
+      ),
+    node: () =>
+      generateNodeExample(serviceName, apiVersion, entry, payloadExample),
+    web: () =>
+      generateWebExample(serviceName, apiVersion, entry, payloadExample),
+    rust: () =>
+      generateRustExample(serviceName, apiVersion, entry, payloadExample),
+    shell: () =>
+      generateShellExample(serviceName, apiVersion, entry, payloadExample),
   };
   const generator = generators[language];
 
@@ -92,13 +125,15 @@ function generateSingleExample(language, serviceName, apiVersion, entry) {
  * @param {string} apiVersion - API version (e.g., 'v1')
  * @param {object} entry - API entry metadata
  * @param {string} [language] - Optional language to generate
+ * @param {string} [version] - Optional Taskcluster version
  * @returns {object|string|null} Examples object or string or null
  */
 export default function generateExamples(
   serviceName,
   apiVersion,
   entry,
-  language = null
+  language = null,
+  version = DEFAULT_VERSION
 ) {
   // Only generate examples for function entries (not exchanges, logs, etc.)
   if (entry.type !== 'function') {
@@ -107,24 +142,61 @@ export default function generateExamples(
 
   // If a specific language is requested, generate only that one (lazy loading)
   if (language) {
-    return generateSingleExample(language, serviceName, apiVersion, entry);
+    return generateSingleExample(
+      language,
+      serviceName,
+      apiVersion,
+      entry,
+      version
+    );
   }
 
   // Generate all examples
   const examples = {
-    curl: generateSingleExample('curl', serviceName, apiVersion, entry),
-    go: generateSingleExample('go', serviceName, apiVersion, entry),
-    python: generateSingleExample('python', serviceName, apiVersion, entry),
+    curl: generateSingleExample(
+      'curl',
+      serviceName,
+      apiVersion,
+      entry,
+      version
+    ),
+    go: generateSingleExample('go', serviceName, apiVersion, entry, version),
+    python: generateSingleExample(
+      'python',
+      serviceName,
+      apiVersion,
+      entry,
+      version
+    ),
     pythonAsync: generateSingleExample(
       'pythonAsync',
       serviceName,
       apiVersion,
-      entry
+      entry,
+      version
     ),
-    node: generateSingleExample('node', serviceName, apiVersion, entry),
-    web: generateSingleExample('web', serviceName, apiVersion, entry),
-    rust: generateSingleExample('rust', serviceName, apiVersion, entry),
-    shell: generateSingleExample('shell', serviceName, apiVersion, entry),
+    node: generateSingleExample(
+      'node',
+      serviceName,
+      apiVersion,
+      entry,
+      version
+    ),
+    web: generateSingleExample('web', serviceName, apiVersion, entry, version),
+    rust: generateSingleExample(
+      'rust',
+      serviceName,
+      apiVersion,
+      entry,
+      version
+    ),
+    shell: generateSingleExample(
+      'shell',
+      serviceName,
+      apiVersion,
+      entry,
+      version
+    ),
   };
 
   return examples;

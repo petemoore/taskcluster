@@ -1,4 +1,4 @@
-import path from 'node:path';
+import path from 'path';
 import { REPO_ROOT, execCommand } from '../../utils/index.js';
 
 export const tasks = [{
