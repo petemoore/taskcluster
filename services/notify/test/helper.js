@@ -1,5 +1,5 @@
-import assert from 'node:assert';
-import path from 'node:path';
+import assert from 'assert';
+import path from 'path';
 import {
   SESv2Client,
   SendEmailCommand,
@@ -41,7 +41,7 @@ const load = testing.stickyLoader(mainLoad);
 const helper = { load, rootUrl, suiteName };
 export default helper;
 
-suiteSetup(async () => {
+suiteSetup(async function() {
   load.inject('profile', 'test');
   load.inject('process', 'test');
 });
@@ -66,7 +66,7 @@ helper.secrets = new testing.Secrets({
  * Define a fake denier that will deny anything with 'denied' in the address
  */
 helper.withDenier = (mock, skipping) => {
-  suiteSetup('withDenier', async () => {
+  suiteSetup('withDenier', async function() {
     if (skipping()) {
       return;
     }
@@ -82,7 +82,7 @@ helper.withSES = (mock, skipping) => {
   let ses;
   let sqs;
 
-  suiteSetup('withSES', async () => {
+  suiteSetup('withSES', async function() {
     if (skipping()) {
       return;
     }
@@ -130,7 +130,7 @@ helper.withSES = (mock, skipping) => {
       }
 
       // Send emails to sqs for testing
-      const sns = new SNSClient({
+      let sns = new SNSClient({
         credentials: {
           accessKeyId: cfg.aws.accessKeyId,
           secretAccessKey: cfg.aws.secretAccessKey,
@@ -188,7 +188,7 @@ helper.withSES = (mock, skipping) => {
           WaitTimeSeconds: 20,
         }));
         const messages = resp.Messages || [];
-        for (const message of messages) {
+        for (let message of messages) {
           await sqs.send(new DeleteMessageCommand({
             QueueUrl: emailSQSQueue,
             ReceiptHandle: message.ReceiptHandle,
@@ -200,7 +200,7 @@ helper.withSES = (mock, skipping) => {
     }
   });
 
-  suiteTeardown('withSES', async () => {
+  suiteTeardown('withSES', async function() {
     if (skipping()) {
       return;
     }
@@ -231,7 +231,7 @@ const stubbedQueue = () => {
     },
   });
 
-  queue.addTask = (taskId, task) => {
+  queue.addTask = function(taskId, task) {
     tasks[taskId] = task;
   };
 
@@ -246,7 +246,7 @@ const stubbedQueue = () => {
  * The component is available at `helper.queue`.
  */
 helper.withFakeQueue = (mock, skipping) => {
-  suiteSetup('withFakeQueue', () => {
+  suiteSetup('withFakeQueue', function() {
     if (skipping()) {
       return;
     }
@@ -265,7 +265,7 @@ const fakeMatrixSend = () => sinon.fake(roomId => {
 });
 
 helper.withFakeMatrix = (mock, skipping) => {
-  suiteSetup('withFakeMatrix', () => {
+  suiteSetup('withFakeMatrix', function() {
     if (skipping()) {
       return;
     }
@@ -277,7 +277,7 @@ helper.withFakeMatrix = (mock, skipping) => {
     load.inject('matrixClient', helper.matrixClient);
   });
 
-  setup(() => {
+  setup(function() {
     helper.matrixClient.sendEvent = fakeMatrixSend();
   });
 };
@@ -285,7 +285,7 @@ helper.withFakeMatrix = (mock, skipping) => {
 helper.withFakeSlack = (mock, skipping) => {
   const fakeSlackSend = () => sinon.fake(() => ({ ok: true }));
 
-  suiteSetup('withFakeSlack', async () => {
+  suiteSetup('withFakeSlack', async function() {
     if (skipping()) {
       return;
     }
@@ -299,7 +299,7 @@ helper.withFakeSlack = (mock, skipping) => {
     load.inject('slackClient', helper.slackClient);
   });
 
-  setup(() => {
+  setup(function() {
     helper.slackClient.chat.postMessage = fakeSlackSend();
   });
 };
@@ -314,7 +314,7 @@ helper.withPulse = (mock, skipping) => {
 helper.withServer = (mock, skipping) => {
   let webServer;
 
-  suiteSetup('withServer', async () => {
+  suiteSetup('withServer', async function() {
     if (skipping()) {
       return;
     }
@@ -344,7 +344,7 @@ helper.withServer = (mock, skipping) => {
     webServer = await load('server');
   });
 
-  suiteTeardown(async () => {
+  suiteTeardown(async function() {
     if (skipping()) {
       return;
     }
@@ -361,7 +361,7 @@ helper.withDb = (mock, skipping) => {
 };
 
 helper.resetTables = (mock, skipping) => {
-  setup('reset tables', async () => {
+  setup('reset tables', async function() {
     await testing.resetTables({ tableNames: [
       'denylisted_notifications',
     ] });

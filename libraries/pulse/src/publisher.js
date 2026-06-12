@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import libUrls from 'taskcluster-lib-urls';
 import debugFactory from 'debug';
 const debug = debugFactory('@taskcluster/lib-pulse.publisher');
@@ -122,7 +122,7 @@ export class Entry {
     let firstMultiWordKey = null;
 
     assert(Array.isArray(this.routingKey), 'routingKey must be an Array');
-    for (const key of this.routingKey) {
+    for (let key of this.routingKey) {
       // Check that the key name is unique
       assert(keyNames.indexOf(key.name) === -1,
         `Routing key entry named ${key.name} already exists`);
@@ -156,7 +156,7 @@ export class Entry {
       }
 
       // Check that we have a maxSize
-      assert(typeof key.maxSize === 'number' && key.maxSize > 0,
+      assert(typeof key.maxSize == 'number' && key.maxSize > 0,
         `routingKey declaration ${key.name} must have maxSize > 0`);
 
       // Check size left in routingKey space
@@ -176,7 +176,7 @@ export class PulsePublisher {
     this.schemaset = schemaset;
     this.client = client;
     this.exchanges = exchanges;
-    this.sendDeadline = sendDeadline || 30000;
+    this.sendDeadline = sendDeadline || 12000;
     this.blocked = true;
 
     if (process.env.NODE_ENV === 'production') {
@@ -289,7 +289,7 @@ export class PulsePublisher {
   async _declareMethods() {
     const validator = await this.schemaset.validator(this.rootUrl);
 
-    for (const entry of this.exchanges.entries) {
+    for (let entry of this.exchanges.entries) {
       const exchange = this.exchanges.exchangePrefix + entry.exchange;
 
       this[entry.name] = async (...args) => {
@@ -307,7 +307,7 @@ export class PulsePublisher {
           entry.routingKeyBuilder.apply(undefined, args));
 
         const CCs = entry.CCBuilder.apply(undefined, args);
-        assert(Array.isArray(CCs), 'CCBuilder must return an array');
+        assert(CCs instanceof Array, 'CCBuilder must return an array');
 
         // Serialize message to buffer
         const payload = Buffer.from(JSON.stringify(message), 'utf8');
@@ -399,7 +399,7 @@ export class PulsePublisher {
    */
   _validateMessage(rootUrl, serviceName, validator, entry, message) {
     const schema = libUrls.schema(rootUrl, serviceName, entry.schema);
-    const err = validator(message, schema);
+    let err = validator(message, schema);
     if (err) {
       debug('Failed to validate message: %j against schema: %s, error: %j',
         message, entry.schema, err);

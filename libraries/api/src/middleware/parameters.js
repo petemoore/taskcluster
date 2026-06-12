@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 
 /**
  * Create parameter validation middle-ware instance, given a mapping from

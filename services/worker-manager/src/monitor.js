@@ -226,24 +226,6 @@ MonitorManager.register({
 });
 
 MonitorManager.register({
-  name: 'registrationRejectedIntermediateCertificateUrl',
-  title: 'Registration Rejected Intermediate Certificate URL',
-  type: 'registration-rejected-intermediate-certificate-url',
-  version: 1,
-  level: 'warning',
-  description: `
-    A worker registration attempted to download an intermediate certificate from
-    a URL that is outside the configured AIA allowlist.
-  `,
-  fields: {
-    url: 'The rejected intermediate certificate URL',
-    workerPoolId: 'The worker pool ID',
-    providerId: 'The provider that did the work for this worker pool.',
-    workerId: 'The worker that failed',
-  },
-});
-
-MonitorManager.register({
   name: 'launchConfigSelectorsDebug',
   title: 'Launch Config Selector Debug Information',
   type: 'launch-config-selector-debug',
@@ -298,28 +280,6 @@ MonitorManager.register({
     vmName: 'Azure VM name',
     provisioningState: 'Provisioning state returned by virtualMachines.get',
     instanceView404Streak: 'Consecutive count of instanceView 404 responses',
-  },
-});
-
-MonitorManager.register({
-  name: 'azureThrottled',
-  title: 'Azure API Throttled (429)',
-  type: 'azure-throttled',
-  version: 1,
-  level: 'warning',
-  description: `
-    Azure ARM API returned HTTP 429 (Too Many Requests).
-    Includes rate-limit headers from the throttled response for diagnosing
-    which subscription limits are being hit.
-  `,
-  fields: {
-    providerId: 'Provider ID',
-    operationType: 'HTTP operation category: read, write, or delete',
-    retryAfterSeconds: 'Retry-After header value in seconds, or null if absent',
-    remainingReads: 'x-ms-ratelimit-remaining-subscription-reads value, or null',
-    remainingWrites: 'x-ms-ratelimit-remaining-subscription-writes value, or null',
-    remainingDeletes: 'x-ms-ratelimit-remaining-subscription-deletes value, or null',
-    remainingResource: 'x-ms-ratelimit-remaining-resource raw value, or null',
   },
 });
 
@@ -531,49 +491,4 @@ MonitorManager.registerMetric('workersToTerminate', {
     reason: 'Reason for termination (over_capacity, launch_config_archived)',
   },
   registers: ['scan'],
-});
-
-MonitorManager.registerMetric('azureThrottleCount', {
-  name: 'worker_manager_azure_throttle_total',
-  type: 'counter',
-  title: 'Azure API throttle events',
-  description: 'Count of HTTP 429 responses from Azure ARM API',
-  labels: {
-    providerId: 'ID of the provider',
-    operationType: 'HTTP operation category: read, write, or delete',
-  },
-  registers: ['provision', 'scan'],
-});
-
-MonitorManager.registerMetric('azureArmDeploymentError', {
-  name: 'worker_manager_azure_arm_deployment_errors_total',
-  type: 'counter',
-  title: 'Azure ARM deployment errors',
-  description: 'Count of Azure ARM deployment creation failures and failed deployment operations by worker pool, location, and Azure error details',
-  labels: {
-    providerId: 'ID of the provider',
-    workerPoolId: 'The worker pool ID',
-    workerGroup: 'Worker group (region/zone/location)',
-    errorKind: 'Worker-manager error kind',
-    errorCode: 'Azure error code',
-    statusCode: 'Operation status code from the resource provider',
-    provisioningState: 'Azure provisioning state',
-    provisioningOperation: 'Azure provisioning operation',
-    targetResourceType: 'Azure target resource type',
-    vmSize: 'Azure VM size',
-    priority: 'Azure VM priority',
-  },
-  registers: ['provision', 'scan'],
-});
-
-MonitorManager.registerMetric('azureRateLimitRemaining', {
-  name: 'worker_manager_azure_ratelimit_remaining',
-  type: 'gauge',
-  title: 'Azure rate limit remaining quota',
-  description: 'Most recently observed value of Azure x-ms-ratelimit-remaining-subscription-* headers',
-  labels: {
-    providerId: 'ID of the provider',
-    limitType: 'Rate limit category: reads, writes, or deletes',
-  },
-  registers: ['provision', 'scan'],
 });

@@ -1,6 +1,6 @@
 import debugFactory from 'debug';
 const debug = debugFactory('test:dependencies');
-import assert from 'node:assert';
+import assert from 'assert';
 import slugid from 'slugid';
 import _ from 'lodash';
 import taskcluster from '@taskcluster/client';
@@ -9,7 +9,7 @@ import assume from 'assume';
 import helper from './helper.js';
 import { LEVELS } from '@taskcluster/lib-monitor';
 
-helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
+helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) {
   helper.withDb(mock, skipping);
   helper.withAmazonIPRanges(mock, skipping);
   helper.withPollingServices(mock, skipping);
@@ -33,16 +33,16 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
   });
 
   let monitor;
-  suiteSetup(async () => {
+  suiteSetup(async function() {
     monitor = await helper.load('monitor');
   });
 
   test('taskA <- taskB', async () => {
-    const taskIdA = slugid.v4();
-    const taskIdB = slugid.v4();
+    let taskIdA = slugid.v4();
+    let taskIdB = slugid.v4();
 
-    const taskA = taskDef();
-    const taskB = _.defaults({
+    let taskA = taskDef();
+    let taskB = _.defaults({
       dependencies: [taskIdA],
     }, taskDef());
 
@@ -50,7 +50,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     await helper.startPollingService('dependency-resolver');
 
     debug('### Create taskA and taskB');
-    const r1 = await helper.queue.createTask(taskIdA, taskA);
+    let r1 = await helper.queue.createTask(taskIdA, taskA);
     helper.assertPulseMessage('task-defined', m => m.payload.status.taskId === taskIdA);
     helper.assertPulseMessage('task-pending', m => m.payload.status.taskId === taskIdA);
     assert.deepEqual(monitor.manager.messages.find(({ Type }) => Type === 'task-defined'), {
@@ -68,7 +68,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     helper.clearPulseMessages();
     monitor.manager.reset();
 
-    const r2 = await helper.queue.createTask(taskIdB, taskB);
+    let r2 = await helper.queue.createTask(taskIdB, taskB);
     helper.assertPulseMessage('task-defined', m => m.payload.status.taskId === taskIdB);
     assume(r1.status.state).equals('pending');
     assume(r2.status.state).equals('unscheduled');
@@ -85,11 +85,11 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     debug('### listTaskDependents');
     {
       helper.scopes(`queue:list-dependent-tasks:${taskIdA}`, `queue:list-dependent-tasks:${taskIdB}`);
-      const d1 = await helper.queue.listDependentTasks(taskIdA);
+      let d1 = await helper.queue.listDependentTasks(taskIdA);
       assume(d1.taskId).equals(taskIdA);
       assume(d1.tasks).has.length(1);
       assume(d1.tasks[0].status.taskId).equals(taskIdB);
-      const d2 = await helper.queue.listDependentTasks(taskIdB);
+      let d2 = await helper.queue.listDependentTasks(taskIdB);
       assume(d2.taskId).equals(taskIdB);
       assume(d2.tasks).has.length(0);
 
@@ -155,11 +155,11 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
 
     debug('### listTaskDependents');
     {
-      const d1 = await helper.queue.listDependentTasks(taskIdA);
+      let d1 = await helper.queue.listDependentTasks(taskIdA);
       assume(d1.taskId).equals(taskIdA);
       assume(d1.tasks).has.length(1);
       assume(d1.tasks[0].status.taskId).equals(taskIdB);
-      const d2 = await helper.queue.listDependentTasks(taskIdB);
+      let d2 = await helper.queue.listDependentTasks(taskIdB);
       assume(d2.taskId).equals(taskIdB);
       assume(d2.tasks).has.length(0);
     }
@@ -168,19 +168,19 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
   });
 
   test('taskA <- taskB, taskC, taskD, taskE', async () => {
-    const taskIdA = slugid.v4();
-    const taskIdB = slugid.v4();
-    const taskIdC = slugid.v4();
-    const taskIdD = slugid.v4();
-    const taskIdE = slugid.v4();
+    let taskIdA = slugid.v4();
+    let taskIdB = slugid.v4();
+    let taskIdC = slugid.v4();
+    let taskIdD = slugid.v4();
+    let taskIdE = slugid.v4();
 
-    const taskA = taskDef();
-    const taskB = _.defaults({
+    let taskA = taskDef();
+    let taskB = _.defaults({
       dependencies: [taskIdA],
     }, taskDef());
-    const taskC = _.cloneDeep(taskB);
-    const taskD = _.cloneDeep(taskB);
-    const taskE = _.cloneDeep(taskB);
+    let taskC = _.cloneDeep(taskB);
+    let taskD = _.cloneDeep(taskB);
+    let taskE = _.cloneDeep(taskB);
 
     // Start dependency-resolver
     await helper.startPollingService('dependency-resolver');
@@ -192,7 +192,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     helper.clearPulseMessages();
 
     debug('### listTaskDependents');
-    const d1 = await helper.queue.listDependentTasks(taskIdA);
+    let d1 = await helper.queue.listDependentTasks(taskIdA);
     assume(d1.taskId).equals(taskIdA);
     assume(d1.tasks).has.length(0);
 
@@ -215,7 +215,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     helper.clearPulseMessages();
 
     debug('### listTaskDependents');
-    const d2 = await helper.queue.listDependentTasks(taskIdA);
+    let d2 = await helper.queue.listDependentTasks(taskIdA);
     assume(d2.taskId).equals(taskIdA);
     assume(d2.tasks).has.length(4);
     assume(d2.tasks.map(t => t.status.taskId)).contains(taskIdB);
@@ -242,16 +242,16 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     }, 200, 250);
 
     debug('### listTaskDependents, limit = 2');
-    const d3 = await helper.queue.listDependentTasks(taskIdA, { limit: 2 });
+    let d3 = await helper.queue.listDependentTasks(taskIdA, { limit: 2 });
     assume(d3.tasks).has.length(2);
     assume(d3).ownProperty('continuationToken');
-    const d4 = await helper.queue.listDependentTasks(taskIdA, {
+    let d4 = await helper.queue.listDependentTasks(taskIdA, {
       limit: 2,
       continuationToken: d3.continuationToken,
     });
     assume(d4.tasks).has.length(2);
     assume(d4).not.has.ownProperty('continuationToken');
-    const tids = _.flatten([d3.tasks, d4.tasks]).map(t => t.status.taskId);
+    let tids = _.flatten([d3.tasks, d4.tasks]).map(t => t.status.taskId);
     assume(tids).contains(taskIdB);
     assume(tids).contains(taskIdC);
     assume(tids).contains(taskIdD);
@@ -261,17 +261,17 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
   });
 
   test('taskA, taskB <- taskC && taskA <- taskD', async () => {
-    const taskIdA = slugid.v4();
-    const taskIdB = slugid.v4();
-    const taskIdC = slugid.v4();
-    const taskIdD = slugid.v4();
+    let taskIdA = slugid.v4();
+    let taskIdB = slugid.v4();
+    let taskIdC = slugid.v4();
+    let taskIdD = slugid.v4();
 
-    const taskA = taskDef();
-    const taskB = taskDef();
-    const taskC = _.defaults({
+    let taskA = taskDef();
+    let taskB = taskDef();
+    let taskC = _.defaults({
       dependencies: [taskIdA, taskIdB],
     }, taskDef());
-    const taskD = _.defaults({
+    let taskD = _.defaults({
       dependencies: [taskIdA],
     }, taskDef());
 
@@ -279,19 +279,19 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     await helper.startPollingService('dependency-resolver');
 
     debug('### Create taskA, taskB, taskC');
-    const r1 = await helper.queue.createTask(taskIdA, taskA);
+    let r1 = await helper.queue.createTask(taskIdA, taskA);
     helper.assertPulseMessage('task-defined', m => m.payload.status.taskId === taskIdA);
     helper.assertPulseMessage('task-pending', m => m.payload.status.taskId === taskIdA);
     helper.clearPulseMessages();
-    const r2 = await helper.queue.createTask(taskIdB, taskB);
+    let r2 = await helper.queue.createTask(taskIdB, taskB);
     helper.assertPulseMessage('task-defined', m => m.payload.status.taskId === taskIdB);
     helper.assertPulseMessage('task-pending', m => m.payload.status.taskId === taskIdB);
     helper.clearPulseMessages();
-    const r3 = await helper.queue.createTask(taskIdC, taskC);
+    let r3 = await helper.queue.createTask(taskIdC, taskC);
     helper.assertPulseMessage('task-defined', m => m.payload.status.taskId === taskIdC);
     helper.assertNoPulseMessage('task-pending');
     helper.clearPulseMessages();
-    const r4 = await helper.queue.createTask(taskIdD, taskD);
+    let r4 = await helper.queue.createTask(taskIdD, taskD);
     helper.assertPulseMessage('task-defined', m => m.payload.status.taskId === taskIdD);
     helper.assertNoPulseMessage('task-pending');
     helper.clearPulseMessages();
@@ -340,13 +340,13 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
   });
 
   test('taskA <- taskA (self-dependency)', async () => {
-    const taskIdA = slugid.v4();
-    const taskA = _.defaults({
+    let taskIdA = slugid.v4();
+    let taskA = _.defaults({
       dependencies: [taskIdA],
     }, taskDef());
 
     debug('### Create taskA');
-    const r1 = await helper.queue.createTask(taskIdA, taskA);
+    let r1 = await helper.queue.createTask(taskIdA, taskA);
     assume(r1.status.state).equals('unscheduled');
     helper.assertPulseMessage('task-defined', m => m.payload.status.taskId === taskIdA);
     helper.assertNoPulseMessage('task-pending'); // because of the self-dep
@@ -365,17 +365,17 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
   });
 
   test('taskA, taskB <- taskB (self-dependency)', async () => {
-    const taskIdA = slugid.v4();
-    const taskIdB = slugid.v4();
+    let taskIdA = slugid.v4();
+    let taskIdB = slugid.v4();
 
-    const taskA = taskDef();
-    const taskB = _.defaults({
+    let taskA = taskDef();
+    let taskB = _.defaults({
       dependencies: [taskIdA, taskIdB],
     }, taskDef());
 
     debug('### Create taskA, taskB');
-    const r1 = await helper.queue.createTask(taskIdA, taskA);
-    const r2 = await helper.queue.createTask(taskIdB, taskB);
+    let r1 = await helper.queue.createTask(taskIdA, taskA);
+    let r2 = await helper.queue.createTask(taskIdB, taskB);
     assume(r1.status.state).equals('pending');
     assume(r2.status.state).equals('unscheduled');
     helper.assertPulseMessage('task-defined', m => m.payload.status.taskId === taskIdA);
@@ -397,15 +397,15 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     helper.clearPulseMessages();
 
     debug('### Check B is still unscheduled');
-    const r3 = helper.checkDates(await helper.queue.status(taskIdB));
+    let r3 = helper.checkDates(await helper.queue.status(taskIdB));
     assume(r3.status.state).equals('unscheduled');
     helper.assertNoPulseMessage('task-pending'); // because of the self-dep
     helper.clearPulseMessages();
   });
 
   test('taskX <- taskA (missing dependency)', async () => {
-    const taskIdA = slugid.v4();
-    const taskA = _.defaults({
+    let taskIdA = slugid.v4();
+    let taskA = _.defaults({
       dependencies: [slugid.v4()],
     }, taskDef());
 
@@ -431,11 +431,11 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
   });
 
   test('taskA <- taskB (reportFailed)', async () => {
-    const taskIdA = slugid.v4();
-    const taskIdB = slugid.v4();
+    let taskIdA = slugid.v4();
+    let taskIdB = slugid.v4();
 
-    const taskA = taskDef();
-    const taskB = _.defaults({
+    let taskA = taskDef();
+    let taskB = _.defaults({
       dependencies: [taskIdA],
     }, taskDef());
 
@@ -443,8 +443,8 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     await helper.startPollingService('dependency-resolver');
 
     debug('### Create taskA and taskB');
-    const r1 = await helper.queue.createTask(taskIdA, taskA);
-    const r2 = await helper.queue.createTask(taskIdB, taskB);
+    let r1 = await helper.queue.createTask(taskIdA, taskA);
+    let r2 = await helper.queue.createTask(taskIdB, taskB);
     assume(r1.status.state).equals('pending');
     assume(r2.status.state).equals('unscheduled');
 
@@ -458,18 +458,18 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     debug('### Wait and check that taskB is unscheduled');
     // wait long enough for the dependencyResolver to run (it's fake time anyway!)
     await new Promise(accept => setTimeout(accept, 2000));
-    const r3 = helper.checkDates(await helper.queue.status(taskIdB));
+    let r3 = helper.checkDates(await helper.queue.status(taskIdB));
     assume(r3.status.state).equals('unscheduled');
 
     await helper.stopPollingService();
   });
 
   test('taskA <- taskB (cancelTask)', async () => {
-    const taskIdA = slugid.v4();
-    const taskIdB = slugid.v4();
+    let taskIdA = slugid.v4();
+    let taskIdB = slugid.v4();
 
-    const taskA = taskDef();
-    const taskB = _.defaults({
+    let taskA = taskDef();
+    let taskB = _.defaults({
       dependencies: [taskIdA],
     }, taskDef());
 
@@ -477,8 +477,8 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     await helper.startPollingService('dependency-resolver');
 
     debug('### Create taskA and taskB');
-    const r1 = await helper.queue.createTask(taskIdA, taskA);
-    const r2 = await helper.queue.createTask(taskIdB, taskB);
+    let r1 = await helper.queue.createTask(taskIdA, taskA);
+    let r2 = await helper.queue.createTask(taskIdB, taskB);
     assume(r1.status.state).equals('pending');
     assume(r2.status.state).equals('unscheduled');
 
@@ -488,18 +488,18 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     debug('### Wait and check that taskB is unscheduled');
     // wait long enough for the dependencyResolver to run (it's fake time anyway!)
     await new Promise(accept => setTimeout(accept, 1000));
-    const r3 = helper.checkDates(await helper.queue.status(taskIdB));
+    let r3 = helper.checkDates(await helper.queue.status(taskIdB));
     assume(r3.status.state).equals('unscheduled');
 
     await helper.stopPollingService();
   });
 
   test('taskA <- taskB (reportFailed w. all-resolved)', async () => {
-    const taskIdA = slugid.v4();
-    const taskIdB = slugid.v4();
+    let taskIdA = slugid.v4();
+    let taskIdB = slugid.v4();
 
-    const taskA = taskDef();
-    const taskB = _.defaults({
+    let taskA = taskDef();
+    let taskB = _.defaults({
       dependencies: [taskIdA],
       requires: 'all-resolved',
     }, taskDef());
@@ -508,7 +508,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     await helper.startPollingService('dependency-resolver');
 
     debug('### Create taskA and taskB');
-    const r1 = await helper.queue.createTask(taskIdA, taskA); // 0NrmWy6kQKClb1gUuFndBw
+    let r1 = await helper.queue.createTask(taskIdA, taskA); // 0NrmWy6kQKClb1gUuFndBw
     // put into taskgroups
     // put into taskgroupmembers
     // put into tsakgroupactivesets
@@ -516,7 +516,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     // put into Tasks
     // put into taskrequirements
     // put into taskdependency
-    const r2 = await helper.queue.createTask(taskIdB, taskB); // JdDSGUoaSvediUtA_U8zAQ
+    let r2 = await helper.queue.createTask(taskIdB, taskB); // JdDSGUoaSvediUtA_U8zAQ
     // same
     assume(r1.status.state).equals('pending');
     assume(r2.status.state).equals('unscheduled');
@@ -552,18 +552,18 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
 
   // https://github.com/taskcluster/taskcluster/issues/7829
   test('taskA <- taskB (all-completed) + taskC (all-resolved)', async () => {
-    const taskIdA = slugid.v4();
+    let taskIdA = slugid.v4();
     // Ensure taskIdB < taskIdC lexicographically so B is processed first.
     // The bug only happened if the all-completed task was processed first
-    const taskIdB = 'A' + slugid.v4().slice(1);
-    const taskIdC = 'B' + slugid.v4().slice(1);
+    let taskIdB = 'A' + slugid.v4().slice(1);
+    let taskIdC = 'B' + slugid.v4().slice(1);
 
-    const taskA = taskDef();
-    const taskB = _.defaults({
+    let taskA = taskDef();
+    let taskB = _.defaults({
       dependencies: [taskIdA],
       requires: 'all-completed',
     }, taskDef());
-    const taskC = _.defaults({
+    let taskC = _.defaults({
       dependencies: [taskIdA],
       requires: 'all-resolved',
     }, taskDef());
@@ -571,9 +571,9 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     await helper.startPollingService('dependency-resolver');
 
     debug('### Create taskA, taskB, and taskC');
-    const r1 = await helper.queue.createTask(taskIdA, taskA);
-    const r2 = await helper.queue.createTask(taskIdB, taskB);
-    const r3 = await helper.queue.createTask(taskIdC, taskC);
+    let r1 = await helper.queue.createTask(taskIdA, taskA);
+    let r2 = await helper.queue.createTask(taskIdB, taskB);
+    let r3 = await helper.queue.createTask(taskIdC, taskC);
     assume(r1.status.state).equals('pending');
     assume(r2.status.state).equals('unscheduled');
     assume(r3.status.state).equals('unscheduled');
@@ -594,7 +594,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
       200, 250);
 
     debug('### Verify taskB (all-completed) stays unscheduled');
-    const statusB = helper.checkDates(await helper.queue.status(taskIdB));
+    let statusB = helper.checkDates(await helper.queue.status(taskIdB));
     assume(statusB.status.state).equals('unscheduled');
 
     helper.clearPulseMessages();
@@ -680,7 +680,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     // now verify that each of those tasks is pending
     const seen = new Set();
     await testing.poll(async () => {
-      for (const [i, depTaskId] of depTaskIds.entries()) {
+      for (let [i, depTaskId] of depTaskIds.entries()) {
         if (seen.has(depTaskId)) {
           continue;
         }

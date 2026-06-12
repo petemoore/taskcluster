@@ -61,7 +61,7 @@ export default class ListHookGroups extends Component {
       data: { loading, error, hookGroups },
     } = this.props;
     const { search } = parse(window.location.search.slice(1));
-    const hookGroupIds = hookGroups?.map(group => group?.hookGroupId);
+    const hookGroupIds = hookGroups?.map(group => group?.hookGroupId).flat();
 
     return (
       <Dashboard
@@ -92,7 +92,7 @@ export default class ListHookGroups extends Component {
           spanProps={{ className: classes.actionButton }}
           tooltipProps={{ title: 'Create Hook' }}
           color="secondary"
-          variant="circular"
+          variant="round"
           onClick={this.handleCreateHook}>
           <PlusIcon />
         </Button>

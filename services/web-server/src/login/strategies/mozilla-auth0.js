@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import request from 'superagent';
 import passport from 'passport';
 import Auth0Strategy from 'passport-auth0';
@@ -42,7 +42,7 @@ export default class MozillaAuth0 {
       access_token: accessToken,
       expires_in: expiresIn,
     } = JSON.parse(res.text);
-    const expires = Date.now() + (expiresIn * 1000);
+    const expires = new Date().getTime() + (expiresIn * 1000);
 
     if (!accessToken) {
       throw new Error('did not receive a token from Auth0 /oauth/token endpoint');
@@ -53,7 +53,7 @@ export default class MozillaAuth0 {
 
   get isTokenExpired() {
     const offset = 10 * 60 * 1000; // expire a bit earlier to be safe
-    return this._personApiExp - offset < Date.now();
+    return this._personApiExp - offset < new Date().getTime();
   }
 
   async getPersonApi() {
@@ -162,9 +162,9 @@ export default class MozillaAuth0 {
     const { ldap, mozilliansorg, hris } = accessInformation;
 
     const groups = [
-      ...(ldap?.values ? Object.keys(ldap.values).map(group => `mozilla-group:${group}`) : []),
-      ...(hris?.values ? Object.keys(hris.values).map(group => `mozilla-hris:${group}`) : []),
-      ...(mozilliansorg?.values ? Object.keys(mozilliansorg.values).map(group => `mozillians-group:${group}`) : []),
+      ...(ldap && ldap.values ? Object.keys(ldap.values).map(group => `mozilla-group:${group}`) : []),
+      ...(hris && hris.values ? Object.keys(hris.values).map(group => `mozilla-hris:${group}`) : []),
+      ...(mozilliansorg && mozilliansorg.values ? Object.keys(mozilliansorg.values).map(group => `mozillians-group:${group}`) : []),
     ];
 
     user.addRole(...groups);
@@ -175,7 +175,7 @@ export default class MozillaAuth0 {
     const strategyCfg = cfg.login.strategies['mozilla-auth0'];
     const loginMiddleware = login(cfg.app.publicUrl);
 
-    if (!credentials?.clientId || !credentials.accessToken) {
+    if (!credentials || !credentials.clientId || !credentials.accessToken) {
       throw new Error(
         'Unable to use "mozilla-auth0" login strategy without taskcluster clientId and accessToken',
       );
