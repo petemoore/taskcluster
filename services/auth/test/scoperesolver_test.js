@@ -2,26 +2,26 @@ import helper from './helper.js';
 import ScopeResolver from '../src/scoperesolver.js';
 import exchanges from '../src/exchanges.js';
 import { scopeCompare } from 'taskcluster-lib-scopes';
-import assert from 'node:assert';
+import assert from 'assert';
 import _ from 'lodash';
 import assume from 'assume';
 import testing from '@taskcluster/lib-testing';
-import { hrtime } from 'node:process';
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { hrtime } from 'process';
+import { readFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 
-helper.secrets.mockSuite('setup and listening', ['azure', 'gcp'], (mock, skipping) => {
+helper.secrets.mockSuite('setup and listening', ['azure', 'gcp'], function (mock, skipping) {
   let scopeResolver;
 
   helper.withDb(mock, skipping);
   helper.withPulse(mock, skipping);
   let reloads = [];
 
-  setup('mock scoperesolver reloading', async () => {
+  setup('mock scoperesolver reloading', async function () {
     reloads = [];
 
-    const monitor = await helper.load('monitor');
+    let monitor = await helper.load('monitor');
     scopeResolver = new ScopeResolver({ monitor, disableCache: true });
 
     scopeResolver.reload = () => reloads.push('all');
@@ -40,11 +40,11 @@ helper.secrets.mockSuite('setup and listening', ['azure', 'gcp'], (mock, skippin
     reloads = [];
   });
 
-  teardown(async () => {
+  teardown(async function () {
     await scopeResolver.stop();
   });
 
-  test('client messages reload specific clients', async () => {
+  test('client messages reload specific clients', async function () {
     await helper.fakePulseMessage({
       exchange: 'exchange/taskcluster-auth/v1/client-created',
       routingKey: '-',
@@ -54,12 +54,12 @@ helper.secrets.mockSuite('setup and listening', ['azure', 'gcp'], (mock, skippin
     assume(reloads).to.deeply.equal(['clid']);
   });
 
-  test('reconnection reloads everything', async () => {
+  test('reconnection reloads everything', async function () {
     await scopeResolver._clientPq.connected();
     assume(reloads).to.deeply.equal(['all']);
   });
 
-  test('role messages reload all roles', async () => {
+  test('role messages reload all roles', async function () {
     assume(reloads).to.deeply.equal([]);
     await helper.fakePulseMessage({
       exchange: 'exchange/taskcluster-auth/v1/role-created',
@@ -76,9 +76,9 @@ suite(testing.suiteName(), () => {
   const fakeMonitor = {};
   const scopeResolver = new ScopeResolver({ monitor: fakeMonitor, disableCache: true });
 
-  suite('buildResolver', () => {
+  suite('buildResolver', function() {
     const testResolver = (title, { roles, scopes, expected }) => {
-      test(title, () => {
+      test(title, function() {
         const resolver = scopeResolver.buildResolver(roles);
         expected.sort(scopeCompare);
         assume(resolver(scopes)).eql(expected);
@@ -393,7 +393,7 @@ suite(testing.suiteName(), () => {
           }
         }
         // Estimate iterations to measure and run them
-        const iterations = Math.ceil(TIMEING_TIME / mean);
+        let iterations = Math.ceil(TIMEING_TIME / mean);
         const start = hrtime.bigint();
         for (let i = 0; i < iterations; i++) {
           result = fn();
@@ -418,8 +418,8 @@ suite(testing.suiteName(), () => {
     }
 
     const testResolver = (title, { roles, scopes, expected }) => {
-      test(title, () => {
-        const resolver = time('setup', () => scopeResolver.buildResolver(roles));
+      test(title, function() {
+        let resolver = time('setup', () => scopeResolver.buildResolver(roles));
         time('execute', () => resolver(scopes));
         if (expected) {
           expected.sort(scopeCompare);

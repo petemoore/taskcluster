@@ -1,7 +1,7 @@
-import fs from 'node:fs';
-import { promisify } from 'node:util';
-import { spawn, execFile } from 'node:child_process';
-import { Transform } from 'node:stream';
+import fs from 'fs';
+import { promisify } from 'util';
+import { spawn, execFile } from 'child_process';
+import { Transform } from 'stream';
 
 const execFileAsync = promisify(execFile);
 
