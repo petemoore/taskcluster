@@ -1,6 +1,6 @@
-import fs from 'fs';
-import path from 'path';
-import assert from 'assert';
+import fs from 'node:fs';
+import path from 'node:path';
+import assert from 'node:assert';
 import _ from 'lodash';
 import helper from './helper.js';
 import libUrls from 'taskcluster-lib-urls';
@@ -10,7 +10,7 @@ import testing from '@taskcluster/lib-testing';
 const webhookDir = new URL('./data/webhooks/', import.meta.url).pathname;
 const loadWebhook = filename => JSON.parse(fs.readFileSync(path.join(webhookDir, filename), 'utf8'));
 
-suite(testing.suiteName(), function() {
+suite(testing.suiteName(), () => {
   let intree;
 
   const webhookPullRequestJson = loadWebhook('webhook.pull_request.open.json');
@@ -20,14 +20,14 @@ suite(testing.suiteName(), function() {
   const webhookReleaseJson = loadWebhook('webhook.release.json');
   const webhookTagPushJson = loadWebhook('webhook.tag_push.json');
 
-  suiteSetup(async function() {
+  suiteSetup(async () => {
     helper.load.save();
     await helper.load('cfg');
     helper.load.cfg('taskcluster.rootUrl', libUrls.testRootUrl());
     intree = await helper.load('intree');
   });
 
-  suiteTeardown(function() {
+  suiteTeardown(() => {
     helper.load.restore();
   });
 
@@ -36,7 +36,7 @@ suite(testing.suiteName(), function() {
    * after a pull request
    **/
   function buildMessage(params) {
-    let defaultMessage = {
+    const defaultMessage = {
       organization: 'testorg',
       repository: 'testrepo',
       details: {
@@ -71,8 +71,8 @@ suite(testing.suiteName(), function() {
    * expected:    {}, keys=>values expected to exist in the compiled config
    * shouldError: if you want intree to throw an exception, set this to true
    **/
-  let buildConfigTest = function(testName, configPath, params, expected, count = -1, shouldError = false) {
-    test(testName, async function() {
+  const buildConfigTest = (testName, configPath, params, expected, count = -1, shouldError = false) => {
+    test(testName, async () => {
       params.config = yaml.load(fs.readFileSync(configPath));
       params.schema = {
         0: libUrls.schema(libUrls.testRootUrl(), 'github', 'v1/taskcluster-github-config.yml'),
@@ -93,8 +93,8 @@ suite(testing.suiteName(), function() {
       if (count > 0) {
         assert.equal(config.tasks.length, count);
       }
-      for (let key of Object.keys(expected)) {
-        if ('key' === 'scopes') {
+      for (const key of Object.keys(expected)) {
+        if (key === 'scopes') {
           expected[key].sort();
         }
         assert.deepEqual(_.get(config, key), expected[key]);
@@ -102,7 +102,7 @@ suite(testing.suiteName(), function() {
     });
   };
 
-  let configPath = 'test/data/configs/';
+  const configPath = 'test/data/configs/';
 
   buildConfigTest(
     'Single Task Config, v0',
@@ -125,9 +125,9 @@ suite(testing.suiteName(), function() {
       'tasks[0].task.extra.github.events': ['push'],
       'metadata.owner': 'test@test.com',
       scopes: [
-        'assume:repo:github.com/testorg/testrepo:branch:default_branch',
-        'queue:route:statuses',
         'queue:scheduler-id:tc-gh-devel',
+        'queue:route:statuses',
+        'assume:repo:github.com/testorg/testrepo:branch:default_branch',
       ],
     });
 

@@ -1,6 +1,6 @@
 import { APIBuilder } from '@taskcluster/lib-api';
 import { getProfile } from './profiler/profile.js';
-import zlib from 'zlib';
+import zlib from 'node:zlib';
 import { StreamingProfileBuilder, lineIterator } from './profiler/log-profile.js';
 
 const MAX_TASKS = 20000;
@@ -192,7 +192,7 @@ builder.declare({
     'This endpoint is used to check on backing services this service',
     'depends on.',
   ].join('\n'),
-}, function(_req, res) {
+}, (_req, res) => {
   // TODO: add implementation
   res.reply({});
 });

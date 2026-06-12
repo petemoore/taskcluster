@@ -9,7 +9,7 @@ import helpers from './helpers.js';
  *   queue:             // taskcluster.Queue instance w. "queue:get-artifact:*"
  * }
  */
-let builder = new APIBuilder({
+const builder = new APIBuilder({
   title: 'Index Service',
   description: [
     'The index service is responsible for indexing tasks. The service ensures that',
@@ -53,8 +53,8 @@ builder.declare({
   indexPath = indexPath.split('.');
 
   // Find name and namespace
-  let name = indexPath.pop() || '';
-  let namespace = indexPath.join('.');
+  const name = indexPath.pop() || '';
+  const namespace = indexPath.join('.');
 
   // Load indexed task
   const task = helpers.taskUtils.fromDbRows(await this.db.fns.get_indexed_task(namespace, name));
@@ -127,7 +127,7 @@ builder.declare({
     'object.',
   ].join('\n'),
 }, async function(req, res) {
-  let namespace = req.params.namespace || '';
+  const namespace = req.params.namespace || '';
 
   await req.authorize({ namespace });
 
@@ -166,7 +166,7 @@ builder.declare({
     'object.',
   ].join('\n'),
 }, async function(req, res) {
-  let namespace = req.params.namespace || '';
+  const namespace = req.params.namespace || '';
   await req.authorize({
     namespace,
   });
@@ -273,8 +273,8 @@ builder.declare({
     'about indexing successfully completed tasks automatically using custom routes.',
   ].join('\n'),
 }, async function(req, res) {
-  let input = req.body;
-  let namespace = req.params.namespace || '';
+  const input = req.body;
+  const namespace = req.params.namespace || '';
 
   // Authenticate request by providing parameters
   await req.authorize({ namespace });
@@ -287,7 +287,7 @@ builder.declare({
     this.db,
     namespace,
     input,
-  ).then(function(task) {
+  ).then((task) => {
     res.reply(helpers.taskUtils.serialize(task));
   });
 });
@@ -309,7 +309,7 @@ builder.declare({
 }, async function(req, res) {
   await req.authorize({ namespace: req.params.namespace || '' });
 
-  let [namespace, name] = helpers.splitNamespace(req.params.namespace || '');
+  const [namespace, name] = helpers.splitNamespace(req.params.namespace || '');
   await this.db.fns.delete_indexed_task({
     namespace_in: namespace,
     name_in: name,
@@ -344,16 +344,15 @@ builder.declare({
     'If no task exists for the given index path, this API end-point responds with 404.',
   ].join('\n'),
 }, async function(req, res) {
-  let that = this;
   let indexPath = req.params.indexPath || '';
-  let artifactName = req.params.name;
+  const artifactName = req.params.name;
 
   // Get indexPath and ensure that we have a least one dot
   indexPath = indexPath.split('.');
 
   // Find name and namespace
-  let name = indexPath.pop() || '';
-  let namespace = indexPath.join('.');
+  const name = indexPath.pop() || '';
+  const namespace = indexPath.join('.');
 
   // Load indexed task
   const task = helpers.taskUtils.fromDbRows(await this.db.fns.get_indexed_task(namespace, name));
@@ -364,30 +363,30 @@ builder.declare({
 
   let isPublic = false;
   try {
-    isPublic = await that.isPublicArtifact(artifactName);
+    isPublic = await this.isPublicArtifact(artifactName);
   } catch {
     isPublic = false;
   }
 
   if (isPublic) {
     try {
-      const artifact = await that.queue.latestArtifact(task.taskId, artifactName);
+      const artifact = await this.queue.latestArtifact(task.taskId, artifactName);
       if (artifact.url) {
         return res.redirect(303, artifact.url);
       }
     } catch {
       // fall through to queue redirect
     }
-    const url = that.queue.externalBuildUrl(
-      that.queue.getLatestArtifact,
+    const url = this.queue.externalBuildUrl(
+      this.queue.getLatestArtifact,
       task.taskId,
       artifactName,
     );
     return res.redirect(303, url);
   }
 
-  const url = that.queue.externalBuildSignedUrl(
-    that.queue.getLatestArtifact,
+  const url = this.queue.externalBuildSignedUrl(
+    this.queue.getLatestArtifact,
     task.taskId,
     artifactName, {
       expiration: 15 * 60,
@@ -410,7 +409,7 @@ builder.declare({
     'This endpoint is used to check on backing services this service',
     'depends on.',
   ].join('\n'),
-}, function(_req, res) {
+}, (_req, res) => {
   // TODO: add implementation
   res.reply({});
 });

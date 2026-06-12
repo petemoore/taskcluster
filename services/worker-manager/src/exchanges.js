@@ -17,7 +17,7 @@ const exchanges = new Exchanges({
 
 export default exchanges;
 
-let buildCommonRoutingKey = (options) => {
+const buildCommonRoutingKey = (options) => {
   return [
     {
       name: 'routingKeyKind',
@@ -66,11 +66,9 @@ let buildCommonRoutingKey = (options) => {
   ];
 };
 
-let commonMessageBuilder = function(message) {
-  return message;
-};
+const commonMessageBuilder = (message) => message;
 
-let commonRoutingKeyBuilder = function(message, routing) {
+const commonRoutingKeyBuilder = (message, routing) => {
   const mapping = {
     workerGroup: message.workerGroup,
     providerId: message.providerId,

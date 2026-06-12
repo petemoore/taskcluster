@@ -1,10 +1,10 @@
 import _ from 'lodash';
 import pg from 'pg';
 const { Pool } = pg;
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 import { annotateError } from './util.js';
 import Keyring from './Keyring.js';
-import { strict as assert } from 'assert';
+import { strict as assert } from 'node:assert';
 import { READ, WRITE, DUPLICATE_OBJECT, UNDEFINED_TABLE } from './constants.js';
 import { MonitorManager } from '@taskcluster/lib-monitor';
 import pgConnectionString from 'pg-connection-string';
@@ -220,7 +220,7 @@ class Database {
       showProgress('...updating users');
       await db._withClient('admin', async client => {
         // make sure all services have basic levels of access..
-        for (let serviceName of schema.access.serviceNames()) {
+        for (const serviceName of schema.access.serviceNames()) {
           const username = `${usernamePrefix}_${serviceName.replace(/-/g, '_')}`;
           // always grant read access to tcversion
           await client.query(`grant select on tcversion to ${username}`);
@@ -340,7 +340,7 @@ class Database {
         res.rows.map(row => `${row.grantee}: ${row.privilege_type} on ${row.table_name}`));
 
       const expectedPrivs = new Set();
-      for (let serviceName of schema.access.serviceNames()) {
+      for (const serviceName of schema.access.serviceNames()) {
         const username = `${usernamePrefix}_${serviceName.replace(/-/g, '_')}`;
 
         // calculate the expected privs based on access.yml
@@ -358,13 +358,13 @@ class Database {
       }
 
       const issues = [];
-      for (let cur of currentPrivs) {
+      for (const cur of currentPrivs) {
         if (!expectedPrivs.has(cur)) {
           issues.push(`unexpected database user grant: ${cur}`);
         }
       }
 
-      for (let exp of expectedPrivs) {
+      for (const exp of expectedPrivs) {
         if (!currentPrivs.has(exp)) {
           issues.push(`missing database user grant: ${exp}`);
         }
@@ -483,7 +483,7 @@ class Database {
   /** @private */
   async _createExtensions() {
     await this._withClient('admin', async client => {
-      for (let ext of EXTENSIONS) {
+      for (const ext of EXTENSIONS) {
         try {
           await client.query('create extension ' + ext);
         } catch (err) {
@@ -542,7 +542,7 @@ class Database {
       };
 
       /// post-process the DB URL a little bit
-      let config = parseConnectionString(dbUrl);
+      const config = parseConnectionString(dbUrl);
       if (config.ssl === true) {
         // As of node-pg 8.x, SSL connections with `ssl=1` try to verify the SSL
         // connection's certificate chain.  In most cases, this doesn't work, so
@@ -598,7 +598,7 @@ class Database {
     this.monitor = monitor;
 
     this.pools = /** @type {Record<DbAccessMode, pg.Pool>} */({});
-    for (let mode of Object.keys(urlsByMode)) {
+    for (const mode of Object.keys(urlsByMode)) {
       // @ts-ignore mode is of a type DbAccessMode
       this.pools[mode] = makePool(urlsByMode[mode]);
     }
@@ -636,7 +636,7 @@ class Database {
     // next attempt to use the client, but we have to handle them anyway
     // or Node will kill the process.  However, when this happens we must
     // pass the error back to the pool or it won't know the client is bad.
-    let clientError = undefined;
+    let clientError;
     const handleError = err => clientError = err;
     client.on('error', handleError);
     const wrapped = {
@@ -645,7 +645,7 @@ class Database {
        * @param {...any[]} args
        * @returns {Promise<pg.QueryResult>}
        */
-      query: async function(query, ...args) {
+      query: async (query, ...args) => {
         try {
           // it is important to keep await here, as we need to catch the error
           return await client.query(query, ...args);
@@ -790,7 +790,7 @@ class Database {
   decrypt({ value }) {
     const key = this.keyring.getCryptoKey(value.kid, 'aes-256');
 
-    const n = value['__bufchunks_val'];
+    const n = value.__bufchunks_val;
     const chunks = [];
     for (let i = 0; i < n; i++) {
       chunks[i] = Buffer.from(value['__buf' + i + '_val'], 'base64');

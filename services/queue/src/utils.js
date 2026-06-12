@@ -1,4 +1,4 @@
-import assert from 'assert';
+import assert from 'node:assert';
 
 export const artifactUtils = {
   // Create a single instance, or undefined, from a set of rows containing zero
@@ -74,7 +74,7 @@ export const artifactUtils = {
           } else if (entry.details.bucket === privateBucket.bucket) {
             s3private.push(entry);
           } else {
-            let err = new Error('Expiring artifact with bucket which isn\'t ' +
+            const err = new Error('Expiring artifact with bucket which isn\'t ' +
               'configured for use. Please investigate!');
             err.bucket = entry.details.bucket;
             err.taskId = entry.taskId;
@@ -90,7 +90,7 @@ export const artifactUtils = {
         if (entries.length) {
           try {
             const response = await bucket.deleteObjects(entries.map(entry => entry.details.prefix), true);
-            if (response.Errors && response.Errors.length) {
+            if (response.Errors?.length) {
               errors.push(response.Errors.map(obj => ({
                 code: obj.Code,
                 message: obj.Message,

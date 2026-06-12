@@ -1,8 +1,8 @@
 import _ from 'lodash';
-import assert from 'assert';
+import assert from 'node:assert';
 import { Logger } from './logger.js';
 import TimeKeeper from './timekeeper.js';
-import { hrtime } from 'process';
+import { hrtime } from 'node:process';
 
 /**
 * @typedef {object} MonitorOptions
@@ -50,7 +50,7 @@ class Monitor {
     this._log = new Logger({
       name: ['taskcluster', this.manager.serviceName, ...this.name].join('.'),
       service: this.manager.serviceName,
-      level: this.manager.levels[name.join('.')] || this.manager.levels['root'],
+      level: this.manager.levels[name.join('.')] || this.manager.levels.root,
       destination: this.manager.destination,
       metadata,
       taskclusterVersion: this.manager.taskclusterVersion,
@@ -318,7 +318,7 @@ class Monitor {
     }
 
     if (this.manager._reporter) {
-      extra['reportId'] = this.manager._reporter.report(err, level, extra);
+      extra.reportId = this.manager._reporter.report(err, level, extra);
     }
     this.log.errorReport({ ...serialized, ...extra }, { level });
   }
@@ -356,7 +356,7 @@ class Monitor {
         assert(!providedFields.includes('v'), '"v" is a reserved field for logging messages.');
         requiredFields.forEach(f => assert(providedFields.includes(f), `Log message "${name}" must include field "${f}".`));
       }
-      let lv = level === 'any' ? overrides.level : level;
+      const lv = level === 'any' ? overrides.level : level;
       this._log[lv](type, { v: version, ...fields });
     };
   }

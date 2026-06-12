@@ -13,7 +13,7 @@ import {
 import QueueLock from '../queue-lock.js';
 import utils from '../utils.js';
 const { markdownLog, markdownAnchor } = utils;
-import { requestArtifact } from './requestArtifact.js';
+import { requestArtifact, buildArtifactUrl } from './requestArtifact.js';
 import { taskUI, makeDebug, taskLogUI, GithubCheck, getTimeDifference, taskGroupUI, buildUrl, buildLogUrl } from './utils.js';
 
 /**
@@ -63,7 +63,7 @@ export async function statusHandler(message) {
   }
   const checkRunStatus = conclusion ? CHECK_RUN_STATES.COMPLETED : TASK_STATE_TO_CHECK_RUN_STATE[state];
 
-  let [build] = await this.context.db.fns.get_github_build_pr(taskGroupId);
+  const [build] = await this.context.db.fns.get_github_build_pr(taskGroupId);
   if (!build) {
     debug(`No github build is associated with task group ${taskGroupId}. Most likely this was triggered by periodic cron hook, which doesn't require github event / check suite.`);
     releaseLock();
@@ -125,7 +125,6 @@ export async function statusHandler(message) {
         debug,
         instGithub,
         build,
-        scopes: taskDefinition.scopes,
       });
     };
 
@@ -165,6 +164,7 @@ export async function statusHandler(message) {
       details_url: taskUI(this.context.cfg.taskcluster.rootUrl, taskGroupId, taskId),
       status: checkRunStatus,
       conclusion,
+      started_at: runs[runId]?.started,
 
       output_title: outputTitle || `${this.context.cfg.app.statusContext} (${event_type.split('.')[0]})`,
       output_summary: outputSummary || taskDefinition.metadata.description,
@@ -248,12 +248,7 @@ export async function statusHandler(message) {
     }
     if (!taskDefined && runId !== undefined) {
       try {
-        const limitedQueueClient = this.queueClient.use({
-          authorizedScopes: taskDefinition.scopes,
-        });
-        const url = limitedQueueClient.buildSignedUrl(
-          limitedQueueClient.getArtifact, taskId, runId, LIVE_BACKING_LOG_ARTIFACT_NAME,
-        );
+        const url = buildArtifactUrl(this.queueClient, { taskId, runId, artifactName: LIVE_BACKING_LOG_ARTIFACT_NAME });
         const response = await fetch(url, { redirect: 'follow' });
         if (response.ok) {
           const logText = await utils.extractLog(

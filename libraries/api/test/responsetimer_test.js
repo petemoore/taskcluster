@@ -1,12 +1,12 @@
 import request from 'superagent';
-import assert from 'assert';
+import assert from 'node:assert';
 import { APIBuilder } from '../src/index.js';
 import helper, { monitorManager } from './helper.js';
 import libUrls from 'taskcluster-lib-urls';
 import testing from '@taskcluster/lib-testing';
 
-suite(testing.suiteName(), function() {
-  setup(async function() {
+suite(testing.suiteName(), () => {
+  setup(async () => {
     await helper.setupServer({ builder });
   });
   teardown(helper.teardownServer);
@@ -27,7 +27,7 @@ suite(testing.suiteName(), function() {
     category: 'API Library',
     description: 'Place we can call to test something',
     scopes: null,
-  }, function(req, res) {
+  }, (req, res) => {
     res.status(200).send(req.params.myparam);
   });
 
@@ -39,7 +39,7 @@ suite(testing.suiteName(), function() {
     category: 'API Library',
     description: 'Place we can call to test something',
     scopes: null,
-  }, function(req, res) {
+  }, (req, res) => {
     res.status(404).send(req.params.name);
   });
 
@@ -51,16 +51,16 @@ suite(testing.suiteName(), function() {
     category: 'API Library',
     description: 'Place we can call to test something',
     scopes: null,
-  }, function(req, res) {
+  }, (req, res) => {
     res.status(500).send(req.params.name);
   });
 
-  test('single parameter', async function() {
+  test('single parameter', async () => {
     const u = path => libUrls.api(helper.rootUrl, 'test', 'v1', path);
-    await request.get(u('/single-param/Hello')),
-    await request.get(u('/single-param/Goodbye')),
-    await request.get(u('/slash-param/Slash')).catch(err => {}),
-    await request.get(u('/another-param/Another')).catch(err => {}),
+    await request.get(u('/single-param/Hello'));
+    await request.get(u('/single-param/Goodbye'));
+    await request.get(u('/slash-param/Slash')).catch(err => {});
+    await request.get(u('/another-param/Another')).catch(err => {});
     assert.equal(monitorManager.messages.length, 4);
     monitorManager.messages.forEach(event => {
       assert.equal(event.Type, 'monitor.apiMethod');

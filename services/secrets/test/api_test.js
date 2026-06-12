@@ -1,10 +1,10 @@
 import helper from './helper.js';
-import assert from 'assert';
+import assert from 'node:assert';
 import slugid from 'slugid';
 import taskcluster from '@taskcluster/client';
 import testing from '@taskcluster/lib-testing';
 
-helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
+helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
   helper.withDb(mock, skipping);
   helper.withServer(mock, skipping);
 
@@ -32,8 +32,8 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
    * errMessage - if statusCode is set, error messages should begin with this
    */
   const makeApiCall = async ({ clientName, apiCall, name, args, res, statusCode, errMessage }) => {
-    let client = await helper.client(clientName);
-    let gotRes = undefined;
+    const client = await helper.client(clientName);
+    let gotRes;
     try {
       if (args) {
         gotRes = await client[apiCall](name, args);
@@ -48,7 +48,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
           assert(e.body.message.startsWith(errMessage));
         }
         // if there's a payload, the secret should be obscured
-        if (e.body.requestInfo && e.body.requestInfo.payload.secret) {
+        if (e.body.requestInfo?.payload.secret) {
           assert.equal(e.body.requestInfo.payload.secret, '(OMITTED)');
         }
         return;
@@ -62,7 +62,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
     });
   };
 
-  test('set allowed key (twice)', async function() {
+  test('set allowed key (twice)', async () => {
     await makeApiCall({
       clientName: 'captain-write',
       apiCall: 'set',
@@ -81,7 +81,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
     });
   });
 
-  test('set disallowed key', async function() {
+  test('set disallowed key', async () => {
     await makeApiCall({
       clientName: 'captain-write',
       apiCall: 'set',
@@ -91,7 +91,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
     });
   });
 
-  test('get with only "set" scope fails to read', async function() {
+  test('get with only "set" scope fails to read', async () => {
     const client = await helper.client('captain-write');
     await client.set(SECRET_NAME, testValueFoo);
     await makeApiCall({
@@ -102,7 +102,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
     });
   });
 
-  test('get with read-only scopes reads the secret', async function() {
+  test('get with read-only scopes reads the secret', async () => {
     const client = await helper.client('captain-write');
     await client.set(SECRET_NAME, testValueFoo);
     await makeApiCall({
@@ -113,7 +113,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
     });
   });
 
-  test('get with read-only scopes reads an updated secret after set', async function() {
+  test('get with read-only scopes reads an updated secret after set', async () => {
     const client = await helper.client('captain-write');
     await client.set(SECRET_NAME, testValueFoo);
     await client.set(SECRET_NAME, testValueBar);
@@ -125,7 +125,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
     });
   });
 
-  test('remove with read-only scopes fails', async function() {
+  test('remove with read-only scopes fails', async () => {
     const client = await helper.client('captain-write');
     await client.set(SECRET_NAME, testValueBar);
     await makeApiCall({
@@ -136,7 +136,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
     });
   });
 
-  test('remove with write-only scopes succeeds', async function() {
+  test('remove with write-only scopes succeeds', async () => {
     const client = await helper.client('captain-write');
     await client.set(SECRET_NAME, testValueBar);
     await makeApiCall({
@@ -149,7 +149,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
     assert.equal(result, undefined);
   });
 
-  test('getting a missing secret is a 404', async function() {
+  test('getting a missing secret is a 404', async () => {
     await makeApiCall({
       clientName: 'captain-read',
       apiCall: 'get',
@@ -159,16 +159,14 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
     });
   });
 
-  test('deleting a missing secret "succeeds"', function() {
-    return makeApiCall({
-      clientName: 'captain-write',
-      apiCall: 'remove',
-      name: SECRET_NAME,
-      res: {},
-    });
-  });
+  test('deleting a missing secret "succeeds"', () => makeApiCall({
+    clientName: 'captain-write',
+    apiCall: 'remove',
+    name: SECRET_NAME,
+    res: {},
+  }));
 
-  test('reading an expired secret is a 410', async function() {
+  test('reading an expired secret is a 410', async () => {
     const client = await helper.client('captain-write');
     await client.set(SECRET_NAME, testValueExpired);
     await makeApiCall({
@@ -181,9 +179,9 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
   });
 
   test('Expire secrets', async () => {
-    let client = await helper.client('captain-read-write');
-    let expireKey = 'captain:' + slugid.v4();
-    let saveKey = 'captain:' + slugid.v4();
+    const client = await helper.client('captain-read-write');
+    const expireKey = 'captain:' + slugid.v4();
+    const saveKey = 'captain:' + slugid.v4();
 
     helper.load.save();
 
@@ -205,7 +203,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
 
       await helper.load('expire');
 
-      let { secret } = await client.get(saveKey);
+      const { secret } = await client.get(saveKey);
       assert.deepEqual(secret, {
         message: 'keep this secret!!',
         list: ['hello', 'world'],
@@ -234,7 +232,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
 
     // delete any secrets we can see
     let list = await client.list();
-    for (let secret of list.secrets) {
+    for (const secret of list.secrets) {
       await client.remove(secret);
     }
 

@@ -1,4 +1,4 @@
-import path from 'path';
+import path from 'node:path';
 import { listServices, readRepoYAML, writeRepoYAML, writeRepoFile } from '../../utils/index.js';
 
 const SERVICES = listServices();
@@ -373,7 +373,7 @@ tasks.push({
           },
         }),
         taskcluster: serviceDefinition('taskcluster', {
-          image: 'nginx:1.29.4',
+          image: 'nginx:1.30.1',
           depends_on: ['ui', 'web-server-web'],
           volumes: [
             './docker/nginx.conf:/etc/nginx/nginx.conf',
@@ -481,7 +481,7 @@ tasks.push({
       ui: serviceEnv('ui'),
     };
 
-    for (let name of SERVICES) {
+    for (const name of SERVICES) {
       const procs = requirements[`procslist-${name}`];
       // only web services for now
       Object.keys(procs).forEach((proc) => {
@@ -524,20 +524,20 @@ tasks.push({
         };
 
         if (isWeb) {
-          serviceOptions['healthcheck'] = healthcheck(`wget -q --spider http://localhost:${serviceHostPort(name)}/api/${name}/v1/ping`);
+          serviceOptions.healthcheck = healthcheck(`wget -q --spider http://localhost:${serviceHostPort(name)}/api/${name}/v1/ping`);
         }
 
         let serviceSuffix = '';
         if (!allowedBackgroundJob && (isCron || isBackground)) {
-          serviceOptions['profiles'] = [type, name, `${name}-${type}`];
-          serviceOptions['_noPorts'] = true;
+          serviceOptions.profiles = [type, name, `${name}-${type}`];
+          serviceOptions._noPorts = true;
           serviceSuffix = `-${type}`;
         }
 
         const svcName = `${name}${serviceSuffix}-${proc}`;
         dockerCompose.services[svcName] = serviceDefinition(name, serviceOptions);
-        dockerComposeProd.services[svcName] = serviceDefinitionProd(name, serviceOptions['profiles']);
-        dockerComposeDev.services[svcName] = serviceDefinitionDev(name, serviceOptions['profiles'], procs[proc].command);
+        dockerComposeProd.services[svcName] = serviceDefinitionProd(name, serviceOptions.profiles);
+        dockerComposeDev.services[svcName] = serviceDefinitionDev(name, serviceOptions.profiles, procs[proc].command);
         envFiles[name] = serviceEnv(name);
       });
     }

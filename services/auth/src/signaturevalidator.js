@@ -1,10 +1,10 @@
 import hawk from 'hawk';
-import assert from 'assert';
+import assert from 'node:assert';
 
 // Someone should rename utils to scopes...
 import utils from 'taskcluster-lib-scopes';
 
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 
 /**
  * Normalize clientIds to avoid storing every id possible
@@ -50,7 +50,7 @@ export const determineSchemeFromRequest = (req) => {
   if (req.authorization) {
     return 'hawk';
   }
-  if (/bewit\=/.test(req.resource)) {
+  if (/bewit=/.test(req.resource)) {
     return 'bewit';
   }
   return 'unknown';
@@ -63,7 +63,7 @@ export const determineSchemeFromRequest = (req) => {
  * applies scope restrictions, certificate validation and returns a clone if
  * modified (otherwise it returns the original).
  */
-const parseExt = function(ext) {
+const parseExt = (ext) => {
   // Attempt to parse ext
   try {
     ext = JSON.parse(Buffer.from(ext, 'base64').toString('utf-8'));
@@ -81,14 +81,14 @@ const parseExt = function(ext) {
  * applies scope restrictions, certificate validation and returns a clone if
  * modified (otherwise it returns the original).
  */
-const limitClientWithExt = function(credentialName, issuingClientId, accessToken, scopes,
-  expires, ext, expandScopes) {
-  let issuingScopes = scopes;
-  let res = { scopes, expires, accessToken };
+const limitClientWithExt = (credentialName, issuingClientId, accessToken, scopes,
+  expires, ext, expandScopes) => {
+  const issuingScopes = scopes;
+  const res = { scopes, expires, accessToken };
 
   // Handle certificates
   if (ext.certificate) {
-    let cert = ext.certificate;
+    const cert = ext.certificate;
     // Validate the certificate
     if (!(cert instanceof Object)) {
       throw new Error('ext.certificate must be a JSON object');
@@ -108,7 +108,7 @@ const limitClientWithExt = function(credentialName, issuingClientId, accessToken
     if (typeof cert.expiry !== 'number') {
       throw new Error('ext.certificate.expiry must be a number');
     }
-    if (!(cert.scopes instanceof Array)) {
+    if (!Array.isArray(cert.scopes)) {
       throw new Error('ext.certificate.scopes must be an array');
     }
     if (!cert.scopes.every(utils.validScope)) {
@@ -116,7 +116,7 @@ const limitClientWithExt = function(credentialName, issuingClientId, accessToken
     }
 
     // Check start and expiry
-    let now = new Date().getTime();
+    const now = Date.now();
     if (cert.start > now + 5 * 60 * 1000) {
       throw new Error('ext.certificate.start > now');
     }
@@ -130,7 +130,7 @@ const limitClientWithExt = function(credentialName, issuingClientId, accessToken
 
     // Check clientId validity
     if (issuingClientId !== credentialName) {
-      let createScope = 'auth:create-client:' + credentialName;
+      const createScope = 'auth:create-client:' + credentialName;
       if (!utils.satisfiesExpression(issuingScopes, createScope)) {
         throw new Error('ext.certificate issuer `' + issuingClientId +
                         '` doesn\'t have `' + createScope + '` for supplied clientId.');
@@ -159,7 +159,7 @@ const limitClientWithExt = function(credentialName, issuingClientId, accessToken
     sigContent.push('expiry:' + cert.expiry);
     sigContent.push('scopes:');
     sigContent = sigContent.concat(cert.scopes);
-    let signature = crypto.createHmac('sha256', accessToken)
+    const signature = crypto.createHmac('sha256', accessToken)
       .update(sigContent.join('\n'))
       .digest('base64');
 
@@ -174,7 +174,7 @@ const limitClientWithExt = function(credentialName, issuingClientId, accessToken
     }
 
     // Regenerate temporary key
-    let temporaryKey = crypto.createHmac('sha256', accessToken)
+    const temporaryKey = crypto.createHmac('sha256', accessToken)
       .update(cert.seed)
       .digest('base64')
       .replace(/\+/g, '-') // Replace + with - (see RFC 4648, sec. 5)
@@ -184,7 +184,7 @@ const limitClientWithExt = function(credentialName, issuingClientId, accessToken
     // Update expiration, scopes and accessToken
     res.accessToken = temporaryKey;
 
-    let cert_expires = new Date(cert.expiry);
+    const cert_expires = new Date(cert.expiry);
     if (res.expires > cert_expires) {
       res.expires = cert_expires;
     }
@@ -195,7 +195,7 @@ const limitClientWithExt = function(credentialName, issuingClientId, accessToken
   // Handle scope restriction with authorizedScopes
   if (ext.authorizedScopes) {
     // Validate input format
-    if (!(ext.authorizedScopes instanceof Array)) {
+    if (!Array.isArray(ext.authorizedScopes)) {
       throw new Error('ext.authorizedScopes must be an array');
     }
     if (!ext.authorizedScopes.every(utils.validScope)) {
@@ -256,13 +256,13 @@ const limitClientWithExt = function(credentialName, issuingClientId, accessToken
  * The method returned by this function works as `signatureValidator` for
  * `remoteAuthentication`.
  */
-const createSignatureValidator = function(options) {
+const createSignatureValidator = (options) => {
   assert(typeof options === 'object', 'options must be an object');
   assert(options.clientLoader instanceof Function,
     'options.clientLoader must be a function');
   if (!options.expandScopes) {
     // Default to the identity function
-    options.expandScopes = function(scopes) { return scopes; };
+    options.expandScopes = (scopes) => scopes;
   }
   assert(options.expandScopes instanceof Function,
     'options.expandScopes must be a function');
@@ -278,7 +278,7 @@ const createSignatureValidator = function(options) {
     // extract ext.certificate.issuer, if present
     if (ext) {
       ext = parseExt(ext);
-      if (ext.certificate && ext.certificate.issuer) {
+      if (ext.certificate?.issuer) {
         issuingClientId = ext.certificate.issuer;
         if (typeof issuingClientId !== 'string') {
           throw new Error('ext.certificate.issuer must be a string');
@@ -314,7 +314,7 @@ const createSignatureValidator = function(options) {
     };
   };
 
-  return async function(req) {
+  return async (req) => {
     let credentials, attributes, result, authResult, scheme;
 
     try {
@@ -327,10 +327,10 @@ const createSignatureValidator = function(options) {
           port: req.port,
           authorization: req.authorization,
         }, async (clientId) => {
-          let ext = undefined;
+          let ext;
 
           // Parse authorization header for ext
-          let attrs = hawk.utils.parseAuthorizationHeader(
+          const attrs = hawk.utils.parseAuthorizationHeader(
             req.authorization,
           );
           // Extra ext
@@ -354,7 +354,7 @@ const createSignatureValidator = function(options) {
 
         credentials = authResult.credentials;
         attributes = authResult.artifacts; // Hawk uses "artifacts" and "attributes"
-      } else if (/^\/.*[\?&]bewit\=/.test(req.resource)) { // using regex because query parsing is disabled
+      } else if (/^\/.*[?&]bewit=/.test(req.resource)) { // using regex because query parsing is disabled
         scheme = 'bewit';
         // Bewit present
         authResult = await hawk.uri.authenticate({
@@ -363,16 +363,16 @@ const createSignatureValidator = function(options) {
           host: req.host,
           port: req.port,
         }, async (clientId) => {
-          let ext = undefined;
+          let ext;
 
           // Get bewit string (stolen from hawk)
-          let parts = req.resource.match(
-            /^(\/.*)([\?&])bewit\=([^&$]*)(?:&(.+))?$/,
+          const parts = req.resource.match(
+            /^(\/.*)([?&])bewit=([^&$]*)(?:&(.+))?$/,
           );
 
           let bewitString;
           try {
-            if (!/^[\w\-]*$/.test(parts[3])) {
+            if (!/^[\w-]*$/.test(parts[3])) {
               throw new Error('invalid character in bewit');
             }
             bewitString = Buffer.from(parts[3], 'base64').toString('binary');
@@ -382,7 +382,7 @@ const createSignatureValidator = function(options) {
 
           if (!(bewitString instanceof Error)) {
             // Split string as hawk does it
-            let parts = bewitString.split('\\');
+            const parts = bewitString.split('\\');
             if (parts.length === 4 && parts[3]) {
               ext = parts[3];
             }
@@ -418,7 +418,7 @@ const createSignatureValidator = function(options) {
         });
       }
 
-      if (attributes && attributes.hash) {
+      if (attributes?.hash) {
         result.hash = attributes.hash;
       }
     } catch (err) {

@@ -1,7 +1,7 @@
 import taskcluster from '@taskcluster/client';
 import request from 'superagent';
-import crypto from 'crypto';
-import assert from 'assert';
+import crypto from 'node:crypto';
+import assert from 'node:assert';
 import helper from '../helper/index.js';
 
 const responseSchema = 'https://tc-testing.example.com/schemas/object/v1/create-upload-response.json#/properties/uploadMethod';
@@ -39,7 +39,7 @@ export const testPutUrlUpload = ({
     (suiteDefinition || (() => {})).call(this);
 
     let backend;
-    suiteSetup(async function() {
+    suiteSetup(async () => {
       const backends = await helper.load('backends');
       backend = backends.get(backendId);
     });
@@ -66,7 +66,7 @@ export const testPutUrlUpload = ({
       assert(new Date(res.putUrl.expires) > new Date());
 
       let req = request.put(res.putUrl.url);
-      for (let [h, v] of Object.entries(res.putUrl.headers)) {
+      for (const [h, v] of Object.entries(res.putUrl.headers)) {
         req = req.set(h, v);
       }
       const putRes = await req.send(data);
@@ -79,7 +79,7 @@ export const testPutUrlUpload = ({
     };
 
     for (const length of [0, 1024]) {
-      test(`upload an object (length=${length})`, async function() {
+      test(`upload an object (length=${length})`, async () => {
         const { name, data, res, object, uploadId } = await makeUpload({ length });
         await performUpload({ name, data, res, uploadId });
         await finishUpload({ name, uploadId, object });
@@ -90,11 +90,11 @@ export const testPutUrlUpload = ({
       });
     }
 
-    test('upload an object with a bad Content-Type', async function() {
+    test('upload an object with a bad Content-Type', async () => {
       const { data, res } = await makeUpload();
 
       let req = request.put(res.putUrl.url);
-      for (let [h, v] of Object.entries(res.putUrl.headers)) {
+      for (const [h, v] of Object.entries(res.putUrl.headers)) {
         req = req.set(h, v);
       }
       req.set('Content-Type', 'some-other/content-type');
@@ -106,7 +106,7 @@ export const testPutUrlUpload = ({
     });
 
     if (!omit.includes('htmlContentDisposition')) {
-      test(`upload of type text/html has attachment disposition`, async function() {
+      test(`upload of type text/html has attachment disposition`, async () => {
         const { name, data, res, object, uploadId } = await makeUpload({ contentType: 'text/html' });
 
         await performUpload({ name, data, res, uploadId });

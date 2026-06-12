@@ -1,9 +1,8 @@
-import _ from 'lodash';
-import assert from 'assert';
+import assert from 'node:assert';
 import helper from './helper.js';
 import testing from '@taskcluster/lib-testing';
 
-helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) {
+helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
   if (!mock) {
     return;
   }

@@ -1,4 +1,4 @@
-import assert from 'assert';
+import assert from 'node:assert';
 import { Task } from './data.js';
 
 /**
@@ -9,7 +9,6 @@ import { Task } from './data.js';
  * Options:
  * {
  *   publisher:          publisher from exchanges
- *   queueService:       QueueService instance
  * }
  */
 class DependencyTracker {
@@ -18,13 +17,11 @@ class DependencyTracker {
     assert(options, 'options are required');
     assert(options.db, 'Expected options.db');
     assert(options.publisher, 'Expected options.publisher');
-    assert(options.queueService, 'Expected options.queueService');
     assert(options.monitor, 'Expected options.monitor');
 
     // Store options on this object
     this.db = options.db;
     this.publisher = options.publisher;
-    this.queueService = options.queueService;
     this.monitor = options.monitor;
   }
 
@@ -44,7 +41,7 @@ class DependencyTracker {
 
     // Load all task dependencies to see if they have been resolved.
     // We will also check for missing and expiring dependencies.
-    let expiring = []; // Dependencies that expire before deadline
+    const expiring = []; // Dependencies that expire before deadline
     let anySatisfied = false; // Track if any dependencies were satisfied
 
     // Load all dependencies (tasks can have aup to max-task-dependencies)
@@ -61,7 +58,7 @@ class DependencyTracker {
         }
 
         // Check if requiredTask is satisfied
-        let state = requiredTask.state();
+        const state = requiredTask.state();
         if (state === 'completed' || task.requires === 'all-resolved' &&
             (state === 'exception' || state === 'failed')) {
           await this.db.fns.satisfy_task_dependency(task.taskId, requiredTask.taskId);
@@ -176,7 +173,7 @@ class DependencyTracker {
     while (true) {
       const deps = await this.db.fns.get_dependent_tasks(taskId, null, tasksAfter, 100, null);
 
-      for (let dep of deps) {
+      for (const dep of deps) {
         tasksAfter = dep.dependent_task_id;
 
         if (resolution !== 'completed') {
@@ -257,7 +254,7 @@ class DependencyTracker {
     }
 
     // Don't attempt to schedule tasks past their deadline
-    if (task.deadline.getTime() < new Date().getTime()) {
+    if (task.deadline.getTime() < Date.now()) {
       return null;
     }
 
@@ -270,19 +267,19 @@ class DependencyTracker {
     }
 
     // Construct status structure
-    let status = task.status();
+    const status = task.status();
 
-    // Put message into pending queue, and publish message to pulse,
-    // if the initial run is pending
+    // Publish task-pending. queue_pending_tasks insert is now atomic inside
+    // schedule_task (db v124). The publish is intentionally NOT wrapped:
+    // this method is invoked from the dependencyResolver's resolved-message
+    // loop, where a throw triggers redelivery and re-attempts the publish,
+    // preserving at-least-once semantics for downstream consumers.
     if (task.runs && task.runs[0].state === 'pending') {
-      await Promise.all([
-        this.queueService.putPendingMessage(task, 0),
-        this.publisher.taskPending({
-          status: status,
-          runId: 0,
-          task: { tags: task.tags || {} },
-        }, task.routes),
-      ]);
+      await this.publisher.taskPending({
+        status: status,
+        runId: 0,
+        task: { tags: task.tags || {} },
+      }, task.routes);
       this.monitor.log.taskPending({ taskId: task.taskId, runId: 0 });
     }
 

@@ -1,9 +1,9 @@
 import _ from 'lodash';
 import stringify from 'fast-json-stable-stringify';
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 import taskcluster from '@taskcluster/client';
 import yaml from 'js-yaml';
-import assert from 'assert';
+import assert from 'node:assert';
 import { consume } from '@taskcluster/lib-pulse';
 import { deprecatedStatusHandler } from './deprecatedStatus.js';
 import { taskGroupCreationHandler } from './taskGroupCreation.js';
@@ -408,7 +408,7 @@ class Handlers {
       debug(`exception comment on ${organization}/${repository}#${pullNumber} found to be duplicate. skipping`);
       return;
     }
-    let errorBody = error.body && error.body.error || error.message;
+    let errorBody = error.body?.error || error.message;
     // Let's prettify any objects
     if (typeof errorBody === 'object') {
       errorBody = stringify(errorBody, null, 4);

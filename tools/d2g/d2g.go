@@ -1,4 +1,4 @@
-//go:generate go run ../../workers/generic-worker/gw-codegen file://../../workers/docker-worker/schemas/v1/payload.yml dockerworker/generated_types.go
+//go:generate go run ../../workers/generic-worker/gw-codegen file://schemas/docker-worker/v1/payload.yml dockerworker/generated_types.go
 //go:generate go run ../../workers/generic-worker/gw-codegen file://../../workers/generic-worker/schemas/multiuser_posix.yml genericworker/generated_types.go
 
 package d2g
@@ -13,9 +13,9 @@ import (
 	"testing"
 
 	"github.com/taskcluster/slugid-go/slugid"
-	"github.com/taskcluster/taskcluster/v99/internal/scopes"
-	"github.com/taskcluster/taskcluster/v99/tools/d2g/dockerworker"
-	"github.com/taskcluster/taskcluster/v99/tools/d2g/genericworker"
+	"github.com/taskcluster/taskcluster/v100/internal/scopes"
+	"github.com/taskcluster/taskcluster/v100/tools/d2g/dockerworker"
+	"github.com/taskcluster/taskcluster/v100/tools/d2g/genericworker"
 
 	"slices"
 
@@ -424,7 +424,10 @@ func runCommand(
 	args = append(args, createVolumeMountArgs(dwPayload, wdcs, gwArtifacts, config)...)
 
 	if dwPayload.Features.TaskclusterProxy && config.AllowTaskclusterProxy {
-		args = append(args, "--add-host=taskcluster:host-gateway")
+		// Use per-task Docker network for tc-proxy isolation.
+		// The network name and gateway IP are set by generic-worker at runtime.
+		args = append(args, "--network", "__TASKCLUSTER_DOCKER_NETWORK__")
+		args = append(args, "--add-host=taskcluster:__TASKCLUSTER_PROXY_GATEWAY__")
 	}
 
 	if config.AllowGPUs {

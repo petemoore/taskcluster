@@ -1,9 +1,9 @@
 import _ from 'lodash';
-import assert from 'assert';
+import assert from 'node:assert';
 import helper from './helper.js';
 import testing from '@taskcluster/lib-testing';
 
-helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) {
+helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
   helper.withDb(mock, skipping);
   helper.withDenier(mock, skipping);
   helper.withFakeQueue(mock, skipping);
@@ -17,31 +17,29 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
   const deadline = new Date();
   deadline.setMinutes(deadline.getMinutes() + 25);
 
-  let makeTask = function(routes) {
-    return {
-      provisionerId: 'dummy-test-provisioner',
-      workerType: 'dummy-test-worker-type',
-      scopes: [],
-      routes: routes,
-      retries: 3,
-      created: created.toJSON(),
-      deadline: deadline.toJSON(),
-      payload: {
-        desiredResolution: 'success',
-      },
-      metadata: {
-        name: 'Print `"Hello World"` Once',
-        description: 'This task will prìnt `"Hello World"` **once**!',
-        owner: 'jojensen@mozilla.com', // Because this is stolen from tc-index tests!
-        source: 'https://github.com/taskcluster/taskcluster-notify',
-      },
-      tags: {
-        objective: 'Test task notifications',
-      },
-    };
-  };
+  const makeTask = (routes) => ({
+    provisionerId: 'dummy-test-provisioner',
+    workerType: 'dummy-test-worker-type',
+    scopes: [],
+    routes: routes,
+    retries: 3,
+    created: created.toJSON(),
+    deadline: deadline.toJSON(),
+    payload: {
+      desiredResolution: 'success',
+    },
+    metadata: {
+      name: 'Print `"Hello World"` Once',
+      description: 'This task will prìnt `"Hello World"` **once**!',
+      owner: 'jojensen@mozilla.com', // Because this is stolen from tc-index tests!
+      source: 'https://github.com/taskcluster/taskcluster-notify',
+    },
+    tags: {
+      objective: 'Test task notifications',
+    },
+  });
 
-  let baseStatus = {
+  const baseStatus = {
     taskId: 'DKPZPsvvQEiw67Pb3rkdNg',
     provisionerId: 'test-provisioner',
     workerType: 'gecko-t-win7-32-gpu',
@@ -67,8 +65,14 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
     ],
   };
 
+  const definedStatus = {
+    ..._.cloneDeep(baseStatus),
+    state: 'unscheduled',
+    runs: [],
+  };
+
   let monitor;
-  suiteSetup('create handler', async function() {
+  suiteSetup('create handler', async () => {
     if (skipping()) {
       return;
     }
@@ -106,6 +110,20 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
     await helper.fakePulseMessage({
       payload: {
         status: baseStatus,
+      },
+      exchange: 'exchange/taskcluster-queue/v1/task-defined',
+      routingKey: 'doesnt-matter',
+      routes: [route],
+    });
+    helper.assertPulseMessage('notification', m => m.CCs[0] === 'route.notify-test');
+  });
+
+  test('pulse on-defined', async () => {
+    const route = 'test-notify.pulse.notify-test.on-defined';
+    helper.queue.addTask(definedStatus.taskId, makeTask([route]));
+    await helper.fakePulseMessage({
+      payload: {
+        status: definedStatus,
       },
       exchange: 'exchange/taskcluster-queue/v1/task-defined',
       routingKey: 'doesnt-matter',

@@ -6,7 +6,7 @@ import assume from 'assume';
 import helper from './helper.js';
 import testing from '@taskcluster/lib-testing';
 
-helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) {
+helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
   helper.withDb(mock, skipping);
   helper.withAmazonIPRanges(mock, skipping);
   helper.withPulse(mock, skipping);
@@ -43,7 +43,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
       workerGroup: 'my-worker-group-extended-extended',
       workerId: 'my-worker-extended-extended',
     });
-    debug(`claimed until ${r2.takenUntil}, ${new Date(r2.takenUntil) - new Date()}ms from now`);
+    debug(`claimed until ${r2.takenUntil}, ${new Date(r2.takenUntil) - Date.now()}ms from now`);
     helper.assertPulseMessage('task-running');
 
     debug('### Start claim-resolver');
@@ -72,7 +72,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
       workerId: 'my-worker-extended-extended',
     });
     assume(r4.status.retriesLeft).equals(0);
-    debug(`claimed until ${r4.takenUntil}, ${new Date(r2.takenUntil) - new Date()}ms from now`);
+    debug(`claimed until ${r4.takenUntil}, ${new Date(r2.takenUntil) - Date.now()}ms from now`);
 
     debug('### Start claimResolver (again)');
     await helper.startPollingService('claim-resolver');
