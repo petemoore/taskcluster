@@ -1,5 +1,5 @@
 import { FakeCloud } from './fake.js';
-import { strict as assert } from 'node:assert';
+import { strict as assert } from 'assert';
 
 import azureApi from '../../src/providers/azure/azure-api.js';
 
@@ -12,6 +12,9 @@ import slugid from 'slugid';
  * that allow access to fakes for those interfaces.
  */
 export class FakeAzure extends FakeCloud {
+  constructor() {
+    super();
+  }
 
   _patch() {
     this.sinon.stub(azureApi, 'AzureServiceClient').callsFake((creds) => {
@@ -56,20 +59,20 @@ export class FakeAzure extends FakeCloud {
     };
 
     this.computeClient = {
-      virtualMachines: this._managers.vm,
-      disks: this._managers.disk,
+      virtualMachines: this._managers['vm'],
+      disks: this._managers['disk'],
       pipeline: new FakePipeline(),
     };
     this.networkClient = {
-      networkInterfaces: this._managers.nic,
-      publicIPAddresses: this._managers.ip,
+      networkInterfaces: this._managers['nic'],
+      publicIPAddresses: this._managers['ip'],
       pipeline: new FakePipeline(),
     };
     this.resourcesClient = {
-      resourceGroups: this._managers.resourceGroup,
+      resourceGroups: this._managers['resourceGroup'],
       pipeline: new FakePipeline(),
     };
-    this.deploymentsClient = Object.assign(this._managers.deployment, {
+    this.deploymentsClient = Object.assign(this._managers['deployment'], {
       pipeline: new FakePipeline(),
     });
 
@@ -265,7 +268,7 @@ export class VMResourceManager extends ResourceManager {
   // Subclass Overrides
 
   _requestToResource(request) {
-    const dataDisks = [];
+    let dataDisks = [];
     for (let i = 0; i < request.parameters.storageProfile.dataDisks.length; i++) {
       dataDisks.push({ name: slugid.nice() });
     }

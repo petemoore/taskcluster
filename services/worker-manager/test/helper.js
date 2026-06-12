@@ -1,7 +1,7 @@
 import taskcluster from '@taskcluster/client';
 import { FakeEC2, FakeAzure, FakeGoogle } from './fakes/index.js';
 import { Worker } from '../src/data.js';
-import { globalAgent } from 'node:http';
+import { globalAgent } from 'http';
 
 import testing from '@taskcluster/lib-testing';
 
@@ -47,7 +47,7 @@ helper.withProviders = (mock, skipping) => {
 helper.withProvisioner = (mock, skipping) => {
   let provisioner;
 
-  suiteSetup(async () => {
+  suiteSetup(async function() {
     if (skipping()) {
       return;
     }
@@ -70,7 +70,7 @@ helper.withProvisioner = (mock, skipping) => {
     };
   });
 
-  teardown(() => {
+  teardown(function() {
     if (provisioner) {
       throw new Error('Must call terminateProvisioner if you have started it');
     }
@@ -80,7 +80,7 @@ helper.withProvisioner = (mock, skipping) => {
 helper.withWorkerScanner = (mock, skipping) => {
   let scanner;
 
-  suiteSetup(async () => {
+  suiteSetup(async function() {
     if (skipping()) {
       return;
     }
@@ -100,7 +100,7 @@ helper.withWorkerScanner = (mock, skipping) => {
     };
   });
 
-  teardown(() => {
+  teardown(function() {
     if (scanner) {
       throw new Error('Must call terminateWorkerScanner if you have started it');
     }
@@ -115,7 +115,7 @@ helper.withWorkerScanner = (mock, skipping) => {
  * The component is available at `helper.queue`.
  */
 helper.withFakeQueue = (mock, skipping) => {
-  suiteSetup(() => {
+  suiteSetup(function() {
     if (skipping()) {
       return;
     }
@@ -135,7 +135,7 @@ helper.withFakeQueue = (mock, skipping) => {
  * We consider any emailing to be test-failing at the moment
  */
 helper.withFakeNotify = (mock, skipping) => {
-  suiteSetup(() => {
+  suiteSetup(function() {
     if (skipping()) {
       return;
     }
@@ -143,7 +143,7 @@ helper.withFakeNotify = (mock, skipping) => {
     helper.notify = stubbedNotify();
     helper.load.inject('notify', helper.notify);
 
-    setup(async () => {
+    setup(async function() {
       helper.notify.emails.splice(0);
     });
   });
@@ -152,7 +152,7 @@ helper.withFakeNotify = (mock, skipping) => {
 helper.withServer = (mock, skipping) => {
   let webServer;
 
-  suiteSetup(async () => {
+  suiteSetup(async function() {
     if (skipping()) {
       return;
     }
@@ -183,7 +183,7 @@ helper.withServer = (mock, skipping) => {
     webServer = await load('server');
   });
 
-  suiteTeardown(async () => {
+  suiteTeardown(async function() {
     if (webServer) {
       await webServer.terminate();
       webServer = null;
@@ -218,11 +218,11 @@ const stubbedQueue = () => {
     },
   });
 
-  queue.setPending = (taskQueueId, pending) => {
+  queue.setPending = function(taskQueueId, pending) {
     pendingCounts[taskQueueId] = pending;
   };
 
-  queue.setClaimed = (taskQueueId, claimed) => {
+  queue.setClaimed = function(taskQueueId, claimed) {
     claimedCounts[taskQueueId] = claimed;
   };
 
@@ -267,7 +267,7 @@ helper.getWorkers = async () =>
     }));
 
 helper.resetTables = (mock, skipping) => {
-  setup('reset tables', async () => {
+  setup('reset tables', async function() {
     await testing.resetTables({ tableNames: [
       'workers',
       'worker_pools',

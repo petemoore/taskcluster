@@ -1,4 +1,4 @@
-import path from 'node:path';
+import path from 'path';
 import mkdirp from 'mkdirp';
 import { ensureTask } from '../../utils/index.js';
 import { rimraf } from 'rimraf';
