@@ -1,5 +1,6 @@
-import util from 'node:util';
-import { execFile } from 'node:child_process';
+import util from 'util';
+import { execFile } from 'child_process';
+import _ from 'lodash';
 const execFileAsync = util.promisify(execFile);
 
 export const tasks = [{
@@ -9,7 +10,7 @@ export const tasks = [{
   run: async () => {
     // This checks one of the tc-lib-postgres security invariants, that
     // services are not using postgres directly
-    for (const pattern of ['require\(.pg\)', '_withClient']) {
+    for (let pattern of ['require\(.pg\)', '_withClient']) {
       try {
         const res = await execFileAsync('git', ['grep', pattern, '--', 'services/']);
         // if the grep succeeded, then something matched

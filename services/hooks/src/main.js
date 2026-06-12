@@ -16,7 +16,7 @@ import exchanges from './exchanges.js';
 import libPulse from '@taskcluster/lib-pulse';
 import HookListeners from './listeners.js';
 import './monitor.js';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath } from 'url';
 
 // Create component loader
 const load = loader({
@@ -123,7 +123,7 @@ const load = loader({
   listeners: {
     requires: ['db', 'taskcreator', 'pulseClient', 'monitor'],
     setup: async ({ db, taskcreator, pulseClient, monitor }) => {
-      const listeners = new HookListeners({
+      let listeners = new HookListeners({
         db,
         taskcreator,
         client: pulseClient,

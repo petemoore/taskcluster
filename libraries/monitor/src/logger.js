@@ -1,5 +1,5 @@
-import os from 'node:os';
-import assert from 'node:assert';
+import os from 'os';
+import assert from 'assert';
 import stringify from 'fast-json-stable-stringify';
 
 export const LEVELS = {
@@ -116,9 +116,9 @@ export class Logger {
     }
 
     if (fields === null || typeof fields === 'boolean') {
-      level = LEVELS.err;
+      level = LEVELS['err'];
       const origType = type;
-      type = 'monitor.loggingError';
+      type = 'monitor.loggingError',
       fields = {
         error: 'Invalid field to be logged.',
         origType,
@@ -126,9 +126,9 @@ export class Logger {
       };
     }
     if (fields.meta !== undefined) {
-      level = LEVELS.err;
+      level = LEVELS['err'];
       const origType = type;
-      type = 'monitor.loggingError';
+      type = 'monitor.loggingError',
       fields = {
         error: 'You may not set meta fields on logs directly.',
         origType,
@@ -190,34 +190,34 @@ export class Logger {
   }
 
   emerg(type, fields) {
-    this._log(LEVELS.emerg, type, fields);
+    this._log(LEVELS['emerg'], type, fields);
   }
 
   alert(type, fields) {
-    this._log(LEVELS.alert, type, fields);
+    this._log(LEVELS['alert'], type, fields);
   }
 
   crit(type, fields) {
-    this._log(LEVELS.crit, type, fields);
+    this._log(LEVELS['crit'], type, fields);
   }
 
   err(type, fields) {
-    this._log(LEVELS.err, type, fields);
+    this._log(LEVELS['err'], type, fields);
   }
 
   warning(type, fields) {
-    this._log(LEVELS.warning, type, fields);
+    this._log(LEVELS['warning'], type, fields);
   }
 
   notice(type, fields) {
-    this._log(LEVELS.notice, type, fields);
+    this._log(LEVELS['notice'], type, fields);
   }
 
   info(type, fields) {
-    this._log(LEVELS.info, type, fields);
+    this._log(LEVELS['info'], type, fields);
   }
 
   debug(type, fields) {
-    this._log(LEVELS.debug, type, fields);
+    this._log(LEVELS['debug'], type, fields);
   }
 }

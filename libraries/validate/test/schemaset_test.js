@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import SchemaSet from '../src/index.js';
 import _ from 'lodash';
 import libUrls from 'taskcluster-lib-urls';
@@ -16,7 +16,7 @@ suite(testing.suiteName(), () => {
   };
 
   test('abstract schemas available', () => {
-    const schemas = makeSchemaSet().abstractSchemas();
+    let schemas = makeSchemaSet().abstractSchemas();
     assert.equal(_.keys(schemas).length, 9);
     assert(_.includes(_.keys(schemas), 'v1/default-schema.json'));
     assert.equal(
@@ -26,7 +26,7 @@ suite(testing.suiteName(), () => {
   });
 
   test('absolute schemas available', () => {
-    const schemas = makeSchemaSet().absoluteSchemas(rootUrl);
+    let schemas = makeSchemaSet().absoluteSchemas(rootUrl);
     assert.equal(_.keys(schemas).length, 9);
     assert(_.includes(_.keys(schemas), 'v1/default-schema.json'));
     assert.equal(

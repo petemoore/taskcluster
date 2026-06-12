@@ -1,14 +1,14 @@
-import { strict as assert } from 'node:assert';
+import { strict as assert } from 'assert';
 import helper from './helper/index.js';
 import testing from '@taskcluster/lib-testing';
 
-helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
+helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
   helper.withMiddleware(mock, skipping, [
     { 'middlewareType': 'test', startDownload: { intercept: 'dl' } },
     { 'middlewareType': 'test', download: { intercept: 'simple' } },
   ]);
 
-  test('calls middleware for startDownloadRequest', async () => {
+  test('calls middleware for startDownloadRequest', async function() {
     const middleware = await helper.load('middleware');
 
     let reply;
@@ -19,7 +19,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     assert.deepEqual(reply, { method: 'simple', url: 'http://intercepted' });
   });
 
-  test('calls middleware for downloadRequest', async () => {
+  test('calls middleware for downloadRequest', async function() {
     const middleware = await helper.load('middleware');
 
     let redirect;

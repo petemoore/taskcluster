@@ -1,4 +1,4 @@
-import path from 'node:path';
+import path from 'path';
 import cronstrue from 'cronstrue';
 import { markdownTable } from 'markdown-table';
 import { listServices, modifyRepoFile } from '../../utils/index.js';
@@ -67,7 +67,7 @@ tasks.push({
   requires: SERVICES.map(name => `procs-${name}`),
   provides: [],
   run: async (requirements, utils) => {
-    const res = [['Service', 'Name', 'Type', 'Reference']];
+    let res = [['Service', 'Name', 'Type', 'Reference']];
     SERVICES.forEach(name => {
       const procs = requirements[`procs-${name}`];
       Object.entries(procs).filter(([_, { metrics }]) => !!metrics).forEach(([proc, ext]) => {

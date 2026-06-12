@@ -1,8 +1,8 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import { APIBuilder } from '../src/index.js';
 import testing from '@taskcluster/lib-testing';
 
-suite(testing.suiteName(), () => {
+suite(testing.suiteName(), function() {
   // Create test api
   const builder = new APIBuilder({
     title: 'Test Api',
@@ -11,7 +11,7 @@ suite(testing.suiteName(), () => {
     apiVersion: 'v1',
   });
 
-  test('no scopes is OK', () => {
+  test('no scopes is OK', function() {
     // doesn't throw
     builder.declare({
       method: 'get',
@@ -21,10 +21,10 @@ suite(testing.suiteName(), () => {
       category: 'API Library',
       title: 'Test',
       description: 'Test',
-    }, (req, res) => {});
+    }, function(req, res) {});
   });
 
-  test('string scope works', () => {
+  test('string scope works', function() {
     builder.declare({
       method: 'get',
       route: '/testString/:myparam',
@@ -33,11 +33,11 @@ suite(testing.suiteName(), () => {
       category: 'API Library',
       title: 'Test',
       description: 'Test',
-    }, (req, res) => {});
+    }, function(req, res) {});
   });
 
-  test('array of string scope rejected', () => {
-    assert.throws(() => {
+  test('array of string scope rejected', function() {
+    assert.throws(function() {
       builder.declare({
         method: 'get',
         route: '/testArr/:myparam',
@@ -46,12 +46,12 @@ suite(testing.suiteName(), () => {
         category: 'API Library',
         title: 'Test',
         description: 'Test',
-      }, (req, res) => {});
+      }, function(req, res) {});
     }, /Invalid scope expression/);
   });
 
-  test('array of arrays of scope rejected', () => {
-    assert.throws(() => {
+  test('array of arrays of scope rejected', function() {
+    assert.throws(function() {
       builder.declare({
         method: 'get',
         route: '/testArrArr/:myparam',
@@ -60,11 +60,11 @@ suite(testing.suiteName(), () => {
         category: 'API Library',
         title: 'Test',
         description: 'Test',
-      }, (req, res) => {});
+      }, function(req, res) {});
     }, /Invalid scope expression/);
   });
 
-  test('scope expression not rejected', () => {
+  test('scope expression not rejected', function() {
     builder.declare({
       method: 'get',
       route: '/testScope/:myparam',
@@ -73,10 +73,10 @@ suite(testing.suiteName(), () => {
       category: 'API Library',
       title: 'Test',
       description: 'Test',
-    }, (req, res) => {});
+    }, function(req, res) {});
   });
 
-  test('scope expression with looping template not rejected', () => {
+  test('scope expression with looping template not rejected', function() {
     builder.declare({
       method: 'get',
       route: '/testScope2/:myparam',
@@ -85,6 +85,6 @@ suite(testing.suiteName(), () => {
       category: 'API Library',
       title: 'Test',
       description: 'Test',
-    }, (req, res) => {});
+    }, function(req, res) {});
   });
 });

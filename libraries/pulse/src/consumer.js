@@ -1,6 +1,6 @@
 import debug from 'debug';
 import amqplib from 'amqplib';
-import assert from 'node:assert';
+import assert from 'assert';
 import slugid from 'slugid';
 
 /**
@@ -160,7 +160,7 @@ export class PulseConsumer {
       },
     });
 
-    for (const { exchange, routingKeyPattern } of this.bindings) {
+    for (let { exchange, routingKeyPattern } of this.bindings) {
       await channel.bindQueue(queueName, exchange, routingKeyPattern);
     }
 
@@ -261,7 +261,7 @@ export class PulseConsumer {
 
   async _handleMessage(msg) {
     // Construct message
-    const message = {
+    let message = {
       payload: JSON.parse(msg.content.toString('utf8')),
       exchange: msg.fields.exchange,
       routingKey: msg.fields.routingKey,
@@ -270,11 +270,12 @@ export class PulseConsumer {
     };
 
     // Find CC'ed routes
-    if (msg.properties?.headers && Array.isArray(msg.properties.headers.CC)) {
-      message.routes = msg.properties.headers.CC.filter((route) => {
+    if (msg.properties && msg.properties.headers &&
+        msg.properties.headers.CC instanceof Array) {
+      message.routes = msg.properties.headers.CC.filter(function(route) {
         // Only return the CC'ed routes that starts with "route."
         return /^route\.(.*)$/.test(route);
-      }).map((route) => {
+      }).map(function(route) {
         // Remove the "route."
         return /^route\.(.*)$/.exec(route)[1];
       });
@@ -291,11 +292,11 @@ export class PulseConsumer {
     // If we have a routing key reference we can parse the routing key
     if (routingKeyReference) {
       let i, j;
-      const routing = {};
-      const keys = message.routingKey.split('.');
+      let routing = {};
+      let keys = message.routingKey.split('.');
       // first handle non-multi keys from the beginning
       for (i = 0; i < routingKeyReference.length; i++) {
-        const ref = routingKeyReference[i];
+        let ref = routingKeyReference[i];
         if (ref.multipleWords) {
           break;
         }
@@ -305,7 +306,7 @@ export class PulseConsumer {
       if (i < routingKeyReference.length) {
         // then handle non-multi keys from the end
         for (j = routingKeyReference.length - 1; j > i; j--) {
-          const ref = routingKeyReference[j];
+          let ref = routingKeyReference[j];
           if (ref.multipleWords) {
             break;
           }
