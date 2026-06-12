@@ -1,6 +1,6 @@
 import debugFactory from 'debug';
 const debug = debugFactory('app:deadline-resolver');
-import assert from 'node:assert';
+import assert from 'assert';
 import _ from 'lodash';
 import QueueService from './queueservice.js';
 import Iterate from '@taskcluster/lib-iterate';
@@ -69,7 +69,7 @@ class DeadlineResolver {
       monitor: this.monitor,
       maxIterationTime: 601 * 1000,
       handler: async () => {
-        const loops = [];
+        let loops = [];
         for (let i = 0; i < this.parallelism; i++) {
           loops.push(this.poll());
         }
@@ -95,7 +95,7 @@ class DeadlineResolver {
 
   /** Poll for messages and handle them in a loop */
   async poll() {
-    const messages = await this.queueService.pollDeadlineQueue(this.count);
+    let messages = await this.queueService.pollDeadlineQueue(this.count);
     let failed = 0;
 
     await Promise.all(messages.map(async (message) => {
@@ -131,18 +131,11 @@ class DeadlineResolver {
       return remove();
     }
 
-    const updated = task.updateStatusWith(
-      await this.db.fns.cancel_task(taskId, 'deadline-exceeded'),
-    );
-
-    if (!updated) {
-      debug('No cancellation run created for taskId: %s; task was already resolved', taskId);
-      return remove();
-    }
+    task.updateStatusWith(await this.db.fns.cancel_task(taskId, 'deadline-exceeded'));
 
     // Check if the last run was resolved here (or possibly by a previous
     // attempt to process this message)
-    const run = _.last(task.runs);
+    let run = _.last(task.runs);
     if (run.reasonResolved === 'deadline-exceeded' &&
         run.state === 'exception') {
       debug('Resolved taskId: %s, by deadline', taskId);

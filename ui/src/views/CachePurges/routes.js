@@ -1,16 +1,14 @@
 import lazy from '../../utils/lazy';
 
-const ViewCachePurges = lazy(
-  () =>
-    import(
-      /* webpackChunkName: 'CachePurges.ViewCachePurges' */ './ViewCachePurges'
-    )
+const ViewCachePurges = lazy(() =>
+  import(
+    /* webpackChunkName: 'CachePurges.ViewCachePurges' */ './ViewCachePurges'
+  )
 );
-const CreatePurgeCacheRequest = lazy(
-  () =>
-    import(
-      /* webpackChunkName: 'CachePurges.CreatePurgeCacheRequest' */ './CreatePurgeCacheRequest'
-    )
+const CreatePurgeCacheRequest = lazy(() =>
+  import(
+    /* webpackChunkName: 'CachePurges.CreatePurgeCacheRequest' */ './CreatePurgeCacheRequest'
+  )
 );
 
 export default path => [
