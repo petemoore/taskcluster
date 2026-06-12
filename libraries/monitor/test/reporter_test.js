@@ -1,12 +1,12 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import testing from '@taskcluster/lib-testing';
 import MonitorManager from '../src/monitormanager.js';
 
-suite(testing.suiteName(), () => {
+suite(testing.suiteName(), function() {
 
-  suite('sentry', () => {
+  suite('sentry', function() {
     let monitor, reported;
-    setup(() => {
+    setup(function() {
       reported = null;
       monitor = MonitorManager.setup({
         serviceName: 'testing-service',
@@ -30,12 +30,12 @@ suite(testing.suiteName(), () => {
       });
     });
 
-    teardown(async () => {
+    teardown(async function() {
       await monitor.terminate();
       reported = null;
     });
 
-    test('simple error report', async () => {
+    test('simple error report', async function() {
       monitor.reportError(new Error('hi'));
       await monitor.terminate();
       assert.equal(reported.tags.service, 'testing-service');
@@ -43,7 +43,7 @@ suite(testing.suiteName(), () => {
       assert.equal(reported.release, '123:foo');
       assert.equal(reported.level, 'error');
     });
-    test('error report with level', async () => {
+    test('error report with level', async function() {
       monitor.reportError(new Error('hi'), 'notice');
       await monitor.terminate();
       assert.equal(reported.tags.service, 'testing-service');
@@ -51,7 +51,7 @@ suite(testing.suiteName(), () => {
       assert.equal(reported.release, '123:foo');
       assert.equal(reported.level, 'info');
     });
-    test('error report with tags', async () => {
+    test('error report with tags', async function() {
       monitor.reportError(new Error('hi'), { baz: 'bing' });
       await monitor.terminate();
       assert.equal(reported.tags.service, 'testing-service');
@@ -60,7 +60,7 @@ suite(testing.suiteName(), () => {
       assert.equal(reported.release, '123:foo');
       assert.equal(reported.level, 'error');
     });
-    test('error report with level and tags', async () => {
+    test('error report with level and tags', async function() {
       monitor.reportError(new Error('hi'), 'warning', { baz: 'bing' });
       await monitor.terminate();
       assert.equal(reported.tags.service, 'testing-service');

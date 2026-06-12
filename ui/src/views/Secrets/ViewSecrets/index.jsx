@@ -4,6 +4,7 @@ import dotProp from 'dot-prop-immutable';
 import { withStyles } from '@material-ui/core/styles';
 import Typography from '@material-ui/core/Typography';
 import PlusIcon from 'mdi-react/PlusIcon';
+import escapeStringRegexp from 'escape-string-regexp';
 import qs from 'qs';
 import Spinner from '../../../components/Spinner';
 import Dashboard from '../../../components/Dashboard';
@@ -28,7 +29,9 @@ import deleteSecretQuery from './deleteSecret.graphql';
         secretsConnection: {
           limit: VIEW_SECRETS_PAGE_SIZE,
         },
-        searchTerm: search || null,
+        filter: search
+          ? { name: { $regex: escapeStringRegexp(search), $options: 'i' } }
+          : null,
       },
     };
   },
@@ -54,7 +57,9 @@ export default class ViewSecrets extends Component {
       secretsConnection: {
         limit: VIEW_SECRETS_PAGE_SIZE,
       },
-      searchTerm: secretSearch || null,
+      filter: secretSearch
+        ? { name: { $regex: escapeStringRegexp(secretSearch), $options: 'i' } }
+        : null,
     });
 
     const query = qs.parse(window.location.search.slice(1));
@@ -86,7 +91,14 @@ export default class ViewSecrets extends Component {
           cursor,
           previousCursor,
         },
-        searchTerm: secretSearch || null,
+        filter: secretSearch
+          ? {
+              name: {
+                $regex: escapeStringRegexp(secretSearch),
+                $options: 'i',
+              },
+            }
+          : null,
       },
       updateQuery(previousResult, { fetchMoreResult }) {
         const { edges, pageInfo } = fetchMoreResult.secrets;

@@ -1,25 +1,25 @@
 import _ from 'lodash';
 import { dollarQuote, paginatedIterator } from '../src/util.js';
-import assert from 'node:assert';
-import path from 'node:path';
+import assert from 'assert';
+import path from 'path';
 
 const { range } = _;
 const __filename = new URL('', import.meta.url).pathname;
 
-suite(path.basename(__filename), () => {
-  suite('dollarQuote', () => {
-    test('simple string', () => {
+suite(path.basename(__filename), function() {
+  suite('dollarQuote', function() {
+    test('simple string', function() {
       assert.equal(dollarQuote('abcd'), '$$abcd$$');
     });
 
-    test('string containing $$', () => {
+    test('string containing $$', function() {
       assert.equal(dollarQuote('pre $$abcd$$ post'), '$x$pre $$abcd$$ post$x$');
     });
   });
 
-  suite('paginatedIterator', () => {
-    suite('offset/limit', () => {
-      test('iterate in a few batches', async () => {
+  suite('paginatedIterator', function() {
+    suite('offset/limit', function() {
+      test('iterate in a few batches', async function() {
         const calls = [];
         const fetch = async (size, offset) => {
           calls.push([size, offset]);
@@ -27,7 +27,7 @@ suite(path.basename(__filename), () => {
         };
 
         const got = [];
-        for await (const v of paginatedIterator({ fetch, size: 13 })) {
+        for await (let v of paginatedIterator({ fetch, size: 13 })) {
           got.push(v);
         }
 
@@ -35,20 +35,20 @@ suite(path.basename(__filename), () => {
         assert.deepEqual(calls, range(0, 1000, 13).map(i => [13, i]).concat([[13, 1000]]));
       });
 
-      test('batch size smaller than requested', async () => {
+      test('batch size smaller than requested', async function() {
         const fetch = async (size, offset) => {
           return range(1000).slice(offset, offset + 10);
         };
 
         const got = [];
-        for await (const v of paginatedIterator({ fetch, size: 100 })) {
+        for await (let v of paginatedIterator({ fetch, size: 100 })) {
           got.push(v);
         }
 
         assert.deepEqual(got, range(1000));
       });
 
-      test('fetch fails', async () => {
+      test('fetch fails', async function() {
         const fetch = async (size, offset) => {
           if (offset > 300) {
             throw new Error('oh noes');
@@ -58,14 +58,14 @@ suite(path.basename(__filename), () => {
 
         assert.rejects(async () => {
           const got = [];
-          for await (const v of paginatedIterator({ fetch, size: 100 })) {
+          for await (let v of paginatedIterator({ fetch, size: 100 })) {
             got.push(v);
           }
         }, /oh noes/);
       });
     });
 
-    suite('index-based', () => {
+    suite('index-based', function() {
       const indexColumns = ['a', 'b'];
       const data = (A, B) => range(0, A).flatMap(a => range(0, B).map(b => ({ a, b })));
       let calls;
@@ -83,10 +83,10 @@ suite(path.basename(__filename), () => {
         };
       };
 
-      test('iterate in a few batches', async () => {
+      test('iterate in a few batches', async function() {
         calls = [];
         const got = [];
-        for await (const v of paginatedIterator({
+        for await (let v of paginatedIterator({
           indexColumns,
           fetch: fetcher(20, 11),
           size: 13,
@@ -117,9 +117,9 @@ suite(path.basename(__filename), () => {
         ]);
       });
 
-      test('batch size smaller than requested', async () => {
+      test('batch size smaller than requested', async function() {
         const got = [];
-        for await (const v of paginatedIterator({
+        for await (let v of paginatedIterator({
           indexColumns,
           fetch: fetcher(20, 12, 15),
           size: 130,
@@ -130,9 +130,9 @@ suite(path.basename(__filename), () => {
         assert.deepEqual(got, data(20, 12));
       });
 
-      test('fetch fails', async () => {
+      test('fetch fails', async function() {
         assert.rejects(async () => {
-          for await (const _ of paginatedIterator({
+          for await (let _ of paginatedIterator({
             indexColumns,
             fetch: async () => { throw new Error('uhoh'); },
           })) {
