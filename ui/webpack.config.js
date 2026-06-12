@@ -1,6 +1,6 @@
+const webpack = require("webpack");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
-const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
 const generateEnvJs = require("./generate-env-js");
 const DEFAULT_PORT = 5080;
@@ -24,27 +24,25 @@ if (process.env.GENERATE_ENV_JS) {
 }
 
 module.exports = (_, { mode }) => ({
-  devtool: mode === "production" ? false : "cheap-module-eval-source-map",
+  devtool: mode === "production" ? false : "eval-cheap-module-source-map",
   target: "web",
   context: __dirname,
   watchOptions: {
-    ignored: (p) => !p.startsWith(__dirname),
+    // webpack 5's schema no longer accepts a function here; ignore the large
+    // node_modules tree to keep watch mode responsive.
+    ignored: /node_modules/,
   },
   externals: { bindings: "bindings" },
   output: {
     path: `${__dirname}/build`,
     publicPath: "/",
-    filename: "assets/[name].[hash:8].js",
+    filename: "assets/[name].[contenthash:8].js",
+    clean: true,
   },
   stats: {
     children: false,
     entrypoints: false,
     modules: false,
-  },
-  node: {
-    Buffer: true,
-    fs: "empty",
-    tls: "empty",
   },
   resolve: {
     alias: {
@@ -59,6 +57,29 @@ module.exports = (_, { mode }) => ({
       ".js",
       ".json",
     ],
+    // webpack 5 no longer polyfills Node.js core modules automatically (it
+    // used to pull them in via node-libs-browser). `@mdx-js/runtime` bundles a
+    // full Babel build that references these core modules, so we restore the
+    // same browserify polyfills webpack 4 provided. `fs`/`tls`/`net` keep the
+    // previous `node: { fs: "empty", tls: "empty" }` behaviour (now `false`),
+    // and `Buffer` is provided via ProvidePlugin plus the `buffer` fallback.
+    fallback: {
+      fs: false,
+      tls: false,
+      net: false,
+      buffer: require.resolve("buffer/"),
+      assert: require.resolve("assert/"),
+      crypto: require.resolve("crypto-browserify"),
+      http: require.resolve("stream-http"),
+      https: require.resolve("https-browserify"),
+      os: require.resolve("os-browserify/browser"),
+      path: require.resolve("path-browserify"),
+      querystring: require.resolve("querystring-es3"),
+      stream: require.resolve("stream-browserify"),
+      url: require.resolve("url/"),
+      vm: require.resolve("vm-browserify"),
+      zlib: require.resolve("browserify-zlib"),
+    },
   },
   optimization: {
     minimize: true,
@@ -71,24 +92,16 @@ module.exports = (_, { mode }) => ({
       disableDotRule: true,
       rewrites: [{ from: /^\/docs/, to: "/docs.html" }],
     },
-    proxy: {
-      "/login": {
+    // webpack-dev-server v5 requires the proxy option to be an array of
+    // route definitions (the object form from v3 is no longer supported).
+    proxy: [
+      {
+        context: ["/login", "/graphql", "/schemas", "/references", "/api/web-server"],
         target: proxyTarget,
         changeOrigin: true,
       },
-      "/graphql": {
-        target: proxyTarget,
-        changeOrigin: true,
-      },
-      "/schemas": {
-        target: proxyTarget,
-        changeOrigin: true,
-      },
-      "/references": {
-        target: proxyTarget,
-        changeOrigin: true,
-      },
-      "/subscription": {
+      {
+        context: ["/subscription"],
         ws: true,
         changeOrigin: true,
         target: proxyTarget.replace(/^http(s)?:/, "ws$1:"),
@@ -101,11 +114,7 @@ module.exports = (_, { mode }) => ({
           });
         },
       },
-      "/api/web-server": {
-        target: proxyTarget,
-        changeOrigin: true,
-      },
-    },
+    ],
   },
   module: {
     rules: [
@@ -115,7 +124,15 @@ module.exports = (_, { mode }) => ({
           {
             loader: "html-loader",
             options: {
-              attrs: ["img:src", "link:href"],
+              // html-loader v5 replaced the `attrs` option with `sources`.
+              // The default already processes `img:src` and `link:href`, so
+              // restrict it to those attributes to preserve prior behaviour.
+              sources: {
+                list: [
+                  { tag: "img", attribute: "src", type: "src" },
+                  { tag: "link", attribute: "href", type: "src" },
+                ],
+              },
             },
           },
         ],
@@ -245,7 +262,7 @@ module.exports = (_, { mode }) => ({
           {
             loader: "file-loader",
             options: {
-              name: "assets/[name].[hash:8].[ext]",
+              name: "assets/[name].[contenthash:8].[ext]",
             },
           },
         ],
@@ -257,7 +274,7 @@ module.exports = (_, { mode }) => ({
             loader: "url-loader",
             options: {
               limit: 8192,
-              name: "assets/[name].[hash:8].[ext]",
+              name: "assets/[name].[contenthash:8].[ext]",
               fallback: require.resolve("file-loader"),
             },
           },
@@ -294,8 +311,10 @@ module.exports = (_, { mode }) => ({
         ],
       },
       {
+        // webpack 5 parses JSON natively via the built-in `json` module type,
+        // so the deprecated json-loader is no longer required.
         test: /\.all-contributorsrc$/,
-        loader: "json-loader",
+        type: "json",
       },
     ],
   },
@@ -347,23 +366,31 @@ module.exports = (_, { mode }) => ({
       lang: "en",
     }),
     new MiniCssExtractPlugin({
-      filename: "assets/[name].[hash:8].css",
+      filename: "assets/[name].[contenthash:8].css",
       ignoreOrder: false,
-      chunkFilename: "assets/[name].[hash:8].css",
+      chunkFilename: "assets/[name].[contenthash:8].css",
     }),
-    new CleanWebpackPlugin({
-      dangerouslyAllowCleanPatternsOutsideProject: false,
-      dry: false,
-      verbose: false,
-      cleanStaleWebpackAssets: true,
-      protectWebpackAssets: true,
-      cleanAfterEveryBuildPatterns: [],
-      cleanOnceBeforeBuildPatterns: ["**/*"],
-      currentAssets: [],
-      initialClean: false,
-      outputPath: "",
+    // clean-webpack-plugin is replaced by the built-in `output.clean: true`.
+    // copy-webpack-plugin v12 takes a `{ patterns: [...] }` object instead of
+    // a bare array.
+    new CopyPlugin({
+      patterns: [
+        {
+          context: "src/static",
+          from: "**/*",
+          to: "static",
+          // src/static is generated at runtime (env.js) and may be absent at
+          // build time; copy-webpack-plugin v12 errors on a missing source
+          // unless told otherwise.
+          noErrorOnMissing: true,
+        },
+      ],
     }),
-    new CopyPlugin([{ context: "src/static", from: "**/*", to: "static" }]),
+    // webpack 5 no longer provides a global Buffer shim automatically; restore
+    // it to match the previous `node: { Buffer: true }` behaviour.
+    new webpack.ProvidePlugin({
+      Buffer: ["buffer", "Buffer"],
+    }),
   ],
   entry: {
     index: [`${__dirname}/src/index.jsx`],

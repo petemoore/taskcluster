@@ -1065,6 +1065,12 @@ export class AzureProvider extends Provider {
       forge.pki.verifyCertificateChain(
         cloneCaStore(this.caStore),
         [crt],
+        // Check certificate validity dates against the injectable clock. In
+        // production `_now()` returns the real current time, which matches
+        // forge's default behaviour of validating against `new Date()`; in
+        // tests it can be pinned to the point in time at which a recorded
+        // signature fixture's certificate chain was valid.
+        { validityCheckDate: this._now() },
       );
     } catch (err) {
       this.monitor.log.registrationErrorWarning({

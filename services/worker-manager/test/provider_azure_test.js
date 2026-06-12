@@ -191,8 +191,13 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
       },
     });
 
-    // So that checked-in certs are still valid
-    provider._now = () => taskcluster.fromNow('-10 years');
+    // Pin the clock to a fixed point in time when the recorded signature
+    // fixture (test/fixtures/azure_signature_good.json) is valid, rather than
+    // a moving offset from the real clock. The fixture's leaf certificate
+    // (CN=metadata.azure.com) is valid 2025-10-25..2026-04-23 and the signed
+    // document expires 2025-11-19T18:53:30Z, so this instant is both within
+    // the certificate chain validity window and before the message expiry.
+    provider._now = () => new Date('2025-11-19T13:00:00Z');
 
     await helper.db.fns.delete_worker_pool(workerPoolId);
 
@@ -2201,7 +2206,11 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
 
           // see services/worker-manager/README.md#Testing on how this file was obtained
           const workerIdentityProof = { document: azureSignatures[0].document };
-          provider._now = () => new Date(new Date().getFullYear() + 1, 1, 1); // in the future for this fixture
+          // After the signed document's expiry (2025-11-19T18:53:30Z) but
+          // still within the fixture certificate chain's validity window, so
+          // the request fails the message-expiry check rather than the
+          // certificate-chain check.
+          provider._now = () => new Date('2025-11-20T00:00:00Z');
           await assert.rejects(() =>
             provider.registerWorker({ workerPool, worker, workerIdentityProof }),
           /Signature validation error/);
