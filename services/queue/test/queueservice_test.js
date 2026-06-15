@@ -1,13 +1,13 @@
 import slugid from 'slugid';
-import assert from 'node:assert';
-import crypto from 'node:crypto';
+import assert from 'assert';
+import crypto from 'crypto';
 import QueueService from '../src/queueservice.js';
 import debugFactory from 'debug';
 const debug = debugFactory('test:queueservice');
 import testing from '@taskcluster/lib-testing';
 import helper from './helper.js';
 
-helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
+helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
   helper.withDb(mock, skipping);
   let queueService;
 
@@ -42,7 +42,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     }
   });
 
-  suiteTeardown(() => {
+  suiteTeardown(function() {
     if (skipping()) {
       return;
     }
@@ -60,7 +60,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     const taskId = slugid.v4();
     const taskGroupId = slugid.v4();
     const schedulerId = slugid.v4();
-    const deadline = new Date(Date.now() + 1 * 1000);
+    const deadline = new Date(new Date().getTime() + 1 * 1000);
     debug('Putting message with taskId: %s, taskGroupId: %s', taskId, taskGroupId);
     // Put message
     await queueService.putDeadlineMessage(taskId, taskGroupId, schedulerId, deadline);
@@ -86,7 +86,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
 
   test('putClaimMessage, pollClaimQueue', async () => {
     const taskId = slugid.v4();
-    const takenUntil = new Date(Date.now() + 2 * 1000);
+    const takenUntil = new Date(new Date().getTime() + 2 * 1000);
     debug('Putting message with taskId: %s', taskId);
     // Put message
     await queueService.putClaimMessage(taskId, 0, takenUntil, 'tq/id', 'wg', 'wi');
@@ -117,7 +117,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     debug('Putting message with taskId: %s, taskGroupId: %s', taskId, taskGroupId);
 
     // when task is resolved, existing claim and pending message should be removed
-    const futureDate = new Date(Date.now() + 24 * 60 * 1000);
+    const futureDate = new Date(new Date().getTime() + 24 * 60 * 1000);
     await queueService.putClaimMessage(taskId, 0, futureDate, 'tq/id', 'wg', 'wi');
     await queueService.putDeadlineMessage(taskId, taskGroupId, schedulerId, futureDate);
     await queueService.putPendingMessage({ taskId, taskGroupId, deadline: futureDate, taskQueueId: 't/q' }, 0);
@@ -171,7 +171,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       taskId: taskId,
       taskQueueId: `${provisionerId}/${workerType}`,
       priority: 'lowest',
-      deadline: new Date(Date.now() + 5 * 60 * 1000),
+      deadline: new Date(new Date().getTime() + 5 * 60 * 1000),
     };
 
     // Put message into pending queue
@@ -179,11 +179,11 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     await queueService.putPendingMessage(task, runId);
 
     // Get poll functions for queues
-    const poll = await queueService.pollPendingQueue(`${provisionerId}/${workerType}`);
+    let poll = await queueService.pollPendingQueue(`${provisionerId}/${workerType}`);
 
     // Poll for the message
     let message = await testing.poll(async () => {
-      const messages = await poll(1);
+      let messages = await poll(1);
       if (messages.length === 1) {
         return messages[0];
       }
@@ -199,7 +199,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
 
     // Poll message again
     message = await testing.poll(async () => {
-      const messages = await poll(1);
+      let messages = await poll(1);
       if (messages.length === 1) {
         return messages[0];
       }

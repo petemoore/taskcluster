@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 
 /** @typedef {'aes-256'} AlgoType */
 

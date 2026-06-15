@@ -1,18 +1,18 @@
-import assert from 'node:assert';
-import stream from 'node:stream';
+import assert from 'assert';
+import stream from 'stream';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import MonitorManager from '../src/monitormanager.js';
 import testing from '@taskcluster/lib-testing';
-import fs from 'node:fs';
-import path from 'node:path';
+import fs from 'fs';
+import path from 'path';
 
 const __dirname = new URL('.', import.meta.url).pathname;
 
-suite(testing.suiteName(), () => {
+suite(testing.suiteName(), function() {
   let monitorManager, monitor;
 
-  setup(() => {
+  setup(function() {
     monitor = MonitorManager.setup({
       serviceName: 'testing-service',
       level: 'debug',
@@ -26,22 +26,22 @@ suite(testing.suiteName(), () => {
       message => monitorManager.messages.push(message);
   });
 
-  teardown(async () => {
+  teardown(async function() {
     await monitor.terminate();
   });
 
-  test('logger moves explicitly set traceId up', () => {
+  test('logger moves explicitly set traceId up', function() {
     monitor.info({ traceId: 'foo/bar' });
     assert.equal(monitorManager.messages[0].traceId, 'foo/bar');
     assert.equal(monitorManager.messages[0].Fields.traceId, undefined);
   });
 
-  test('logger with no traceId leaves it out', () => {
+  test('logger with no traceId leaves it out', function() {
     monitor.info({ something: 123 });
     assert.equal(monitorManager.messages[0].traceId, undefined);
   });
 
-  test('logger conforms to schema', () => {
+  test('logger conforms to schema', function() {
     const schema = JSON.parse(fs.readFileSync(path.resolve(__dirname, './mozlog_schema.json'), 'utf8'));
     monitor.info('something', { test: 123 });
     const event = monitorManager.messages[0];
@@ -51,7 +51,7 @@ suite(testing.suiteName(), () => {
     assert(ajv.validate(schema, event), ajv.errorsText());
   });
 
-  test('logger separates lines with newlines', () => {
+  test('logger separates lines with newlines', function() {
     let results = Buffer.alloc(0);
     const destination = new stream.Writable({
       write: (chunk, encoding, next) => {
@@ -76,50 +76,50 @@ suite(testing.suiteName(), () => {
     JSON.parse(results[2]);
   });
 
-  test('simple eliding', () => {
+  test('simple eliding', function() {
     monitor.info({ credentials: 5 });
     assert.equal(monitorManager.messages[0].Type, 'monitor.generic');
     assert.equal(monitorManager.messages[0].Fields.credentials, '...');
   });
 
-  test('nested eliding', () => {
+  test('nested eliding', function() {
     monitor.info({ whatever: [{ accessToken: 'hi' }] });
     assert.equal(monitorManager.messages[0].Type, 'monitor.generic');
     assert.equal(monitorManager.messages[0].Fields.whatever[0].accessToken, '...');
   });
 
-  test('null eliding does not crash', () => {
+  test('null eliding does not crash', function() {
     monitor.info({ something: null });
     assert.equal(monitorManager.messages[0].Type, 'monitor.generic');
     assert.equal(monitorManager.messages[0].Fields.something, null);
   });
 
-  test('empty data still logs', () => {
+  test('empty data still logs', function() {
     monitor.info({ whatever: 5 });
     assert.equal(monitorManager.messages[0].Type, 'monitor.generic');
     assert.equal(monitorManager.messages[0].Fields.whatever, 5);
   });
 
-  test('string data still logs', () => {
+  test('string data still logs', function() {
     monitor.info('baz', 'hello');
     assert.equal(monitorManager.messages[0].Type, 'baz');
     assert.equal(monitorManager.messages[0].Fields.message, 'hello');
   });
 
-  test('number data still logs', () => {
+  test('number data still logs', function() {
     monitor.info('foobar', 5.0);
     assert.equal(monitorManager.messages[0].Type, 'foobar');
     assert.equal(monitorManager.messages[0].Fields.message, 5.0);
   });
 
-  test('multiline fields.message is truncated in message', () => {
+  test('multiline fields.message is truncated in message', function() {
     monitor.info('foobar', { message: 'title\nmore info\neven more' });
     assert.equal(monitorManager.messages[0].Type, 'foobar');
     assert.equal(monitorManager.messages[0].message, 'title');
     assert.equal(monitorManager.messages[0].Fields.message, 'title\nmore info\neven more');
   });
 
-  test('null data still logs', () => {
+  test('null data still logs', function() {
     monitor.info('something', null);
     assert.equal(monitorManager.messages[0].Type, 'monitor.loggingError');
     assert.equal(monitorManager.messages[0].Fields.error, 'Invalid field to be logged.');
@@ -127,7 +127,7 @@ suite(testing.suiteName(), () => {
     assert.equal(monitorManager.messages[0].Fields.orig, null);
   });
 
-  test('boolean data still logs', () => {
+  test('boolean data still logs', function() {
     monitor.info('something', true);
     assert.equal(monitorManager.messages[0].Type, 'monitor.loggingError');
     assert.equal(monitorManager.messages[0].Fields.error, 'Invalid field to be logged.');
@@ -135,7 +135,7 @@ suite(testing.suiteName(), () => {
     assert.equal(monitorManager.messages[0].Fields.orig, true);
   });
 
-  test('metadata still logs but alerts', () => {
+  test('metadata still logs but alerts', function() {
     monitor.info('something', { meta: 'foo' });
     assert.equal(monitorManager.messages[0].Type, 'monitor.loggingError');
     assert.equal(monitorManager.messages[0].Fields.error, 'You may not set meta fields on logs directly.');
@@ -143,7 +143,7 @@ suite(testing.suiteName(), () => {
     assert.equal(monitorManager.messages[0].Fields.orig.meta, 'foo');
   });
 
-  test('all logging levels represented', () => {
+  test('all logging levels represented', function() {
     const levels = [
       'emerg',
       'alert',
@@ -166,7 +166,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('levels work', () => {
+  test('levels work', function() {
     const m = MonitorManager.setup({
       serviceName: 'taskcluster-level',
       level: 'alert',

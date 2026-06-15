@@ -17,7 +17,7 @@ const secretToJson = (db, item) => ({
 /** API end-point for version v1/
  *
  */
-const builder = new APIBuilder({
+let builder = new APIBuilder({
   title: 'Secrets Service',
   description: [
     'The secrets service provides a simple key/value store for small bits of secret',
@@ -36,7 +36,7 @@ const builder = new APIBuilder({
 // Export API
 export default builder;
 
-const cleanPayload = payload => {
+let cleanPayload = payload => {
   payload.secret = '(OMITTED)';
   return payload;
 };
@@ -153,10 +153,10 @@ builder.declare({
     'List the names of all secrets.',
     '',
     'By default this end-point will try to return up to 1000 secret names in one',
-    'request. But it **may return less**, even if more secrets are available.',
+    'request. But it **may return less**, even if more tasks are available.',
     'It may also return a `continuationToken` even though there are no more',
     'results. However, you can only be sure to have seen all results if you',
-    'keep calling `list` with the last `continuationToken` until you',
+    'keep calling `listTaskGroup` with the last `continuationToken` until you',
     'get a result without a `continuationToken`.',
     '',
     'If you are not interested in listing all the members at once, you may',
@@ -191,7 +191,7 @@ builder.declare({
     'This endpoint is used to check on backing services this service',
     'depends on.',
   ].join('\n'),
-}, (_req, res) => {
+}, function(_req, res) {
   // TODO: add implementation
   res.reply({});
 });

@@ -20,12 +20,12 @@ export const sentryBuilder = builder => builder.declare({
     'to have the project transferred to a team you have access to if needed',
   ].join('\n'),
 }, async function(req, res) {
-  const project = req.params.project;
+  let project = req.params.project;
 
   // Check scopes
   await req.authorize({ project });
 
-  const key = await this.sentryManager.projectDSN(project);
+  let key = await this.sentryManager.projectDSN(project);
 
   if (!key) {
     return res.reportError(

@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import taskcluster from '@taskcluster/client';
 import debugFactory from 'debug';
 const debug = debugFactory('hooks:taskcreator');
@@ -28,7 +28,7 @@ export class TaskCreator {
 
   taskForHook(hook, context, options) {
     const now = options.created;
-    const task = jsone(hook.task, _.defaults({}, context, { now, taskId: options.taskId }));
+    let task = jsone(hook.task, _.defaults({}, context, { now, taskId: options.taskId }));
     if (!task) {
       return;
     }
@@ -102,7 +102,7 @@ export class TaskCreator {
 
       // create a queue instance with its authorized scopes limited to those
       // assigned to the hook.
-      const role = `assume:hook-id:${hook.hookGroupId}/${hook.hookId}`;
+      const role = 'assume:hook-id:' + hook.hookGroupId + '/' + hook.hookId;
       const queue = new taskcluster.Queue({
         rootUrl: this.rootUrl,
         credentials: this.credentials,
@@ -141,17 +141,10 @@ export class TaskCreator {
         // of the LastFire table
         let lfError;
 
-        if (err && typeof err === 'object') {
-          lfError = JSON.stringify({
-            name: err.name,
-            message: err.message,
-            code: err.code,
-            statusCode: err.statusCode ?? err.response?.statusCode,
-            url: err.options?.url?.href,
-            body: err.body,
-          }, null, 2);
+        if (typeof err === 'object') {
+          lfError = JSON.stringify(err, null, 2);
         } else {
-          lfError = String(err);
+          lfError = err.toString();
         }
         if (lfError.length > 256 * 1024 / 2) {
           lfError = lfError.substring(0, 256 * 1024 / 2);
@@ -194,7 +187,7 @@ export class MockTaskCreator extends TaskCreator {
 
   async fire(hook, context, options) {
     if (this.shouldFail) {
-      const err = new Error();
+      let err = new Error();
       Object.assign(err, this.shouldFail);
       throw err;
     }

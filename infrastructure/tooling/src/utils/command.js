@@ -1,7 +1,7 @@
-import fs from 'node:fs';
-import { promisify } from 'node:util';
-import { spawn, execFile } from 'node:child_process';
-import { Transform } from 'node:stream';
+import fs from 'fs';
+import { promisify } from 'util';
+import { spawn, execFile } from 'child_process';
+import { Transform } from 'stream';
 
 const execFileAsync = promisify(execFile);
 
@@ -73,7 +73,7 @@ export const execCommand = async ({
       if (keepAllOutput) {
         output += chunk.toString();
       } else {
-        output = `...\n${chunk.toString()}`;
+        output = '...\n' + chunk.toString();
       }
       callback(null, chunk);
     },
