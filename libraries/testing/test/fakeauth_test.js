@@ -6,16 +6,16 @@ import SchemaSet from '@taskcluster/lib-validate';
 import { APIBuilder } from '@taskcluster/lib-api';
 import { MonitorManager } from '@taskcluster/lib-monitor';
 import { App } from '@taskcluster/lib-app';
-import assert from 'node:assert';
+import assert from 'assert';
 import taskcluster from '@taskcluster/client';
-import path from 'node:path';
+import path from 'path';
 import libUrls from 'taskcluster-lib-urls';
 import testing from '@taskcluster/lib-testing';
 
 const __dirname = new URL('.', import.meta.url).pathname;
 
 let monitor;
-suiteSetup(() => {
+suiteSetup(function() {
   monitor = MonitorManager.setup({
     serviceName: 'whatever',
     fake: true,
@@ -39,7 +39,7 @@ builder.declare({
   title: 'Test function',
   description: 'for testing',
   category: 'Testing library',
-}, async (req, res) => {
+}, async function(req, res) {
   try {
     await req.authorize();
     return res.reply({ hasTestScope: true });
@@ -51,12 +51,12 @@ builder.declare({
   }
 });
 
-suite(testing.suiteName(), () => {
+suite(testing.suiteName(), function() {
   const rootUrl = 'http://localhost:1208';
-  const fakeauth = testing.fakeauth;
+  let fakeauth = testing.fakeauth;
   let server;
 
-  suiteSetup(async () => {
+  suiteSetup(async function() {
     const schemaset = new SchemaSet({
       rootUrl,
       serviceName: 'lib-testing',
@@ -85,16 +85,18 @@ suite(testing.suiteName(), () => {
     server.setTimeout(500);
   });
 
-  suiteTeardown(() => server.terminate());
+  suiteTeardown(function() {
+    return server.terminate();
+  });
 
-  teardown(() => {
+  teardown(function() {
     fakeauth.stop();
   });
 
-  const callApi = (clientId, extContent) => {
+  let callApi = (clientId, extContent) => {
     // We'll call both with auth headers and bewit
-    const reqUrl = libUrls.api(rootUrl, 'test', 'v1', 'test');
-    const content = {
+    let reqUrl = libUrls.api(rootUrl, 'test', 'v1', 'test');
+    let content = {
       ttlSec: 60 * 5,
       credentials: {
         id: clientId,
@@ -103,62 +105,62 @@ suite(testing.suiteName(), () => {
       },
     };
     if (extContent) {
-      content.ext = Buffer.from(JSON.stringify(extContent)).toString('base64');
+      content['ext'] = Buffer.from(JSON.stringify(extContent)).toString('base64');
     }
 
-    const { header } = hawk.client.header(reqUrl, 'GET', content);
+    let { header } = hawk.client.header(reqUrl, 'GET', content);
 
-    const bewit = hawk.uri.getBewit(reqUrl, content);
-    const bewitUrl = `${reqUrl}?bewit=${bewit}`;
+    let bewit = hawk.uri.getBewit(reqUrl, content);
+    let bewitUrl = reqUrl + '?bewit=' + bewit;
     return Promise.all([
       request
         .get(reqUrl)
         .set('Authorization', header)
-        .then((res) => {
+        .then(function(res) {
           debug(res.body);
           return res;
         }),
       request
         .get(bewitUrl)
-        .then((res) => {
+        .then(function(res) {
           debug(res.body);
           return res;
         }),
     ]);
   };
 
-  test('using a rawClientId', () => {
+  test('using a rawClientId', function() {
     fakeauth.start({ client1: ['test.scope'] }, { rootUrl });
-    return callApi('client1').then((responses) => {
-      for (const res of responses) {
+    return callApi('client1').then(function(responses) {
+      for (let res of responses) {
         assert(res.ok && res.body.hasTestScope, 'Request failed');
       }
     });
   });
 
-  test('using an unconfigured rawClientId', () => {
+  test('using an unconfigured rawClientId', function() {
     fakeauth.start({ client1: ['test.scope'] }, { rootUrl });
     return callApi('unconfiguredClient')
       .then(() => {assert(false, 'should have failed');})
-      .catch((err) => {
+      .catch(function(err) {
         assert.equal(err.status, 401, 'wrong error code returned');
       });
   });
 
-  test('using authorizedScopes', () => {
+  test('using authorizedScopes', function() {
     fakeauth.start({ client1: ['some.other.scope'] }, { rootUrl });
     return callApi('client1', {
       authorizedScopes: ['test.scope'],
-    }).then((responses) => {
-      for (const res of responses) {
+    }).then(function(responses) {
+      for (let res of responses) {
         assert(res.ok && res.body.hasTestScope, 'Request failed');
       }
     });
   });
 
-  test('using temp creds', () => {
+  test('using temp creds', function() {
     fakeauth.start({ client1: ['some.other.scope'] }, { rootUrl });
-    const tempCreds = taskcluster.createTemporaryCredentials({
+    let tempCreds = taskcluster.createTemporaryCredentials({
       scopes: ['test.scope'],
       expiry: taskcluster.fromNow('1d'),
       credentials: {
@@ -168,8 +170,8 @@ suite(testing.suiteName(), () => {
     });
     return callApi('client1', {
       certificate: JSON.parse(tempCreds.certificate),
-    }).then((responses) => {
-      for (const res of responses) {
+    }).then(function(responses) {
+      for (let res of responses) {
         assert(res.ok && res.body.hasTestScope, 'Request failed');
       }
     });

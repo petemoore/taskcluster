@@ -1,14 +1,14 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import helper from '../helper.js';
 import testing from '@taskcluster/lib-testing';
 import taskcluster from '@taskcluster/client';
 
-const THIS_VERSION = parseInt(/.*\/0*(\d+)_test\.js/.exec(import.meta.url)[1], 10);
+const THIS_VERSION = parseInt(/.*\/0*(\d+)_test\.js/.exec(import.meta.url)[1]);
 
-suite(testing.suiteName(), () => {
+suite(testing.suiteName(), function() {
   helper.withDbForVersion();
 
-  test('pagination returns tasks in stable order', async () => {
+  test('pagination returns tasks in stable order', async function() {
     await testing.resetDb({ testDbUrl: helper.dbUrl });
     await helper.upgradeTo(THIS_VERSION);
 

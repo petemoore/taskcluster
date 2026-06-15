@@ -18,10 +18,10 @@ tasks.push({
     'target-index',
   ],
   run: async (requirements, utils) => {
-    const queue = new taskcluster.Queue(taskcluster.fromEnvVars());
-    const randomId = taskcluster.slugid();
-    const taskIndex = `project.taskcluster.smoketest.${randomId}`;
-    const task = {
+    let queue = new taskcluster.Queue(taskcluster.fromEnvVars());
+    let randomId = taskcluster.slugid();
+    const taskIndex = 'project.taskcluster.smoketest.' + randomId;
+    let task = {
       provisionerId: 'built-in',
       workerType: 'succeed',
       created: (new Date()).toJSON(),
@@ -37,15 +37,15 @@ tasks.push({
       payload: {},
       routes: [`index.${taskIndex}`],
     };
-    utils.status({ message: `indexTask-find taskId: ${randomId}` });
+    utils.status({ message: 'indexTask-find taskId: ' + randomId });
     await queue.createTask(randomId, task);
-    const index = new taskcluster.Index(taskcluster.fromEnvVars());
-    const pollForStatusStart = new Date();
-    while ((Date.now() - pollForStatusStart) < 120000) {
-      const status = await queue.status(randomId);
+    let index = new taskcluster.Index(taskcluster.fromEnvVars());
+    let pollForStatusStart = new Date();
+    while ((new Date() - pollForStatusStart) < 120000) {
+      let status = await queue.status(randomId);
       if (status.status.state === 'pending' || status.status.state === 'running') {
         utils.status({
-          message: `Current task status: ${status.status.state}`,
+          message: 'Current task status: ' + status.status.state,
         });
       } else if (status.status.state === 'completed') {
         try {

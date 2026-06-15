@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import helper from './helper.js';
 import testing from '@taskcluster/lib-testing';
 import { modifyRoles } from '../src/data.js';
@@ -8,18 +8,18 @@ const sorted = (arr) => {
   return arr;
 };
 
-helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping) => {
+helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], function(mock, skipping) {
   helper.withDb(mock, skipping);
   helper.withCfg(mock, skipping);
   helper.withPulse(mock, skipping);
   helper.withServers(mock, skipping);
   helper.resetTables(mock, skipping);
 
-  test('get when blob is empty', async () => {
+  test('get when blob is empty', async function() {
     assert.deepEqual(await helper.db.fns.get_roles(), []);
   });
 
-  test('first modification of an empty blob', async () => {
+  test('first modification of an empty blob', async function() {
     await modifyRoles(helper.db, ({ roles }) => {
       roles.push({
         role_id: 'my-role',
@@ -34,7 +34,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping)
       sorted(['my-role']));
   });
 
-  test('add a second role', async () => {
+  test('add a second role', async function() {
     await modifyRoles(helper.db, ({ roles }) => {
       roles.push({
         role_id: 'my-role',

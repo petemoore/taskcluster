@@ -1,8 +1,8 @@
-import assert from 'node:assert';
-import fs from 'node:fs';
-import path from 'node:path';
+import assert from 'assert';
+import fs from 'fs';
+import path from 'path';
 import _ from 'lodash';
-import stream from 'node:stream';
+import stream from 'stream';
 import { LEVELS } from './logger.js';
 import Monitor from './monitor.js';
 import chalk from 'chalk';
@@ -173,7 +173,7 @@ export class MonitorManager {
     assert(!MonitorManager.#registeredTypes[name], `Cannot register event ${name} twice`);
     assert(level === 'any' || LEVELS[level] !== undefined, `${level} is not a valid level.`);
     assert(Number.isInteger(version), 'Version must be an integer');
-    assert(!fields.v, '"v" is a reserved field for messages');
+    assert(!fields['v'], '"v" is a reserved field for messages');
     /** @type {Record<string, string>} */
     const cleaned = {};
     Object.entries(fields).forEach(([field, desc]) => {
@@ -263,9 +263,9 @@ export class MonitorManager {
         o[c[0]] = c[1];
         return o;
       }, levels);
-      assert(levels.root, 'Must specify `root:` level if using child-specific levels.');
+      assert(levels['root'], 'Must specify `root:` level if using child-specific levels.');
     } else {
-      levels.root = level;
+      levels['root'] = level;
     }
     manager.levels = levels;
 

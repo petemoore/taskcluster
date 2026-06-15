@@ -16,7 +16,8 @@ type WorkerType {
   workers(
     provisionerId: String = provisionerId,
     workerType: String = workerType,
-    connection: PageConnection
+    connection: PageConnection,
+    filter: JSON
   ): WorkersCompactConnection
   # Note: This field will trigger an additional request.
   worker(
@@ -42,5 +43,5 @@ type WorkerTypesConnection implements Connection {
 extend type Query {
   workerType(provisionerId: String!, workerType: String!): WorkerType
   pendingTasks(provisionerId: String!, workerType: String!): Int!  # count of pending tasks
-  workerTypes(provisionerId: String!, connection: PageConnection): WorkerTypesConnection
+  workerTypes(provisionerId: String!, connection: PageConnection, filter: JSON): WorkerTypesConnection
 }
