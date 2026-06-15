@@ -1,8 +1,8 @@
-import events from 'node:events';
+import events from 'events';
 import amqplib from 'amqplib';
-import assert from 'node:assert';
-import { MonitorManager } from '@taskcluster/lib-monitor';
-import URL from 'node:url';
+import assert from 'assert';
+import { MonitorManager } from 'taskcluster-lib-monitor';
+import URL from 'url';
 
 let clientCounter = 0;
 
@@ -55,7 +55,7 @@ MonitorManager.register({
  * * recycleInterval (ms; default 1h)
  * * retirementDelay (ms; default 30s)
  * * minReconnectionInterval (ms; default 15s)
- * * monitor (@taskcluster/lib-monitor instance)
+ * * monitor (taskcluster-lib-monitor instance)
  *
  * The pulse namespace for this user is available as `client.namespace`.
  */
@@ -153,7 +153,7 @@ export class Client extends events.EventEmitter {
 
     // don't actually start connecting until at least minReconnectionInterval has passed
     const earliestConnectionTime = this.lastConnectionTime + this._minReconnectionInterval;
-    const now = Date.now();
+    const now = new Date().getTime();
     setTimeout(async () => {
       if (newConn.state !== 'waiting') {
         // the connection is no longer waiting, so don't proceed with
@@ -163,7 +163,7 @@ export class Client extends events.EventEmitter {
       }
 
       try {
-        this.lastConnectionTime = Date.now();
+        this.lastConnectionTime = new Date().getTime();
         const { connectionString } = await this.credentials();
         newConn.connect(connectionString).catch(err => {
           // .connect should be infallible, but just in case..

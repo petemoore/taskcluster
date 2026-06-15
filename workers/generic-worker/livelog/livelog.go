@@ -5,7 +5,6 @@ package livelog
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"io"
 	"log"
@@ -13,12 +12,11 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
 	"github.com/taskcluster/slugid-go/slugid"
-	"github.com/taskcluster/taskcluster/v100/internal/httputil"
+	"github.com/taskcluster/taskcluster/v86/internal/httputil"
 )
 
 // LiveLog provides access to a livelog process running on the OS. Use
@@ -36,11 +34,7 @@ type LiveLog struct {
 	LogWriter io.WriteCloser
 	mutex     sync.Mutex
 	command   *exec.Cmd
-	cancel    context.CancelFunc
 	done      chan (struct{})
-	// tmpDir is a dedicated temporary directory for the livelog process's
-	// streaming files. It is cleaned up when Terminate() is called.
-	tmpDir string
 }
 
 // New starts a livelog OS process using the executable specified, and returns
@@ -49,54 +43,21 @@ type LiveLog struct {
 // io.WriteCloser where the logs should be written to. It is envisanged that
 // the io.WriteCloser is passed on to the executing process.
 func New(liveLogExecutable string, putPort, getPort uint16) (*LiveLog, error) {
-	// Create a dedicated temporary directory for the livelog process's
-	// streaming files. This directory is cleaned up in Terminate() after
-	// the livelog process is killed, ensuring temp files don't accumulate.
-	tmpDir, err := os.MkdirTemp("", "livelog-")
-	if err != nil {
-		return nil, fmt.Errorf("could not create temp dir for livelog: %v", err)
-	}
-
 	l := &LiveLog{
 		secret:  slugid.Nice(),
 		command: exec.Command(liveLogExecutable),
 		PUTPort: putPort,
 		GETPort: getPort,
 		done:    make(chan (struct{})),
-		tmpDir:  tmpDir,
 	}
 	l.setRequestURLs()
 
-	// Set environment variables directly on the command to avoid race conditions
-	// when multiple livelog instances start concurrently. Start from the
-	// inherited environment (safe to read since we no longer call os.Setenv)
-	// and filter out vars we want to override or omit.
-	env := []string{}
-	for _, e := range os.Environ() {
-		switch {
-		case strings.HasPrefix(e, "ACCESS_TOKEN="),
-			strings.HasPrefix(e, "LIVELOG_GET_PORT="),
-			strings.HasPrefix(e, "LIVELOG_PUT_PORT="),
-			strings.HasPrefix(e, "LIVELOG_TEMP_DIR="),
-			strings.HasPrefix(e, "SERVER_KEY_FILE="),
-			strings.HasPrefix(e, "SERVER_CRT_FILE="):
-			// Skip — we override or omit these below
-		default:
-			env = append(env, e)
-		}
-	}
-	l.command.Env = append(env,
-		"ACCESS_TOKEN="+l.secret,
-		"LIVELOG_GET_PORT="+strconv.Itoa(int(l.GETPort)),
-		"LIVELOG_PUT_PORT="+strconv.Itoa(int(l.PUTPort)),
-		"LIVELOG_TEMP_DIR="+tmpDir,
-		// Explicitly omit SERVER_KEY_FILE and SERVER_CRT_FILE to prohibit TLS
-	)
-
-	// Context used to cancel the connectInputStream goroutine if the
-	// livelog process exits before the connection is established.
-	ctx, cancel := context.WithCancel(context.Background())
-	l.cancel = cancel
+	os.Setenv("ACCESS_TOKEN", l.secret)
+	os.Setenv("LIVELOG_GET_PORT", strconv.Itoa(int(l.GETPort)))
+	os.Setenv("LIVELOG_PUT_PORT", strconv.Itoa(int(l.PUTPort)))
+	// we want to explicitly prohibit the process to use TLS
+	os.Unsetenv("SERVER_KEY_FILE")
+	os.Unsetenv("SERVER_CRT_FILE")
 
 	type CommandResult struct {
 		b []byte
@@ -128,7 +89,7 @@ func New(liveLogExecutable string, putPort, getPort uint16) (*LiveLog, error) {
 	inputStreamConnectionResult := make(chan error)
 	go func() {
 		defer close(inputStreamConnectionResult)
-		err := l.connectInputStream(ctx)
+		err := l.connectInputStream()
 		inputStreamConnectionResult <- err
 	}()
 
@@ -142,23 +103,9 @@ func New(liveLogExecutable string, putPort, getPort uint16) (*LiveLog, error) {
 			}
 		}()
 		if err != nil {
-			// Kill the livelog process if it is still running to
-			// avoid leaving an orphaned process holding the ports.
-			l.cancel()
-			l.mutex.Lock()
-			if l.command.Process != nil {
-				_ = l.command.Process.Kill()
-			}
-			l.mutex.Unlock()
-			os.RemoveAll(l.tmpDir)
 			return nil, err
 		}
 	case pr := <-putResult:
-		// Cancel the connectInputStream goroutine so it does not
-		// keep waiting and later connect to a different livelog
-		// process that binds to the same port.
-		l.cancel()
-		os.RemoveAll(l.tmpDir)
 		if pr.e != nil {
 			return nil, fmt.Errorf("WARNING: Livelog terminated early with error '%v' and output:\n%s", pr.e, pr.b)
 		}
@@ -173,18 +120,10 @@ func (l *LiveLog) Terminate() error {
 	// DON'T close the reader!!! otherwise PUT will fail
 	// i.e DON'T write `l.logReader.Close()`
 	l.LogWriter.Close()
-	l.cancel()
 	l.mutex.Lock()
 	close(l.done)
 	defer l.mutex.Unlock()
-	err := l.command.Process.Kill()
-	// Clean up the temporary directory used by the livelog process for
-	// streaming files. Since the process is killed with SIGKILL, it has
-	// no opportunity to clean up after itself.
-	if removeErr := os.RemoveAll(l.tmpDir); removeErr != nil {
-		log.Printf("WARNING: could not remove livelog temp dir %s: %v", l.tmpDir, removeErr)
-	}
-	return err
+	return l.command.Process.Kill()
 }
 
 func (l *LiveLog) setRequestURLs() {
@@ -193,9 +132,9 @@ func (l *LiveLog) setRequestURLs() {
 
 }
 
-func (l *LiveLog) connectInputStream(ctx context.Context) error {
+func (l *LiveLog) connectInputStream() error {
 	l.logReader, l.LogWriter = io.Pipe()
-	req, err := http.NewRequestWithContext(ctx, "PUT", l.putURL, l.logReader)
+	req, err := http.NewRequest("PUT", l.putURL, l.logReader)
 	if err != nil {
 		return err
 	}
@@ -206,7 +145,7 @@ func (l *LiveLog) connectInputStream(ctx context.Context) error {
 	// livelog will only serve from that port once some content is sent - so no
 	// good to execute httputil.WaitForLocalTCPListener(l.getPort) here...  We
 	// would need to fix this in livelog codebase not here...
-	err = httputil.WaitForLocalTCPListenerWithContext(ctx, l.PUTPort, time.Minute*1)
+	err = httputil.WaitForLocalTCPListener(l.PUTPort, time.Minute*1)
 	if err != nil {
 		return err
 	}

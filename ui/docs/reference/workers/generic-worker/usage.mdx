@@ -24,7 +24,6 @@ and reports back results to the queue.
     generic-worker create-file              --create-file CREATE-FILE
     generic-worker create-dir               --create-dir CREATE-DIR
     generic-worker unarchive                --archive-src ARCHIVE-SRC --archive-dst ARCHIVE-DST --archive-fmt ARCHIVE-FMT
-    generic-worker status
     generic-worker --help
     generic-worker --version
     generic-worker --short-version
@@ -54,8 +53,6 @@ and reports back results to the queue.
     unarchive                               This will unarchive the specified archive file
                                             to the specified destination directory.
                                             Intended for internal use.
-    status                                  This will print whether the worker is currently
-                                            running a task, and if so, what the task ID is.
 
   Options:
     --config CONFIG-FILE                    Json configuration file to use. See
@@ -131,19 +128,13 @@ and reports back results to the queue.
                                             not exist. This may be a relative path to the
                                             current directory, or an absolute path.
                                             [default: "caches"]
-          capacity                          The number of tasks the worker will run concurrently.
-                                            When greater than 1, the worker claims and executes
-                                            multiple tasks in parallel, each in its own task
-                                            directory with isolated ports for LiveLog,
-                                            Interactive, and TaskclusterProxy features. In
-                                            multiuser mode, requires headlessTasks enabled. The
-                                            runTaskAsCurrentUser and
-                                            runAsAdministrator task features are automatically
-                                            disabled when capacity > 1 to preserve task
-                                            isolation. Maximum value is 255.
-                                            [default: 1]
           certificate                       Taskcluster certificate, when using temporary
                                             credentials only.
+          checkForNewDeploymentEverySecs    The number of seconds between consecutive calls
+                                            to the provisioner, to check if there has been a
+                                            new deployment of the current worker type. If a
+                                            new deployment is discovered, worker will shut
+                                            down. See deploymentId property. [default: 1800]
           cleanUpTaskDirs                   Whether to delete the home directories of the task
                                             users after the task completes. Normally you would
                                             want to do this to avoid filling up disk space,
@@ -154,6 +145,15 @@ and reports back results to the queue.
                                             containing data.  If false, use artifact type 's3'.
                                             The 'object' type will become the default when the
                                             's3' type is deprecated.
+          deploymentId                      If running with --configure-for-aws, then between
+                                            tasks, at a chosen maximum frequency (see
+                                            checkForNewDeploymentEverySecs property), the
+                                            worker will query the provisioner to get the
+                                            updated worker type definition. If the deploymentId
+                                            in the config of the worker type definition is
+                                            different to the worker's current deploymentId, the
+                                            worker will shut itself down. See
+                                            https://bugzil.la/1298010
           disableNativePayloads             Disables native Generic Worker payloads. D2G should be
                                             enabled (d2gConfig.enableD2G) when this is set to true.
                                             Tasks submitted with native payloads will be resolved
@@ -222,9 +222,7 @@ and reports back results to the queue.
           enableLoopbackVideo               Enables the Loopback Video feature to be used in the
                                             task payload. [default: true]
           enableRunTaskAsCurrentUser        Enables the Run Task As Current User feature to be
-                                            used in the task payload. Automatically disabled
-                                            when capacity > 1 to preserve task isolation.
-                                            [default: true]
+                                            used in the task payload. [default: true]
           headlessTasks                     If true, no dedicated graphical session will be available to tasks.
                                             There will also be no reboots between tasks and multiple workers
                                             can be run on the same host. Useful for tasks that don't require
@@ -233,12 +231,7 @@ and reports back results to the queue.
                                             task to perform, before the worker process exits.
                                             An integer, >= 0. A value of 0 means "never reach
                                             the idle state" - i.e. continue running
-                                            indefinitely. When running with worker-runner, the
-                                            worker checks with Worker Manager before shutting
-                                            down; if Worker Manager says the worker is still
-                                            needed (e.g. to satisfy minCapacity), the idle
-                                            timer resets instead of shutting down.
-                                            See also shutdownMachineOnIdle.
+                                            indefinitely. See also shutdownMachineOnIdle.
                                             [default: 0]
           instanceID                        The EC2 instance ID of the worker. Used by chain of trust.
           instanceType                      The EC2 instance Type of the worker. Used by chain of trust.
@@ -384,14 +377,14 @@ and reports back results to the queue.
            config setting disableReboots is set to true - in either code this exit code will
            be issued.
     68     The generic-worker hit its idle timeout limit (see config settings idleTimeoutSecs
-           and shutdownMachineOnIdle). When running with worker-runner, this only occurs if
-           Worker Manager also confirms the worker should terminate.
+           and shutdownMachineOnIdle).
     69     Worker panic - either a worker bug, or the environment is not suitable for running
            a task, e.g. a file cannot be written to the file system, or something else did
            not work that was required in order to execute a task. See config setting
            shutdownMachineOnInternalError.
-    70     Worker Manager advised this worker that it is no longer needed and should be
-           terminated.
+    70     A new deploymentId has been issued in the AWS worker type configuration, meaning
+           this worker environment is no longer up-to-date. Typcially workers should
+           terminate.
     71     The worker was terminated via an interrupt signal (e.g. Ctrl-C pressed).
     72     The worker is running on spot infrastructure and has been served a
            spot termination notice, and therefore has shut down.

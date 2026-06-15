@@ -31,14 +31,14 @@ export default {
 
       return loaders.status.load(parent.taskId);
     },
-    taskActions(parent, args, { loaders }) {
+    taskActions(parent, { filter }, { loaders }) {
       if (parent.taskActions) {
         return parent.taskActions;
       }
 
       return loaders.taskActions.load({
         taskGroupId: parent.taskGroupId,
-        contextScope: 'task',
+        filter,
       });
     },
     async decisionTask(parent, args, { loaders }) {
@@ -57,12 +57,12 @@ export default {
         return e;
       }
     },
-    latestArtifacts(parent, { taskId, connection }, { loaders }) {
+    latestArtifacts(parent, { taskId, connection, filter }, { loaders }) {
       if (parent.latestArtifacts) {
         return parent.latestArtifacts;
       }
 
-      return loaders.latestArtifacts.load({ taskId, connection });
+      return loaders.latestArtifacts.load({ taskId, connection, filter });
     },
   },
   DependentTask: {
@@ -113,17 +113,17 @@ export default {
         }
       }));
     },
-    async dependents(parent, { taskId, connection }, { loaders }) {
-      return loaders.dependents.load({ taskId, connection });
+    async dependents(parent, { taskId, connection, filter }, { loaders }) {
+      return loaders.dependents.load({ taskId, connection, filter });
     },
     indexedTask(parent, { indexPath }, { loaders }) {
       return loaders.indexedTask.load(indexPath);
     },
-    taskGroup(parent, { taskGroupId, connection }, { loaders }) {
-      return loaders.taskGroup.load({ taskGroupId, connection });
+    taskGroup(parent, { taskGroupId, connection, filter }, { loaders }) {
+      return loaders.taskGroup.load({ taskGroupId, connection, filter });
     },
-    taskActions(parent, { taskGroupId }, { loaders }) {
-      return loaders.taskActions.load({ taskGroupId, contextScope: 'group' });
+    taskActions(parent, { taskGroupId, filter }, { loaders }) {
+      return loaders.taskActions.load({ taskGroupId, filter });
     },
     listPendingTasks(parent, { taskQueueId, connection }, { loaders }) {
       return loaders.listPendingTasks.load({ taskQueueId, connection });
@@ -134,8 +134,11 @@ export default {
   },
   Mutation: {
     async createTask(parent, { taskId, task }, { clients }) {
+      const queue = task.options
+        ? clients.queue.use(task.options)
+        : clients.queue;
       const { options: _, ...taskWithoutOptions } = task;
-      const { status } = await clients.queue.createTask(taskId, taskWithoutOptions);
+      const { status } = await queue.createTask(taskId, taskWithoutOptions);
 
       return new TaskStatus(taskId, status);
     },

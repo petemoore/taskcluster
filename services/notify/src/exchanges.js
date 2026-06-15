@@ -1,5 +1,5 @@
-import { Exchanges } from '@taskcluster/lib-pulse';
-import assert from 'node:assert';
+import { Exchanges } from 'taskcluster-lib-pulse';
+import assert from 'assert';
 
 /** Declaration of exchanges offered by the queue */
 const exchanges = new Exchanges({
@@ -18,7 +18,7 @@ const exchanges = new Exchanges({
 export default exchanges;
 
 /** Build common routing key construct for `exchanges.declare` */
-const buildCommonRoutingKey = (options) => {
+const buildCommonRoutingKey = function(options) {
   options = options || {};
   return [
     {
@@ -39,20 +39,22 @@ const buildCommonRoutingKey = (options) => {
 };
 
 /** Build an AMQP compatible message from a message */
-const commonMessageBuilder = (message) => {
+const commonMessageBuilder = function(message) {
   message.version = 1;
   return message;
 };
 
 /** Build a message from message */
-const commonRoutingKeyBuilder = (message, routing) => ({
-  topic: routing[0],
-});
+const commonRoutingKeyBuilder = function(message, routing) {
+  return {
+    topic: routing[0],
+  };
+};
 
 /** Build list of routing keys to CC */
-const commonCCBuilder = (message, routes) => {
-  assert(Array.isArray(routes), 'Routes must be an array');
-  return routes.map(route => `route.${route}`);
+const commonCCBuilder = function(message, routes) {
+  assert(routes instanceof Array, 'Routes must be an array');
+  return routes.map(route => 'route.' + route);
 };
 
 /** Notification exchange */

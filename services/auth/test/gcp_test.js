@@ -1,8 +1,9 @@
-import assert from 'node:assert';
+import _ from 'lodash';
+import assert from 'assert';
 import helper from './helper.js';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 
-helper.secrets.mockSuite(testing.suiteName(), ['gcp', 'azure'], (mock, skipping) => {
+helper.secrets.mockSuite(testing.suiteName(), ['gcp', 'azure'], function(mock, skipping) {
   helper.withCfg(mock, skipping);
   helper.withDb(mock, skipping);
   helper.withGcp(mock, skipping);

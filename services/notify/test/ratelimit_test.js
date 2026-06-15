@@ -1,13 +1,13 @@
 import _ from 'lodash';
-import assert from 'node:assert';
+import assert from 'assert';
 import MockDate from 'mockdate';
 import RateLimit from '../src/ratelimit.js';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 
-suite(testing.suiteName(), () => {
+suite(testing.suiteName(), function() {
   let rateLimit;
 
-  setup(async () => {
+  setup(async function() {
     rateLimit = new RateLimit({
       count: 5,
       time: 10,
@@ -17,7 +17,7 @@ suite(testing.suiteName(), () => {
     MockDate.set('1/1/2000');
   });
 
-  teardown(() => {
+  teardown(function() {
     MockDate.reset();
   });
 
@@ -27,11 +27,11 @@ suite(testing.suiteName(), () => {
     MockDate.set(newTime);
   };
 
-  test('does not rate-limit a single send', () => {
+  test('does not rate-limit a single send', function() {
     assert(rateLimit.remaining('foo@taskcluster.net') >= 0);
   });
 
-  test('does rate-limit sends at higher than 5 per 10 seconds', () => {
+  test('does rate-limit sends at higher than 5 per 10 seconds', function() {
     // send at 1 per second..
     const limited = _.range(10).map(() => {
       timeFlies(1);
@@ -47,7 +47,7 @@ suite(testing.suiteName(), () => {
     ]);
   });
 
-  test('lifts the rate limit maxMessageTime after a message is sent', () => {
+  test('lifts the rate limit maxMessageTime after a message is sent', function() {
     // send 3 all at once
     _.range(3).forEach(() => {
       rateLimit.markEvent('foo@taskcluster.net');
@@ -66,7 +66,7 @@ suite(testing.suiteName(), () => {
     assert.equal(rateLimit.remaining('foo@taskcluster.net'), 5);
   });
 
-  test('purgeAllOldTimes purges things', () => {
+  test('purgeAllOldTimes purges things', function() {
     _.range(20).forEach(() => {
       rateLimit.markEvent('foo@taskcluster.net');
       rateLimit.markEvent('bar@taskcluster.net');

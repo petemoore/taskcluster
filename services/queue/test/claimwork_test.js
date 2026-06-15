@@ -1,14 +1,14 @@
 import debugFactory from 'debug';
 const debug = debugFactory('test:claim-work');
-import assert from 'node:assert';
+import assert from 'assert';
 import slugid from 'slugid';
-import taskcluster from '@taskcluster/client';
+import taskcluster from 'taskcluster-client';
 import assume from 'assume';
 import helper from './helper.js';
-import testing from '@taskcluster/lib-testing';
-import { LEVELS } from '@taskcluster/lib-monitor';
+import testing from 'taskcluster-lib-testing';
+import { LEVELS } from 'taskcluster-lib-monitor';
 
-helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
+helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) {
   helper.withDb(mock, skipping);
   helper.withAmazonIPRanges(mock, skipping);
   helper.withPulse(mock, skipping);
@@ -36,30 +36,30 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
   };
 
   let monitor;
-  suiteSetup(async () => {
+  suiteSetup(async function() {
     monitor = await helper.load('monitor');
   });
 
-  test('claimWork from empty queue', async () => {
+  test('claimWork from empty queue', async function() {
     helper.scopes(
-      `queue:claim-work:${taskQueueId}`,
+      'queue:claim-work:' + taskQueueId,
       'queue:worker-id:my-worker-group-extended-extended/my-worker-extended-extended',
     );
 
-    const started = new Date();
-    const result = await helper.queue.claimWork(taskQueueId, {
+    let started = new Date();
+    let result = await helper.queue.claimWork(taskQueueId, {
       workerGroup: 'my-worker-group-extended-extended',
       workerId: 'my-worker-extended-extended',
       tasks: 2,
     });
     assert(result.tasks.length === 0, 'Did not expect any claims');
-    assert(Date.now() - started >= 20 * 1000, 'Expected 20s sleep');
+    assert(new Date() - started >= 20 * 1000, 'Expected 20s sleep');
   });
 
   test('claimWork requires scopes', async () => {
     // wrong taskQueueId scope
     helper.scopes(
-      `queue:claim-work:${helper.makeTaskQueueId('wrong-provisioner')}`,
+      'queue:claim-work:' + helper.makeTaskQueueId('wrong-provisioner'),
       'queue:worker-id:my-worker-group-extended-extended/my-worker-extended-extended',
     );
     await helper.queue.claimWork(taskQueueId, {
@@ -72,7 +72,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
 
     // wrong workerId scope
     helper.scopes(
-      `queue:claim-work:${taskQueueId}`,
+      'queue:claim-work:' + taskQueueId,
       'queue:worker-id:my-worker-group/other-worker',
     );
     await helper.queue.claimWork(taskQueueId, {
@@ -89,7 +89,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
   });
 
   test('claimWork, reportCompleted', async () => {
-    const taskId = slugid.v4();
+    let taskId = slugid.v4();
 
     debug('### Creating task');
     await helper.queue.createTask(taskId, makeTask('normal', taskQueueId));
@@ -99,20 +99,20 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     debug('### Claim task');
     // Reduce scopes available to test minimum set of scopes required
     helper.scopes(
-      `queue:claim-work:${taskQueueId}`,
+      'queue:claim-work:' + taskQueueId,
       'queue:worker-id:my-worker-group-extended-extended/my-worker-extended-extended',
-      `queue:get-task:${taskId}`,
-      `queue:status:${taskId}`,
+      'queue:get-task:' + taskId,
+      'queue:status:' + taskId,
     );
-    const before = new Date();
-    const r1 = await helper.queue.claimWork(taskQueueId, {
+    let before = new Date();
+    let r1 = await helper.queue.claimWork(taskQueueId, {
       workerGroup: 'my-worker-group-extended-extended',
       workerId: 'my-worker-extended-extended',
     });
     assert.equal(r1.tasks.length, 1, 'Expected a single task');
     assert(r1.tasks[0].status.taskId === taskId, 'Expected specific taskId');
     assert(r1.tasks[0].runId === 0, 'Expected runId = 0');
-    const takenUntil = new Date(r1.tasks[0].takenUntil);
+    let takenUntil = new Date(r1.tasks[0].takenUntil);
     // Compare to time before the request, because claimTimeout is very small
     // so we can only count on takenUntil being larger than or equal to the
     // time before the request was made
@@ -140,18 +140,18 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     helper.assertPulseMessage('task-running');
 
     debug('### Fetch task status');
-    const r2 = helper.checkDates(await helper.queue.status(taskId));
+    let r2 = helper.checkDates(await helper.queue.status(taskId));
     assume(r2.status).deep.equals(r1.tasks[0].status);
 
     debug('### reportCompleted');
     // Report completed with temp creds from claimWork
-    const queue = new helper.Queue({ rootUrl: helper.rootUrl, credentials: r1.tasks[0].credentials });
+    let queue = new helper.Queue({ rootUrl: helper.rootUrl, credentials: r1.tasks[0].credentials });
     await queue.reportCompleted(taskId, 0);
     helper.assertPulseMessage('task-completed');
   });
 
   test('claimWork, reclaimTask, reportCompleted', async () => {
-    const taskId = slugid.v4();
+    let taskId = slugid.v4();
 
     debug('### Creating task');
     await helper.queue.createTask(taskId, makeTask('normal', taskQueueId));
@@ -161,20 +161,20 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     debug('### Claim task');
     // Reduce scopes available to test minimum set of scopes required
     helper.scopes(
-      `queue:claim-work:${taskQueueId}`,
+      'queue:claim-work:' + taskQueueId,
       'queue:worker-id:my-worker-group-extended-extended/my-worker-extended-extended',
-      `queue:get-task:${taskId}`,
-      `queue:status:${taskId}`,
+      'queue:get-task:' + taskId,
+      'queue:status:' + taskId,
     );
-    const before = new Date();
-    const r1 = await helper.queue.claimWork(taskQueueId, {
+    let before = new Date();
+    let r1 = await helper.queue.claimWork(taskQueueId, {
       workerGroup: 'my-worker-group-extended-extended',
       workerId: 'my-worker-extended-extended',
     });
     assert.equal(r1.tasks.length, 1, 'Expected a single task');
     assert(r1.tasks[0].status.taskId === taskId, 'Expected specific taskId');
     assert(r1.tasks[0].runId === 0, 'Expected runId = 0');
-    const takenUntil = new Date(r1.tasks[0].takenUntil);
+    let takenUntil = new Date(r1.tasks[0].takenUntil);
     // Compare to time before the request, because claimTimeout is very small
     // so we can only count on takenUntil being larger than or equal to the
     // time before the request was made
@@ -187,14 +187,14 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     helper.assertPulseMessage('task-running');
 
     debug('### Fetch task status');
-    const r2 = helper.checkDates(await helper.queue.status(taskId));
+    let r2 = helper.checkDates(await helper.queue.status(taskId));
     assume(r2.status).deep.equals(r1.tasks[0].status);
 
     debug('### reclaimTask');
     // Use temp creds from claimWork
     let queue = new helper.Queue({ rootUrl: helper.rootUrl, credentials: r1.tasks[0].credentials });
-    const r3 = await queue.reclaimTask(taskId, 0);
-    const takenUntil2 = new Date(r3.takenUntil);
+    let r3 = await queue.reclaimTask(taskId, 0);
+    let takenUntil2 = new Date(r3.takenUntil);
     assume(takenUntil2.getTime()).is.greaterThan(takenUntil.getTime() - 1);
 
     // check that the task was logged
@@ -219,8 +219,8 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
   });
 
   test('claimWork gets "high" before "normal" priority', async () => {
-    const taskIdA = slugid.v4();
-    const taskIdB = slugid.v4();
+    let taskIdA = slugid.v4();
+    let taskIdB = slugid.v4();
 
     debug('### Creating task');
     await helper.queue.createTask(taskIdB, makeTask('normal', taskQueueId));
@@ -234,7 +234,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     helper.clearPulseMessages();
 
     debug('### ClaimWork');
-    const r1 = await helper.queue.claimWork(taskQueueId, {
+    let r1 = await helper.queue.claimWork(taskQueueId, {
       workerGroup: 'my-worker-group-extended-extended',
       workerId: 'my-worker-extended-extended',
       tasks: 1,
@@ -246,7 +246,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     helper.clearPulseMessages();
 
     debug('### ClaimWork');
-    const r2 = await helper.queue.claimWork(taskQueueId, {
+    let r2 = await helper.queue.claimWork(taskQueueId, {
       workerGroup: 'my-worker-group-extended-extended',
       workerId: 'my-worker-extended-extended',
       tasks: 1,
@@ -259,19 +259,19 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
 
     debug('### reportCompleted');
     // Report completed with temp creds from claimWork
-    const queueA = new helper.Queue({ rootUrl: helper.rootUrl, credentials: r1.tasks[0].credentials });
+    let queueA = new helper.Queue({ rootUrl: helper.rootUrl, credentials: r1.tasks[0].credentials });
     await queueA.reportCompleted(taskIdA, 0);
 
     debug('### reportCompleted');
     // Report completed with temp creds from claimWork
-    const queueB = new helper.Queue({ rootUrl: helper.rootUrl, credentials: r2.tasks[0].credentials });
+    let queueB = new helper.Queue({ rootUrl: helper.rootUrl, credentials: r2.tasks[0].credentials });
     await queueB.reportCompleted(taskIdB, 0);
   });
 
   test('createTask twice, claimWork, reportCompleted', async () => {
-    const taskQueueId = helper.makeTaskQueueId('no-provisioner-extended-extended');
-    const taskId = slugid.v4();
-    const task = makeTask('normal', taskQueueId);
+    let taskQueueId = helper.makeTaskQueueId('no-provisioner-extended-extended');
+    let taskId = slugid.v4();
+    let task = makeTask('normal', taskQueueId);
 
     debug('### Creating task');
     await helper.queue.createTask(taskId, task);
@@ -286,7 +286,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     helper.clearPulseMessages();
 
     debug('### Claim task');
-    const r1 = await helper.queue.claimWork(taskQueueId, {
+    let r1 = await helper.queue.claimWork(taskQueueId, {
       workerGroup: 'my-worker-group-extended-extended',
       workerId: 'my-worker-extended-extended',
       tasks: 2,
@@ -297,7 +297,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
 
     debug('### reportCompleted');
     // Report completed with temp creds from claimWork
-    const queue = new helper.Queue({ rootUrl: helper.rootUrl, credentials: r1.tasks[0].credentials });
+    let queue = new helper.Queue({ rootUrl: helper.rootUrl, credentials: r1.tasks[0].credentials });
     await queue.reportCompleted(taskId, 0);
   });
 });

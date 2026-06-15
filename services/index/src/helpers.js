@@ -1,8 +1,7 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import _ from 'lodash';
-import { paginateResults } from '@taskcluster/lib-api';
-import { UNIQUE_VIOLATION } from '@taskcluster/lib-postgres';
-import { satisfiesExpression } from 'taskcluster-lib-scopes';
+import { paginateResults } from 'taskcluster-lib-api';
+import { UNIQUE_VIOLATION } from 'taskcluster-lib-postgres';
 
 /** Regular expression for valid namespaces */
 export const namespaceFormat = /^([a-zA-Z0-9_!~*'()%-]+\.)*[a-zA-Z0-9_!~*'()%-]+$/;
@@ -39,7 +38,7 @@ export const taskUtils = {
   // Create a serializable representation of this indexed task suitable for response
   // from an API method.
   serialize(task) {
-    let ns = `${task.namespace}.${task.name}`;
+    let ns = task.namespace + '.' + task.name;
     // Remove separate if there is no need
     if (task.namespace.length === 0 || task.name.length === 0) {
       ns = task.namespace + task.name;
@@ -74,10 +73,10 @@ export const taskUtils = {
     assert(db,
       'db must be set');
 
-    const [namespace, name] = splitNamespace(fullNamespace);
+    let [namespace, name] = splitNamespace(fullNamespace);
 
     // Find expiration time and parse as date object
-    const expires = new Date(input.expires);
+    let expires = new Date(input.expires);
 
     // Attempt to load indexed task
     let task = taskUtils.fromDbRows(await db.fns.get_indexed_task(namespace, name));
@@ -146,7 +145,7 @@ export const taskUtils = {
     } = {},
   ) {
     const fetchResults = async (continuation) => {
-      const q = query;
+      let q = query;
 
       if (continuation) {
         q.continuationToken = continuation;
@@ -173,11 +172,11 @@ export const taskUtils = {
 
   async findTasksAtIndexes(db, { indexes }, { query } = {}) {
     assert(_.isArray(indexes), 'indexes must be an Array');
-    for (const index of indexes) {
+    for (let index of indexes) {
       assert(_.isString(index), 'index must be a String');
     }
     const fetchResults = async (continuation) => {
-      const q = query;
+      let q = query;
 
       if (continuation) {
         q.continuationToken = continuation;
@@ -220,7 +219,7 @@ export const namespaceUtils = {
   // Create a serializable representation of this namespace suitable for response
   // from an API method.
   serialize(indexNamespace) {
-    let ns = `${indexNamespace.parent}.${indexNamespace.name}`;
+    let ns = indexNamespace.parent + '.' + indexNamespace.name;
     // Remove separate if there is no need
     if (indexNamespace.parent.length === 0 || indexNamespace.name.length === 0) {
       ns = indexNamespace.parent + indexNamespace.name;
@@ -246,7 +245,7 @@ export const namespaceUtils = {
     } = {},
   ) {
     const fetchResults = async (continuation) => {
-      const q = query;
+      let q = query;
 
       if (continuation) {
         q.continuationToken = continuation;
@@ -286,12 +285,12 @@ export const namespaceUtils = {
     );
 
     // Parse namespace
-    if (!Array.isArray(namespace)) {
+    if (!(namespace instanceof Array)) {
       namespace = namespace.split('.');
     }
     // Find parent and folder name
-    const name = namespace.pop() || '';
-    const parent = namespace.join('.');
+    let name = namespace.pop() || '';
+    let parent = namespace.join('.');
 
     // Load namespace, to check if it exists and if we should update expires
     const folder = taskUtils.fromDbRows(await db.fns.get_index_namespace(parent, name));
@@ -349,35 +348,4 @@ export const splitNamespace = namespace => {
   return [namespace, name];
 };
 
-const satisfiesArtifactScope = async (anonymousScopeCache, artifactName) => {
-  try {
-    const scopes = await anonymousScopeCache();
-    return satisfiesExpression(scopes, `queue:get-artifact:${artifactName}`);
-  } catch {
-    return false;
-  }
-};
-
-export { satisfiesArtifactScope as _satisfiesArtifactScope };
-
-const ANONYMOUS_SCOPE_CACHE_TTL = 5 * 60 * 1000;
-
-const isPublicArtifact = (auth) => {
-  let cachedScopes = null;
-  let cachedAt = 0;
-
-  const anonymousScopeCache = async () => {
-    const now = Date.now();
-    if (cachedScopes && (now - cachedAt) < ANONYMOUS_SCOPE_CACHE_TTL) {
-      return cachedScopes;
-    }
-    const result = await auth.expandScopes({ scopes: ['assume:anonymous'] });
-    cachedScopes = result.scopes;
-    cachedAt = Date.now();
-    return cachedScopes;
-  };
-
-  return (artifactName) => satisfiesArtifactScope(anonymousScopeCache, artifactName);
-};
-
-export default { taskUtils, namespaceUtils, splitNamespace, namespaceFormat, isPublicArtifact };
+export default { taskUtils, namespaceUtils, splitNamespace, namespaceFormat };

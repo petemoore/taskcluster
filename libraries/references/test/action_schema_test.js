@@ -1,9 +1,9 @@
 import { getCommonSchemas } from '../src/common-schemas.js';
 import libUrls from 'taskcluster-lib-urls';
 import References from '../src/index.js';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 
-suite(testing.suiteName(), () => {
+suite(testing.suiteName(), function() {
   const rootUrl = libUrls.testRootUrl();
 
   let ajv;
@@ -36,7 +36,7 @@ suite(testing.suiteName(), () => {
     }
   };
 
-  test('empty list is OK', async () => {
+  test('empty list is OK', async function() {
     await validate({
       version: 1,
       variables: {},
@@ -44,7 +44,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('action with bogus kind fails', async () => {
+  test('action with bogus kind fails', async function() {
     await validateFails({
       version: 1,
       variables: {},
@@ -54,7 +54,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('task kind is OK', async () => {
+  test('task kind is OK', async function() {
     await validate({
       version: 1,
       variables: {},
@@ -70,7 +70,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('hook kind is OK', async () => {
+  test('hook kind is OK', async function() {
     await validate({
       version: 1,
       variables: {},
@@ -88,7 +88,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('action.extra is allowed', async () => {
+  test('action.extra is allowed', async function() {
     await validate({
       version: 1,
       variables: {},

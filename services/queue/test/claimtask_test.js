@@ -1,12 +1,12 @@
 import debugFactory from 'debug';
 const debug = debugFactory('test:claim');
 import slugid from 'slugid';
-import taskcluster from '@taskcluster/client';
+import taskcluster from 'taskcluster-client';
 import assume from 'assume';
 import helper from './helper.js';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 
-helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
+helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) {
   helper.withDb(mock, skipping);
   helper.withAmazonIPRanges(mock, skipping);
   helper.withPulse(mock, skipping);
@@ -36,7 +36,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     },
   });
 
-  test('can claimTask', async () => {
+  test('can claimTask', async function() {
     const taskId = slugid.v4();
 
     debug('### Creating task');
@@ -51,8 +51,8 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
       `queue:reclaim-task:${taskId}/0`,
       'assume:worker-type:no-provisioner-extended-extended/test-worker-extended-extended',
       'queue:worker-id:my-worker-group-extended-extended/my-worker-extended-extended',
-      `queue:get-task:${taskId}`,
-      `queue:status:${taskId}`,
+      'queue:get-task:' + taskId,
+      'queue:status:' + taskId,
     );
     // First runId is always 0, so we should be able to claim it here
     const before = new Date();
@@ -154,8 +154,8 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     helper.scopes(
       'queue:claim-task',
       'assume:worker-id:my-worker-group/my-worker',
-      `queue:get-task:${taskId}`,
-      `queue:status:${taskId}`,
+      'queue:get-task:' + taskId,
+      'queue:status:' + taskId,
     );
     // First runId is always 0, so we should be able to claim it here
     await helper.queue.claimTask(taskId, 0, {
@@ -173,8 +173,8 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     helper.scopes(
       'queue:claim-task',
       'assume:worker-type:no-provisioner-extended-extended/test-worker-extended-extended',
-      `queue:get-task:${taskId}`,
-      `queue:status:${taskId}`,
+      'queue:get-task:' + taskId,
+      'queue:status:' + taskId,
     );
     // First runId is always 0, so we should be able to claim it here
     await helper.queue.claimTask(taskId, 0, {

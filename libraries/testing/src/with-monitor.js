@@ -1,4 +1,4 @@
-import { MonitorManager, LEVELS } from '@taskcluster/lib-monitor';
+import { MonitorManager, LEVELS } from 'taskcluster-lib-monitor';
 
 let monitor;
 
@@ -12,12 +12,11 @@ export default (helper, options = {}) => {
       debug: true,
       verify: true,
       level: 'debug',
-      ...(options?.withPrometheus ? { prometheusConfig: {} } : {}),
     });
     helper.load.inject('monitor', monitor);
   }
 
-  teardown(async () => {
+  teardown(async function() {
     // any messages at the ERROR level of above should cause a test failure
     if (monitor) {
       const errors = monitor.manager.messages

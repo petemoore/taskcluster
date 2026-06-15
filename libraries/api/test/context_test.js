@@ -1,17 +1,17 @@
-import SchemaSet from '@taskcluster/lib-validate';
-import { App } from '@taskcluster/lib-app';
+import SchemaSet from 'taskcluster-lib-validate';
+import { App } from 'taskcluster-lib-app';
 import { APIBuilder } from '../src/index.js';
-import assert from 'node:assert';
+import assert from 'assert';
 import request from 'superagent';
 import slugid from 'slugid';
 import sinon from 'sinon';
-import path from 'node:path';
+import path from 'path';
 import { monitor } from './helper.js';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 
 const __dirname = new URL('.', import.meta.url).pathname;
 
-suite(testing.suiteName(), () => {
+suite(testing.suiteName(), function() {
   const rootUrl = 'http://localhost:4321';
 
   setup(async () => {
@@ -68,11 +68,15 @@ suite(testing.suiteName(), () => {
 
     await request
       .get('http://localhost:60872/api/test/v1/context')
-      .then((res) => {
+      .then(function(res) {
         assert(res.body.myProp === value);
-      }).then(() => server.terminate(), (err) => server.terminate().then(() => {
-        throw err;
-      }));
+      }).then(function() {
+        return server.terminate();
+      }, function(err) {
+        return server.terminate().then(function() {
+          throw err;
+        });
+      });
   });
 
   test('Context properties can be required', async () => {
@@ -190,7 +194,7 @@ suite(testing.suiteName(), () => {
       res.status(200).json(this.foo());
     });
 
-    let fooFake;
+    let fooFake = undefined;
     const api = await builder.build({
       rootUrl,
       monitor,
@@ -218,12 +222,16 @@ suite(testing.suiteName(), () => {
     await request
       .get('http://localhost:60872/api/test/v1/context')
       .set('x-taskcluster-trace-id', 'foo/bar')
-      .then((res) => {
+      .then(function(res) {
         assert.equal(res.body.foo, 'foo/bar');
         assert(res.body.bar);
-      }).then(() => server.terminate(), (err) => server.terminate().then(() => {
-        throw err;
-      }));
+      }).then(function() {
+        return server.terminate();
+      }, function(err) {
+        return server.terminate().then(function() {
+          throw err;
+        });
+      });
 
     assert.equal(fooFake.callCount, 1);
   });

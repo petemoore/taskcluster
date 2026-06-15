@@ -1,12 +1,12 @@
 import request from 'superagent';
-import assert from 'node:assert';
+import assert from 'assert';
 import { APIBuilder } from '../src/index.js';
 import slugid from 'slugid';
 import helper from './helper.js';
 import libUrls from 'taskcluster-lib-urls';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 
-suite(testing.suiteName(), () => {
+suite(testing.suiteName(), function() {
   const u = path => libUrls.api(helper.rootUrl, 'test', 'v1', path);
 
   // Create test api
@@ -33,7 +33,7 @@ suite(testing.suiteName(), () => {
     category: 'API Library',
     stability: APIBuilder.stability.stable,
     description: 'Place we can call to test something',
-  }, (req, res) => {
+  }, function(req, res) {
     res.status(200).send(req.params.myparam);
   });
 
@@ -46,7 +46,7 @@ suite(testing.suiteName(), () => {
     stability: APIBuilder.stability.stable,
     category: 'API Library',
     description: 'Place we can call to test something',
-  }, (req, res) => {
+  }, function(req, res) {
     res.status(200).send(req.params.myparam);
   });
 
@@ -61,7 +61,7 @@ suite(testing.suiteName(), () => {
     category: 'API Library',
     description: 'Place we can call to test something',
     scopes: null,
-  }, (req, res) => {
+  }, function(req, res) {
     res.status(200).send(req.query.nextPage || 'empty');
   });
 
@@ -80,7 +80,7 @@ suite(testing.suiteName(), () => {
     title: 'Test End-Point',
     category: 'API Library',
     description: 'Place we can call to test something',
-  }, (req, res) => {
+  }, function(req, res) {
     res.status(200).send(req.query.incantation);
   });
 
@@ -92,7 +92,7 @@ suite(testing.suiteName(), () => {
     title: 'Test End-Point',
     category: 'API Library',
     description: 'Place we can call to test something',
-  }, (req, res) => {
+  }, function(req, res) {
     res.status(200).send(req.params.name);
   });
 
@@ -104,7 +104,7 @@ suite(testing.suiteName(), () => {
     title: 'Test End-Point',
     category: 'API Library',
     description: 'Place we can call to test something',
-  }, (req, res) => {
+  }, function(req, res) {
     res.status(200).send(req.params.taskId);
   });
 
@@ -123,7 +123,7 @@ suite(testing.suiteName(), () => {
       },
     },
     description: 'Place we can call to test something',
-  }, (req, res) => {
+  }, function(req, res) {
     res.status(200).send(req.params.fnValidated);
   });
 
@@ -136,13 +136,13 @@ suite(testing.suiteName(), () => {
     description: 'Place we can call to test something',
     category: 'API Library',
     params: {
-      param2: (value) => {
+      param2: function(value) {
         if (value !== 'correct') {
           return 'Wrong value passed!';
         }
       },
     },
-  }, (req, res) => {
+  }, function(req, res) {
     res.status(200).send(req.params.param2);
   });
 
@@ -158,90 +158,90 @@ suite(testing.suiteName(), () => {
   });
   teardown(helper.teardownServer);
 
-  test('single parameter', () => {
+  test('single parameter', function() {
     const url = u('/single-param/Hello');
     return request
       .get(url)
-      .then((res) => {
+      .then(function(res) {
         assert(res.ok, 'Request failed');
         assert(res.text === 'Hello', 'Got wrong value');
       });
   });
 
-  test('single parameter, trailing slash', () => {
+  test('single parameter, trailing slash', function() {
     const url = u('/single-param/Hello/');
     return request
       .get(url)
-      .then((res) => {
+      .then(function(res) {
         assert(res.ok, 'Request failed');
         assert(res.text === 'Hello', 'Got wrong value');
       });
   });
 
-  test('single parameter with slashes', () => {
+  test('single parameter with slashes', function() {
     const url = u('/single-param-with-slashes/Hello/world');
     return request
       .get(url)
-      .then((res) => {
+      .then(function(res) {
         assert(res.ok, 'Request failed');
         assert.equal(res.text, 'Hello/world', 'Got wrong value');
       });
   });
 
-  test('single parameter allowing slashes without slashes', () => {
+  test('single parameter allowing slashes without slashes', function() {
     const url = u('/single-param-with-slashes/Helloworld');
     return request
       .get(url)
-      .then((res) => {
+      .then(function(res) {
         assert(res.ok, 'Request failed');
         assert.equal(res.text, 'Helloworld', 'Got wrong value');
       });
   });
 
-  test('single parameter with encoded slashes', () => {
+  test('single parameter with encoded slashes', function() {
     const url = u('/single-param-with-slashes/Hello%2Fworld');
     return request
       .get(url)
-      .then((res) => {
+      .then(function(res) {
         assert(res.ok, 'Request failed');
         assert.equal(res.text, 'Hello/world', 'Got wrong value');
       });
   });
 
-  test('query parameter', () => {
+  test('query parameter', function() {
     const url = u('/query-param/');
     return request
       .get(url)
       .query({ nextPage: '352' })
-      .catch((res) => {
+      .catch(function(res) {
         assert(res.ok, 'Request failed');
         assert(res.text === '352', 'Got wrong value');
       });
   });
 
-  test('query parameter (is optional)', () => {
+  test('query parameter (is optional)', function() {
     const url = u('/query-param/');
     return request
       .get(url)
-      .then((res) => {
+      .then(function(res) {
         assert(res.ok, 'Request failed');
         assert(res.text === 'empty', 'Got wrong value');
       });
   });
 
-  test('query parameter (validation works)', () => {
+  test('query parameter (validation works)', function() {
     const url = u('/query-param/');
     return request
       .get(url)
       .query({ nextPage: 'abc' })
       .then(res => assert(false, 'should have failed!'))
-      .catch((res) => {
+      .catch(function(res) {
         assert(!res.ok, 'Expected request failure!');
         assert(res.status === 400, 'Expected a 400 error');
       });
   });
 
-  test('query parameter with function + context (valid)', () => {
+  test('query parameter with function + context (valid)', function() {
     const url = u('/query-param-fn/');
     return request
       .get(url)
@@ -252,72 +252,72 @@ suite(testing.suiteName(), () => {
       });
   });
 
-  test('query parameter with function + context (invalid)', () => {
+  test('query parameter with function + context (invalid)', function() {
     const url = u('/query-param-fn/');
     return request
       .get(url)
       .query({ incantation: 'alohomora' })
       .then(res => assert(false, 'should have failed!'))
-      .catch((res) => {
+      .catch(function(res) {
         assert(!res.ok, 'Expected request failure!');
         assert(res.status === 400, 'Expected a 400 error');
       });
   });
 
-  test('slash parameter', () => {
+  test('slash parameter', function() {
     const url = u('/slash-param/Hello/World');
     return request
       .get(url)
-      .then((res) => {
+      .then(function(res) {
         assert(res.ok, 'Request failed');
         assert(res.text === 'Hello/World', 'Got wrong value');
       });
   });
 
-  test('validated reg-exp parameter (valid)', () => {
+  test('validated reg-exp parameter (valid)', function() {
     const id = slugid.v4();
     const url = u('/validated-param/') + id;
     return request
       .get(url)
-      .then((res) => {
+      .then(function(res) {
         assert(res.ok, 'Request failed');
         assert(res.text === id, 'Got wrong value');
       });
   });
 
-  test('validated reg-exp parameter (invalid)', () => {
+  test('validated reg-exp parameter (invalid)', function() {
     const url = u('/validated-param/-');
     return request
       .get(url)
       .then(res => assert(false, 'should have failed!'))
-      .catch((res) => {
+      .catch(function(res) {
         assert(!res.ok, 'Expected a failure');
         assert(res.status === 400, 'Expected a 400 error');
       });
   });
 
-  test('validated function parameter (valid)', () => {
+  test('validated function parameter (valid)', function() {
     const url = u('/validated-param-2/correct');
     return request
       .get(url)
-      .then((res) => {
+      .then(function(res) {
         assert(res.ok, 'Request failed');
         assert(res.text === 'correct', 'Got wrong value');
       });
   });
 
-  test('validated function parameter (invalid)', () => {
+  test('validated function parameter (invalid)', function() {
     const url = u('/validated-param-2/incorrect');
     return request
       .get(url)
       .then(res => assert(false, 'should have failed!'))
-      .catch((res) => {
+      .catch(function(res) {
         assert(!res.ok, 'Expected a failure');
         assert(res.status === 400, 'Expected a 400 error');
       });
   });
 
-  test('validated function parameter using context (valid)', () => {
+  test('validated function parameter using context (valid)', function() {
     const url = u('/function-validated-param/open-sesame');
     return request
       .get(url)
@@ -327,51 +327,51 @@ suite(testing.suiteName(), () => {
       });
   });
 
-  test('validated function parameter using context (invalid)', () => {
+  test('validated function parameter using context (invalid)', function() {
     const url = u('/function-validated-param/open-amaranth');
     return request
       .get(url)
       .then(res => assert(false, 'should have failed!'))
-      .catch((res) => {
+      .catch(function(res) {
         assert(!res.ok, 'Expected request failure!');
         assert(res.status === 400, 'Expected a 400 error');
       });
   });
 
-  test('cors header', () => {
+  test('cors header', function() {
     const url = u('/single-param/Hello');
     return request
       .get(url)
       .set('origin', 'https://tc.example.com')
-      .then((res) => {
+      .then(function(res) {
         assert(res.ok, 'Request failed');
         assert.equal(res.header['access-control-allow-origin'], '*');
       });
   });
 
-  test('cache header', () => {
+  test('cache header', function() {
     const url = u('/single-param/Hello');
     return request
       .get(url)
-      .then((res) => {
+      .then(function(res) {
         assert(res.ok, 'Request failed');
         assert(res.header['cache-control'] === 'no-store no-cache must-revalidate', 'Got wrong header');
       });
   });
 
-  test('cache header on 404s', () => {
+  test('cache header on 404s', function() {
     const url = u('/unknown');
     return request
       .get(url)
       .then(res => assert(false, 'should have failed!'))
-      .catch((err) => {
+      .catch(function(err) {
         assert(err.response.header['cache-control'] === 'no-store no-cache must-revalidate', 'Got wrong header');
       });
   });
 
-  test('reference', async () => {
+  test('reference', async function() {
     const ref = builder.reference();
-    ref.entries.forEach((entry) => {
+    ref.entries.forEach(function(entry) {
       if (entry.name === 'testSlashParam') {
         assert(entry.route === '/slash-param/<name>',
           'not parsing route correctly');
@@ -381,7 +381,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  test('no duplicate route and method', () => {
+  test('no duplicate route and method', function() {
     builder.declare({
       method: 'get',
       route: '/test',
@@ -390,9 +390,9 @@ suite(testing.suiteName(), () => {
       title: 'Test',
       category: 'API Library',
       description: 'Test',
-    }, (req, res) => {});
+    }, function(req, res) {});
 
-    assert.throws(() => {
+    assert.throws(function() {
       builder.declare({
         method: 'get',
         route: '/test',
@@ -401,17 +401,17 @@ suite(testing.suiteName(), () => {
         title: 'Test',
         category: 'API Library',
         description: 'Test',
-      }, (req, res) => {});
+      }, function(req, res) {});
     }, /Identical route and method/);
   });
 
-  test('routes are case-sensitive', () => {
+  test('routes are case-sensitive', function() {
     const url = u('/SiNgLe-pArAm/Hello');
     return request
       .get(url)
-      .then((res) => {
+      .then(function(res) {
         assert(!res.ok, 'Request succeeded');
-      }, (err) => {
+      }, function(err) {
         assert.equal(err.status, 404);
       });
   });

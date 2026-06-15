@@ -2,13 +2,12 @@ package artifacts
 
 import (
 	"fmt"
-	"log"
 	"time"
 
-	tcclient "github.com/taskcluster/taskcluster/v100/clients/client-go"
-	"github.com/taskcluster/taskcluster/v100/clients/client-go/tcqueue"
-	"github.com/taskcluster/taskcluster/v100/internal/mocktc/tc"
-	"github.com/taskcluster/taskcluster/v100/workers/generic-worker/gwconfig"
+	tcclient "github.com/taskcluster/taskcluster/v86/clients/client-go"
+	"github.com/taskcluster/taskcluster/v86/clients/client-go/tcqueue"
+	"github.com/taskcluster/taskcluster/v86/internal/mocktc/tc"
+	"github.com/taskcluster/taskcluster/v86/workers/generic-worker/gwconfig"
 )
 
 type ObjectArtifact struct {
@@ -18,17 +17,13 @@ type ObjectArtifact struct {
 	Path string
 	// ContentType is used in the Content-Type header.
 	ContentType string
-	// ContentLength is the original file size in bytes, before any
-	// encoding (e.g. gzip). Sent to the queue for monitoring purposes.
-	ContentLength int64
 }
 
 func (a *ObjectArtifact) RequestObject() any {
 	return &tcqueue.ObjectArtifactRequest{
-		ContentType:   a.ContentType,
-		ContentLength: a.ContentLength,
-		Expires:       a.Expires,
-		StorageType:   "object",
+		ContentType: a.ContentType,
+		Expires:     a.Expires,
+		StorageType: "object",
 	}
 }
 
@@ -38,7 +33,7 @@ func (a *ObjectArtifact) ResponseObject() any {
 
 func (a *ObjectArtifact) ProcessResponse(resp any, logger Logger, serviceFactory tc.ServiceFactory, config *gwconfig.Config) (err error) {
 	response := resp.(*tcqueue.ObjectArtifactResponse)
-	log.Printf("Uploading artifact %v from file %v with content type %q and expiry %v", a.Name, a.Path, a.ContentType, a.Expires)
+	logger.Infof("Uploading artifact %v from file %v with content type %q and expiry %v", a.Name, a.Path, a.ContentType, a.Expires)
 	creds := tcclient.Credentials{
 		ClientID:    response.Credentials.ClientID,
 		AccessToken: response.Credentials.AccessToken,
@@ -64,11 +59,10 @@ func (a *ObjectArtifact) FinishArtifact(resp any, queue tc.Queue, taskID, runID,
 }
 
 func (a *ObjectArtifact) String() string {
-	return fmt.Sprintf("Object Artifact - Name: '%v', Path: '%v', Expires: %v, Content-Type: '%v', Content-Length: '%v'",
+	return fmt.Sprintf("Object Artifact - Name: '%v', Path: '%v', Expires: %v, Content-Type: '%v'",
 		a.Name,
 		a.Path,
 		a.Expires,
 		a.ContentType,
-		a.ContentLength,
 	)
 }

@@ -1,5 +1,5 @@
-import path from 'node:path';
-import { strict as assert } from 'node:assert';
+import path from 'path';
+import { strict as assert } from 'assert';
 import Method from './Method.js';
 import { loadSql } from './util.js';
 
@@ -42,7 +42,7 @@ class Version {
    * @returns {Version}
    */
   static fromSerializable(serializable) {
-    for (const k of Object.keys(serializable)) {
+    for (let k of Object.keys(serializable)) {
       if (!ALLOWED_KEYS.includes(k)) {
         throw new Error(`unexpected version key ${k}`);
       }

@@ -1,5 +1,5 @@
-import os from 'node:os';
-import path from 'node:path';
+import os from 'os';
+import path from 'path';
 import { REPO_ROOT, readRepoYAML, writeRepoFile, execCommand } from '../utils/index.js';
 import { TaskGraph } from 'console-taskgraph';
 
@@ -10,15 +10,6 @@ const resourceTypes = [
   'secret',
   'serviceaccount',
   'service',
-];
-
-// Resource types whose CRDs may not be installed on a given cluster (e.g. an
-// Ingress-only deployment that hasn't installed the Gateway API CRDs). Deleted
-// in a separate kubectl call so a missing CRD doesn't abort the whole cleanup.
-const optionalResourceTypes = [
-  'gateway',
-  'httproute',
-  'healthcheckpolicy',
 ];
 
 const dumpFileLocation = path.join(os.tmpdir(), 'taskcluster.k8s.yml');
@@ -34,7 +25,7 @@ const actions = [
         throw new Error('Must have configured dev-config.yml to deploy.');
       }
 
-      if (config.auth?.static_clients) {
+      if (config.auth && config.auth.static_clients) {
         if (config.auth.static_clients.some(({ clientId, scopes }) => clientId.startsWith('static/taskcluster/') && scopes)) {
           throw new Error('`static/taskcluster/..` clients in auth.static_clients in `dev-config.yml` should not contain scopes');
         }
@@ -159,25 +150,14 @@ const actions = [
     title: 'Delete Your Deployment',
     requires: ['namespace-switch'],
     provides: ['target-delete'],
-    run: async (requirements, utils) => {
-      const coreOutput = await execCommand({
+    run: async (requirements, utils) => ({
+      'target-delete': await execCommand({
         command: ['kubectl', 'delete', resourceTypes.join(','), '-l', 'app.kubernetes.io/part-of=taskcluster'],
         dir: REPO_ROOT,
         keepAllOutput: true,
         utils,
-      });
-      // Optional CRDs (Gateway API, HealthCheckPolicy) may not be installed on
-      // every cluster; tolerate "the server doesn't have a resource type" so
-      // an Ingress-only deployment can still clean up.
-      const optionalOutput = await execCommand({
-        command: ['kubectl', 'delete', optionalResourceTypes.join(','), '-l', 'app.kubernetes.io/part-of=taskcluster'],
-        dir: REPO_ROOT,
-        keepAllOutput: true,
-        ignoreReturn: true,
-        utils,
-      });
-      return { 'target-delete': `${coreOutput}\n${optionalOutput}` };
-    },
+      }),
+    }),
   },
 ];
 

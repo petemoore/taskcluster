@@ -1,5 +1,5 @@
 import semver from 'semver';
-import path from 'node:path';
+import path from 'path';
 import { ChangeLog } from '../changelog/index.js';
 
 import {
@@ -22,10 +22,9 @@ import {
   modifyRepoFile,
   removeRepoFile,
   REPO_ROOT,
-  execCommand,
 } from '../utils/index.js';
 
-import { schema as readSchema } from '@taskcluster/db';
+import { schema as readSchema } from 'taskcluster-db';
 
 const UPSTREAM_REMOTE = 'git@github.com:taskcluster/taskcluster';
 
@@ -59,7 +58,7 @@ export default ({ tasks, cmdOptions, credentials }) => {
         throw new Error(`Version ${pkgJson.version} in package.json is not valid`);
       }
 
-      const level = requirements.changelog.level();
+      const level = requirements['changelog'].level();
 
       return {
         'release-version': semver.inc(pkgJson.version, level),
@@ -122,7 +121,7 @@ export default ({ tasks, cmdOptions, credentials }) => {
     run: async (requirements, utils) => {
       const changed = [];
 
-      for (const file of await gitLsFiles({ patterns: ['**/package.json', 'package.json'] })) {
+      for (let file of await gitLsFiles({ patterns: ['**/package.json', 'package.json'] })) {
         utils.status({ message: `Update ${file}` });
         await modifyRepoJSON(file, contents => {
           contents.version = requirements['release-version'];
@@ -150,21 +149,11 @@ export default ({ tasks, cmdOptions, credentials }) => {
         contents.replace(/appVersion: .*/, `appVersion: '${requirements['release-version']}'`));
       changed.push(helmchart);
 
-      const pyClientDir = path.join('clients', 'client-py');
-      const pyClientPyprojectToml = path.join(pyClientDir, 'pyproject.toml');
-      utils.status({ message: `Update ${pyClientPyprojectToml}` });
-      await modifyRepoFile(pyClientPyprojectToml, contents =>
-        contents.replace(/^version = ".*"$/m, `version = "${requirements['release-version']}"`));
-      changed.push(pyClientPyprojectToml);
-
-      const pyClientUvLock = path.join(pyClientDir, 'uv.lock');
-      utils.status({ message: `Update ${pyClientUvLock}` });
-      await execCommand({
-        command: ['uv', 'lock', '-P', 'taskcluster'],
-        dir: path.join(REPO_ROOT, pyClientDir),
-        utils,
-      });
-      changed.push(pyClientUvLock);
+      const pyclient = 'clients/client-py/setup.py';
+      utils.status({ message: `Update ${pyclient}` });
+      await modifyRepoFile(pyclient, contents =>
+        contents.replace(/VERSION = .*/, `VERSION = '${requirements['release-version']}'`));
+      changed.push(pyclient);
 
       for (const dir of ['client', 'upload', 'download', 'integration_tests']) {
         const rsclient = `clients/client-rust/${dir}/Cargo.toml`;
@@ -196,12 +185,6 @@ export default ({ tasks, cmdOptions, credentials }) => {
         contents.replace(/download\/v[0-9.]*\/taskcluster-/g, `download/v${requirements['release-version']}/taskcluster-`));
       changed.push(shellreadme);
 
-      const installingMdx = 'ui/docs/reference/workers/generic-worker/installing.mdx';
-      utils.status({ message: `Update ${installingMdx}` });
-      await modifyRepoFile(installingMdx, contents =>
-        contents.replace(/download\/v[0-9.]+\//g, `download/v${requirements['release-version']}/`));
-      changed.push(installingMdx);
-
       const internalVersion = 'internal/version.go';
       utils.status({ message: `Update ${internalVersion}` });
       await modifyRepoFile(internalVersion, contents =>
@@ -226,12 +209,11 @@ export default ({ tasks, cmdOptions, credentials }) => {
         // Provide explicit list of allowed file extensions so that
         // workers/generic-worker/testdata/*.zip files are not modified.
         'workers/generic-worker/**.go',
-        'workers/generic-worker/**.md',
         'workers/generic-worker/**.yml',
         'workers/generic-worker/**.sh',
         'workers/generic-worker/**.cmd',
       ];
-      for (const file of await gitLsFiles({ patterns: goFiles })) {
+      for (let file of await gitLsFiles({ patterns: goFiles })) {
         await modifyRepoFile(file, contents =>
           contents.replace(/(github.com\/taskcluster\/taskcluster\/v)\d+/g, `$1${major}`));
         changed.push(file);
@@ -282,7 +264,7 @@ export default ({ tasks, cmdOptions, credentials }) => {
 
       // append this TC release version and DB version to the list of releases
       await modifyRepoFile(releasesFile,
-        content => `${content.trim()}\n${tcVersion}: ${dbVersion}\n`);
+        content => content.trim() + `\n${tcVersion}: ${dbVersion}\n`);
 
       return {
         // load the whole txt file into `db-releases`
@@ -367,12 +349,12 @@ export default ({ tasks, cmdOptions, credentials }) => {
       await writeRepoFile('CHANGELOG.md',
         oldCL.slice(0, breakpoint) +
           `\n## v${requirements['release-version']}\n\n` +
-          (await requirements.changelog.format()) +
+          (await requirements['changelog'].format()) +
           '\n' +
           oldCL.slice(breakpoint));
       changed.push('CHANGELOG.md');
 
-      for (const filename of requirements.changelog.filenames()) {
+      for (let filename of requirements['changelog'].filenames()) {
         await removeRepoFile(filename);
         changed.push(filename);
       }

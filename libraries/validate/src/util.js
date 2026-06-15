@@ -1,26 +1,27 @@
 import _ from 'lodash';
+import url from 'url';
 
 /**
  * Render {$const: <key>} into JSON schema and update $ref
  */
 export function renderConstants(schema, constants) {
   // Replace val with constant, if it is an {$const: <key>} schema
-  const substitute = (val) => {
+  let substitute = (val) => {
     // Primitives and arrays shouldn't event be considered
-    if (!(val instanceof Object) || Array.isArray(val)) {
+    if (!(val instanceof Object) || val instanceof Array) {
       return undefined;
     }
 
     // Check if there is a key and only one key
-    const key = val.$const;
-    if (key === undefined || typeof key !== 'string' || _.keys(val).length !== 1) {
+    let key = val.$const;
+    if (key === undefined || typeof key != 'string' || _.keys(val).length !== 1) {
       return undefined;
     }
 
     // Check that there's a constant for the key
-    const constant = constants[key];
+    let constant = constants[key];
     if (constant === undefined) {
-      throw new Error(`Warning! Undefined constant: ${key}`);
+      throw new Error('Warning! Undefined constant: ' + key);
     }
 
     // Clone constant
@@ -39,12 +40,11 @@ export const checkRefs = (schema, serviceName) => {
   const check = val => {
     if (_.isObject(val)) {
       if (typeof val.$ref === 'string' && _.keys(val).length === 1) {
-        const ref = URL.parse(val.$ref);
-        // if url is parsed, it is absolute
-        if (ref !== null) {
+        const ref = url.parse(val.$ref);
+        if (ref.hostname || ref.protocol) {
           throw new Error(`Disallowed $ref '${ref}': absolute URIs are not allowed`);
         }
-        if (val.$ref.startsWith('/')) {
+        if (ref.path && ref.path.startsWith('/')) {
           throw new Error(`Disallowed $ref '${ref}': rooted URIs (starting with /) are not allowed`);
         }
         return;

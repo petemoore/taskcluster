@@ -1,6 +1,5 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { ensureTask } from './tasks.js';
+import fs from 'fs';
+import path from 'path';
 
 export const enumFiles = (dirname) => {
   const files = [];
@@ -25,9 +24,7 @@ export const loadTasks = async (dirname) => {
 
   await Promise.all(files.map(async (file) => {
     const { tasks } = await import(path.join(dirname, file));
-    tasks.forEach(val => {
-      ensureTask(result, val);
-    });
+    tasks.forEach(val => result.push(val));
   }));
 
   return result;

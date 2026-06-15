@@ -35,12 +35,12 @@ export class Providers {
    *   cfg: Record<string, any>,
    *   monitor: object,
    *   notify: object,
-   *   db: import('@taskcluster/lib-postgres').Database,
+   *   db: import('taskcluster-lib-postgres').Database,
    *   estimator: import('../estimator.js').Estimator,
    *   Worker: import('../data.js').Worker,
    *   WorkerPoolError: import('../data.js').WorkerPoolError,
    *   validator: Function,
-   *   publisher: import('@taskcluster/lib-pulse').PulsePublisher,
+   *   publisher: import('taskcluster-lib-pulse').PulsePublisher,
    *   launchConfigSelector: import('../launch-config-selector.js').LaunchConfigSelector
    * }} opts
    */
@@ -147,10 +147,10 @@ export class Providers {
    */
   get(providerId) {
     const p = this._providers[providerId];
-    if (p?.setupFailed) {
+    if (p && p.setupFailed) {
       // If setup failed, we do not return the provider, but just an empty object.  This
       // avoids mistakes where the caller does not check for failed setup.
-      // @ts-expect-error
+      // @ts-ignore
       return { setupFailed: true };
     }
     return p;

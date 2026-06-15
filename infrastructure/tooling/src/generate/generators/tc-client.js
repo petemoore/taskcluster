@@ -6,14 +6,14 @@ export const tasks = [{
   requires: ['apis'],
   provides: ['target-taskcluster-client'],
   run: async (requirements, utils) => {
-    const apis = requirements.apis;
+    const apis = requirements['apis'];
 
     await writeRepoFile('clients/client/src/apis.js',
-      `/* eslint-disable */\nexport default ${stringify(apis, { space: 2 })};\n`);
+      '/* eslint-disable */\nexport default ' + stringify(apis, { space: 2 }) + ';\n');
 
     // update client tests to include all exposed apis
     const clientsTest = `// This file is auto-generated, don't edit
-import taskcluster from '@taskcluster/client';
+import taskcluster from 'taskcluster-client';
 import assert from 'assert';
 
 test('Main clients exposed', function () {

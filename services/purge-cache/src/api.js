@@ -1,9 +1,9 @@
 import _ from 'lodash';
 import debugFactory from 'debug';
 const debug = debugFactory('purge-cache');
-import { APIBuilder } from '@taskcluster/lib-api';
-import taskcluster from '@taskcluster/client';
-import { paginateResults } from '@taskcluster/lib-api';
+import { APIBuilder } from 'taskcluster-lib-api';
+import taskcluster from 'taskcluster-client';
+import { paginateResults } from 'taskcluster-lib-api';
 import { splitWorkerPoolId } from './util.js';
 
 // Common patterns URL parameters
@@ -13,7 +13,7 @@ const GENERIC_ID_PATTERN = /^[a-zA-Z0-9-_]{1,38}$/;
 const builder = new APIBuilder({
   title: 'Purge Cache Service',
   context: [
-    'cfg', // A @taskcluster/lib-config instance
+    'cfg', // A taskcluster-lib-config instance
     'cachePurgeCache', // An Promise for cacheing cachepurge responses
     'db',
   ],
@@ -57,7 +57,7 @@ builder.declare({
   ].join('\n'),
 }, async function(req, res) {
   const { workerPoolId } = req.params;
-  const { cacheName } = req.body;
+  let { cacheName } = req.body;
 
   debug(`Processing request for ${workerPoolId}/${cacheName}.`);
 
@@ -130,7 +130,7 @@ builder.declare({
 }, async function(req, res) {
 
   const { workerPoolId } = req.params;
-  const since = new Date(req.query.since || 0);
+  let since = new Date(req.query.since || 0);
 
   // Cache the azure query for cacheTime seconds.  Note that if a second request
   // for this task queue comes in while the first DB query is still running, this
@@ -145,7 +145,7 @@ builder.declare({
     };
   }
 
-  const { reqs: openRequests } = cacheCache;
+  let { reqs: openRequests } = cacheCache;
   return res.reply({
     requests: _.reduce(openRequests, (l, entry) => {
       const { provisionerId, workerType } = splitWorkerPoolId(entry.worker_pool_id);
@@ -176,7 +176,7 @@ builder.declare({
     'This endpoint is used to check on backing services this service',
     'depends on.',
   ].join('\n'),
-}, (_req, res) => {
+}, function(_req, res) {
   // TODO: add implementation
   res.reply({});
 });

@@ -1,4 +1,4 @@
-FROM node:24.16.0
+FROM node:22.16.0
 
 WORKDIR /app/ui
 COPY yarn.lock package.json ./
@@ -9,8 +9,6 @@ RUN corepack enable && \
   yarn install
 
 COPY . ./
-
-ENV PATH="/app/ui/node_modules/.bin:${PATH}"
 
 ENTRYPOINT [ "yarn" ]
 CMD [ "start:docker" ]

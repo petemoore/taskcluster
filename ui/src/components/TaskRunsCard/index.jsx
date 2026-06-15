@@ -35,7 +35,6 @@ import { ARTIFACTS_PAGE_SIZE, ARTIFACTS_SHOW_MAX } from '../../utils/constants';
 import { runs } from '../../utils/prop-types';
 import { withAuth } from '../../utils/Auth';
 import { getArtifactUrl } from '../../utils/getArtifactUrl';
-import formatBytes from '../../utils/formatBytes';
 import splitTaskQueueId from '../../utils/splitTaskQueueId';
 import Link from '../../utils/Link';
 import { sortArtifacts } from './sort';
@@ -125,12 +124,6 @@ const DOTS_VARIANT_LIMIT = 5;
     },
     copyButton: {
       width: 30,
-    },
-    sizeCell: {
-      whiteSpace: 'nowrap',
-      color: theme.palette.text.secondary,
-      marginRight: theme.spacing(1),
-      alignSelf: 'center',
     },
   }),
   { withTheme: true }
@@ -328,9 +321,6 @@ export default class TaskRunsCard extends Component {
                 </Label>
               )}
               <div className={classes.artifactName}>{artifact.name}</div>
-            </div>
-            <div className={classes.sizeCell}>
-              {formatBytes(artifact.contentLength)}
             </div>
             <div>{isLogFile ? <LinkIcon /> : <OpenInNewIcon />}</div>
           </Link>

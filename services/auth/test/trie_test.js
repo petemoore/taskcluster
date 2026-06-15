@@ -3,7 +3,7 @@ import _ from 'lodash';
 import ScopeSetBuilder from '../src/scopesetbuilder.js';
 import * as trie from '../src/trie.js';
 import trietestcases from './trietestcases.js';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 
 // This test suite was designed to test every conceivable combination of
 // inputs to the trie implementation, in an effort to suss out any hidden bugs
@@ -47,17 +47,15 @@ suite(testing.suiteName(), () => {
         { pattern: 'a*', scopes: ['b<..>z'] },
         { pattern: 'c*', scopes: ['d<..>'] },
       ],
-    ].forEach((rules, index) => {
-      test(`independent rules (${index + 1})`, () => {
-        _.range(50).forEach(() => { // run 50 times with different shuffling
-          const ordering = trie.dependencyOrdering(_.shuffle(rules));
-          assume(ordering).has.length(rules.length);
-          for (const { pattern } of rules) {
-            assume(ordering.map(r => r.pattern)).contains(pattern);
-          }
-        });
+    ].forEach((rules, index) => test(`independent rules (${index + 1})`, () => {
+      _.range(50).forEach(() => { // run 50 times with different shuffling
+        const ordering = trie.dependencyOrdering(_.shuffle(rules));
+        assume(ordering).has.length(rules.length);
+        for (const { pattern } of rules) {
+          assume(ordering.map(r => r.pattern)).contains(pattern);
+        }
       });
-    });
+    }));
 
     [ // rules must be strictly dependent and ordered by dependency
       [
@@ -91,14 +89,12 @@ suite(testing.suiteName(), () => {
         { pattern: 'bbb', scopes: ['cb'] },
         { pattern: 'a*', scopes: ['b<..>c'] },
       ],
-    ].forEach((rules, index) => {
-      test(`acyclic rules (${index + 1})`, () => {
-        _.range(50).forEach(() => { // run 50 times with different shuffling
-          const ordering = trie.dependencyOrdering(_.shuffle(rules));
-          assume(ordering.map(r => r.pattern)).eql(rules.map(r => r.pattern));
-        });
+    ].forEach((rules, index) => test(`acyclic rules (${index + 1})`, () => {
+      _.range(50).forEach(() => { // run 50 times with different shuffling
+        const ordering = trie.dependencyOrdering(_.shuffle(rules));
+        assume(ordering.map(r => r.pattern)).eql(rules.map(r => r.pattern));
       });
-    });
+    }));
 
     [
       [
@@ -138,13 +134,11 @@ suite(testing.suiteName(), () => {
         { pattern: 'bbb', scopes: ['cb'] },
         { pattern: 'a*', scopes: ['b<..>c'] },
       ],
-    ].forEach((rules, index) => {
-      test(`cyclic rules (${index + 1})`, () => {
-        assume(() => {
-          trie.dependencyOrdering(rules);
-        }).throws('cycle');
-      });
-    });
+    ].forEach((rules, index) => test(`cyclic rules (${index + 1})`, () => {
+      assume(() => {
+        trie.dependencyOrdering(rules);
+      }).throws('cycle');
+    }));
 
     [
       [
@@ -158,13 +152,11 @@ suite(testing.suiteName(), () => {
       ], [
         { pattern: 'a*', scopes: ['bc*<..>'] },
       ],
-    ].forEach((rules, index) => {
-      test(`illegal scopes (${index + 1})`, () => {
-        assume(() => {
-          trie.dependencyOrdering(rules);
-        }).throws('scope', 'expected illegal scope');
-      });
-    });
+    ].forEach((rules, index) => test(`illegal scopes (${index + 1})`, () => {
+      assume(() => {
+        trie.dependencyOrdering(rules);
+      }).throws('scope', 'expected illegal scope');
+    }));
   });
 
   /**
@@ -183,7 +175,7 @@ suite(testing.suiteName(), () => {
     const mapP = (p) => p.split('').map(mapChar).join('');
     // Helper method to apply mapP while respecting kleene
     const mapPWithKleene = (p) => p.endsWith('*')
-      ? `${mapP(p.slice(0, -1))}*`
+      ? mapP(p.slice(0, -1)) + '*'
       : mapP(p);
 
     //console.log(JSON.stringify(rules, null, 2));
@@ -234,7 +226,7 @@ suite(testing.suiteName(), () => {
         if (pattern.endsWith('*')) {
           const remaining = patternMatch(pattern, input) ? input.slice(pattern.length - 1) : '*';
           if (input.endsWith('*')) {
-            newScopes = scopes.map(s => s.replace(/<\.\.>.*$/, remaining));
+            newScopes = scopes.map(s => s.replace(/\<\.\.\>.*$/, remaining));
           } else {
             newScopes = scopes.map(s => s.replace('<..>', remaining));
           }

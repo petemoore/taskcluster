@@ -1,10 +1,10 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import helper from './helper.js';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 import { WorkerPool, WorkerPoolError, Worker } from '../src/data.js';
-import taskcluster from '@taskcluster/client';
+import taskcluster from 'taskcluster-client';
 
-helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
+helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
   helper.withDb(mock, skipping);
   helper.resetTables(mock, skipping);
 
@@ -33,40 +33,40 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     await worker.create(helper.db);
   };
 
-  suite('expireWorkerPools', () => {
+  suite('expireWorkerPools', function() {
     const checkWP = async workerPoolId => {
       return WorkerPool.fromDbRows(
         await helper.db.fns.get_worker_pool_with_launch_configs(workerPoolId));
     };
 
-    setup(() => {
+    setup(function() {
       helper.load.remove('expireWorkerPools');
     });
 
-    test('scan of empty set of worker pools', async () => {
+    test('scan of empty set of worker pools', async function() {
       await helper.load('expireWorkerPools');
     });
 
-    test('worker pool with an active providerId', async () => {
+    test('worker pool with an active providerId', async function() {
       await makeWP({ workerPoolId: 'pp/wt', providerId: 'testing' });
       await helper.load('expireWorkerPools');
       assert(await checkWP('pp/wt'));
     });
 
-    test('worker pool with null-provider but previousProviderIds', async () => {
+    test('worker pool with null-provider but previousProviderIds', async function() {
       await makeWP({ workerPoolId: 'pp/wt', providerId: 'null-provider', previousProviderIds: ['something'] });
       await helper.load('expireWorkerPools');
       assert(await checkWP('pp/wt'));
     });
 
-    test('worker pool with null-provider and empty previousProviderIds', async () => {
+    test('worker pool with null-provider and empty previousProviderIds', async function() {
       await makeWP({ workerPoolId: 'pp/wt', providerId: 'null-provider', previousProviderIds: [] });
       await helper.load('expireWorkerPools');
       assert.equal(await checkWP('pp/wt'), undefined);
     });
   });
 
-  suite('expireLaunchConfigs', () => {
+  suite('expireLaunchConfigs', function () {
     const getWPLCs = async (workerPoolId, providerId) => {
       return helper.db.fns.get_worker_pool_launch_configs(workerPoolId, null, null, null);
     };
@@ -82,15 +82,15 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
         false);
     };
 
-    setup(() => {
+    setup(function() {
       helper.load.remove('expireLaunchConfigs');
     });
 
-    test('nothing to remove', async () => {
+    test('nothing to remove', async function() {
       await helper.load('expireLaunchConfigs');
     });
 
-    test('does not remove active launch configs', async () => {
+    test('does not remove active launch configs', async function () {
       const workerPoolId = 'pp/wt';
       const providerId = 'testing';
 
@@ -113,7 +113,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       const configs2 = (await getWPLCs(workerPoolId, providerId)).map(c => c.configuration).sort();
       assert.deepEqual(configs2, ['lc3', 'lc4']);
     });
-    test('does not remove archived launch configs with workers', async () => {
+    test('does not remove archived launch configs with workers', async function () {
       const workerPoolId = 'pp/wt';
       const providerId = 'testing';
 
@@ -134,33 +134,33 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     });
   });
 
-  suite('expireWorkers', () => {
+  suite('expireWorkers', function() {
     const checkWorker = async (workerPoolId = 'pp/wt', workerGroup = 'wg', workerId = 'wid') => {
       return await Worker.get(helper.db, { workerPoolId, workerGroup, workerId });
     };
 
-    setup(() => {
+    setup(function() {
       helper.load.remove('expireWorkers');
     });
 
-    test('scan of empty set of workers', async () => {
+    test('scan of empty set of workers', async function() {
       await helper.load('expireWorkers');
     });
 
-    test('active worker', async () => {
+    test('active worker', async function() {
       await makeWorker({ expires: taskcluster.fromNow('1 hour') });
       await helper.load('expireWorkers');
       assert(await checkWorker());
     });
 
-    test('expired worker', async () => {
+    test('expired worker', async function() {
       await makeWorker({ expires: taskcluster.fromNow('-1 hour') });
       await helper.load('expireWorkers');
       assert.equal(await checkWorker(), undefined);
     });
   });
 
-  suite('expireErrors', () => {
+  suite('expireErrors', function() {
     const eid = taskcluster.slugid();
     const makeWPE = async values => {
       const now = new Date();
@@ -187,28 +187,28 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       await helper.load('expireErrors');
     };
 
-    setup(() => {
+    setup(function() {
       helper.load.remove('expireErrors');
     });
 
-    test('expire an empty set of errors', async () => {
+    test('expire an empty set of errors', async function() {
       await helper.load('expireErrors');
       assert.equal((await checkWPE()).length, 0);
     });
 
-    test('active error', async () => {
+    test('active error', async function() {
       await makeWPE({ reported: taskcluster.fromNow('10 hours') });
       await expireWithRetentionDays(1);
       assert.equal((await checkWPE()).length, 1);
     });
 
-    test('old error', async () => {
+    test('old error', async function() {
       await makeWPE({ reported: taskcluster.fromNow('-3 days') });
       await expireWithRetentionDays(2);
       assert.equal((await checkWPE()).length, 0);
     });
 
-    test('old error', async () => {
+    test('old error', async function() {
       await makeWPE({ reported: taskcluster.fromNow('-3 days') });
       await expireWithRetentionDays(2);
       assert.equal((await checkWPE()).length, 0);

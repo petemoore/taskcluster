@@ -5,16 +5,16 @@ const FUTURE = new Date(4000, 1, 1);
 
 /** Return the next scheduled date that is greater than the reference, in UTC.
  */
-const nextDate = (schedule, reference) => {
+const nextDate = function(schedule, reference) {
   reference = typeof reference !== 'undefined' ? reference : new Date();
 
   let next;
   schedule.forEach((pattern) => {
-    const interval = parser.parse(pattern, {
+    let interval = parser.parse(pattern, {
       currentDate: reference,
       utc: true,
     });
-    const n = new Date(interval.next().toString());
+    let n = new Date(interval.next().toString());
     if (typeof next === 'undefined' || n < next) {
       next = n;
     }

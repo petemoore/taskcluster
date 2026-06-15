@@ -1,14 +1,14 @@
 import _ from 'lodash';
 import helper from '../helper.js';
-import testing from '@taskcluster/lib-testing';
-import { strict as assert } from 'node:assert';
+import testing from 'taskcluster-lib-testing';
+import { strict as assert } from 'assert';
 import * as hugeBufs from './fixtures/huge_bufs.js';
 
 const ASCII = _.range(1, 128).map(i => String.fromCharCode(i)).join(' ');
-const THIS_VERSION = parseInt(/.*\/0*(\d+)_test\.js/.exec(import.meta.url)[1], 10);
+const THIS_VERSION = parseInt(/.*\/0*(\d+)_test\.js/.exec(import.meta.url)[1]);
 
 // (copied from azure-entities)
-const encodeStringKey = (str) => {
+const encodeStringKey = function(str) {
   if (str === '') {
     return '!';
   }
@@ -18,7 +18,7 @@ const encodeStringKey = (str) => {
     .replace(/%/g, '!');
 };
 
-const decodeStringKey = (str) => {
+const decodeStringKey = function(str) {
   if (str === '!') {
     return '';
   }
@@ -29,17 +29,21 @@ const decodeStringKey = (str) => {
   return decodeURIComponent(str.replace(/!/g, '%'));
 };
 
-const encodeCompositeKey = (key1, key2) => `${encodeStringKey(key1)}~${encodeStringKey(key2)}`;
+const encodeCompositeKey = function(key1, key2) {
+  return `${encodeStringKey(key1)}~${encodeStringKey(key2)}`;
+};
 
-const decodeCompositeKey = (key) => key.split('~').map(decodeStringKey);
+const decodeCompositeKey = function(key) {
+  return key.split('~').map(decodeStringKey);
+};
 
 // (this is used by 0010_test.js, too)
 export let entityBufDecodeTest = null;
 
-suite(testing.suiteName(), () => {
+suite(testing.suiteName(), function() {
   helper.withDbForVersion();
 
-  suiteSetup(async () => {
+  suiteSetup(async function() {
     await testing.resetDb({ testDbUrl: helper.dbUrl });
     await helper.upgradeTo(THIS_VERSION);
   });
@@ -47,7 +51,7 @@ suite(testing.suiteName(), () => {
   const b64 = x => Buffer.from(x).toString('base64');
 
   entityBufDecodeTest = (name, encoded, expected, xfail) => {
-    test(`entity_buf_decode: ${name}${xfail && ' (XFAIL)'}`, async () => {
+    test(`entity_buf_decode: ${name}${xfail && ' (XFAIL)'}`, async function() {
       await helper.withDbClient(async client => {
         const t = await client.query(`
           select entity_buf_decode($1, 'val') as decoded
@@ -69,7 +73,7 @@ suite(testing.suiteName(), () => {
   entityBufDecodeTest('2 huge bufs', hugeBufs.encoded, hugeBufs.decoded, true);
 
   const entityBufEncodeTest = (name, value) => {
-    test(`entity_buf_encode: ${name}`, async () => {
+    test(`entity_buf_encode: ${name}`, async function() {
       await helper.withDbClient(async client => {
         const t = await client.query(`
           select entity_buf_encode('{}'::jsonb, 'val', $1) as encoded
@@ -86,7 +90,7 @@ suite(testing.suiteName(), () => {
   entityBufEncodeTest('all ascii', ASCII);
 
   const entityBufRoundTrip = (name, value) => {
-    test(`entity_buf_en/decode round-trip: ${name}`, async () => {
+    test(`entity_buf_en/decode round-trip: ${name}`, async function() {
       await helper.withDbClient(async client => {
         const res = await client.query(`
           select entity_buf_decode(
@@ -104,7 +108,7 @@ suite(testing.suiteName(), () => {
   entityBufRoundTrip('json with backslashes', JSON.stringify(["back\\slash"]));
 
   const encodeStringKeyTest = (name, input) => {
-    test(`encode_string_key: ${name}`, async () => {
+    test(`encode_string_key: ${name}`, async function() {
       await helper.withDbClient(async client => {
         const res = await client.query(
           'select encode_string_key($1) as output',
@@ -119,7 +123,7 @@ suite(testing.suiteName(), () => {
   encodeStringKeyTest('slashed worker pool id', 'worker/pool');
 
   const decodeStringKeyTest = (name, input) => {
-    test(`decode_string_key: ${name}`, async () => {
+    test(`decode_string_key: ${name}`, async function() {
       await helper.withDbClient(async client => {
         const res = await client.query(
           'select decode_string_key($1) as output',
@@ -143,7 +147,7 @@ suite(testing.suiteName(), () => {
   decodeStringKeyTest('multiple escapes', '!7ea!5eb!25c');
 
   const encodeDecodeRoundTrip = (name, value) => {
-    test(`en/decode_string_key: ${name}`, async () => {
+    test(`en/decode_string_key: ${name}`, async function() {
       await helper.withDbClient(async client => {
         const res = await client.query(
           'select decode_string_key(encode_string_key($1)) as output',
@@ -159,7 +163,7 @@ suite(testing.suiteName(), () => {
   encodeDecodeRoundTrip('tilde', '~');
 
   const encodeCompositeKeyTest = (name, input) => {
-    test(`decode_composite_key: ${name}`, async () => {
+    test(`decode_composite_key: ${name}`, async function() {
       await helper.withDbClient(async client => {
         const res = await client.query(
           'select encode_composite_key($1, $2) as output',
@@ -176,7 +180,7 @@ suite(testing.suiteName(), () => {
   encodeCompositeKeyTest('weird chars', [ASCII, 'def']);
 
   const decodeCompositeKeyTest = (name, input) => {
-    test(`decode_composite_key: ${name}`, async () => {
+    test(`decode_composite_key: ${name}`, async function() {
       await helper.withDbClient(async client => {
         const res = await client.query(
           'select decode_composite_key($1) as output',
@@ -191,7 +195,7 @@ suite(testing.suiteName(), () => {
   decodeCompositeKeyTest('encoded', 'foo!2fbar~bar!5cfoo');
 
   const compositeKeyRoundTripTest = (name, value) => {
-    test(`en/decode_composite_key: ${name}`, async () => {
+    test(`en/decode_composite_key: ${name}`, async function() {
       await helper.withDbClient(async client => {
         const res = await client.query(
           'select decode_composite_key(encode_composite_key($1, $2)) as output',

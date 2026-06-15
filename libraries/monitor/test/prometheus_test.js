@@ -1,8 +1,9 @@
-import assert from 'node:assert';
+import assert from 'assert';
+import _ from 'lodash';
 import request from 'superagent';
 import nock from 'nock';
 import MonitorManager from '../src/monitormanager.js';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 
 // Register metrics once to be used across all tests
 MonitorManager.registerMetric('testingServiceTestCounter', {
@@ -33,18 +34,9 @@ MonitorManager.registerMetric('testingServiceGauge', {
   registers: ['extra'],
 });
 
-MonitorManager.registerMetric('testingGlobalCounter', {
-  name: 'testing_global_counter',
-  type: 'counter',
-  title: 'A global test counter',
-  description: 'A global counter that should propagate to any exposed registry',
-  labels: { op: 'Operation name' },
-  global: true,
-});
-
 const TEST_PORT = 39090;
 
-suite(testing.suiteName(), () => {
+suite(testing.suiteName(), function() {
   const configDefaults = {
     serviceName: 'testing-service',
     level: 'debug',
@@ -64,11 +56,11 @@ suite(testing.suiteName(), () => {
     },
   };
 
-  suiteTeardown(async () => {
+  suiteTeardown(async function() {
     nock.cleanAll();
   });
 
-  test('starts server and responds to metrics', async () => {
+  test('starts server and responds to metrics', async function() {
     const monitor = MonitorManager.setup(configDefaults);
     monitor.exposeMetrics();
     monitor.metric.testingServiceTestCounter(1);
@@ -82,7 +74,7 @@ suite(testing.suiteName(), () => {
     await monitor.terminate();
   });
 
-  test('server ignores other urls and methods', async () => {
+  test('server ignores other urls and methods', async function () {
     const monitor = MonitorManager.setup(configDefaults);
     monitor.exposeMetrics();
     await assert.rejects(
@@ -96,46 +88,7 @@ suite(testing.suiteName(), () => {
     await monitor.terminate();
   });
 
-  test('global metrics propagate to non-default registries on exposeMetrics', async () => {
-    const monitor = MonitorManager.setup({
-      ...configDefaults,
-      prometheusConfig: { server: { port: TEST_PORT } },
-    });
-    try {
-      // Expose a non-default registry — global metrics should be copied into it
-      monitor.exposeMetrics('extra');
-      monitor.metric.testingGlobalCounter(1, { op: 'test-op' });
-
-      const res = await request.get(`http://localhost:${TEST_PORT}/metrics`);
-      assert(res.ok);
-      // Global counter appears in the 'extra' registry
-      assert.match(res.text, /testing_global_counter/);
-      assert.match(res.text, /op="test-op"/);
-      // The non-global default-only counter does NOT appear
-      assert.doesNotMatch(res.text, /testing_service_test_counter/);
-    } finally {
-      await monitor.terminate();
-    }
-  });
-
-  test('global metrics appear in default registry', async () => {
-    const monitor = MonitorManager.setup({
-      ...configDefaults,
-      prometheusConfig: { server: { port: TEST_PORT } },
-    });
-    try {
-      monitor.exposeMetrics(); // default registry
-      monitor.metric.testingGlobalCounter(1, { op: 'default-op' });
-
-      const res = await request.get(`http://localhost:${TEST_PORT}/metrics`);
-      assert(res.ok);
-      assert.match(res.text, /testing_global_counter/);
-    } finally {
-      await monitor.terminate();
-    }
-  });
-
-  test('push gateway successfully sends metrics', async () => {
+  test('push gateway successfully sends metrics', async function() {
     const pushGateway = nock('http://push-gateway.test:9091')
       .put('/metrics/job/push-test-job/instance/test-instance', (body) => {
         return body.includes('http_requests_total') &&
