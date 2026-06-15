@@ -1,6 +1,6 @@
 #import "../../../fragments/artifacts.graphql"
 
-query Task($taskId: ID!, $artifactsConnection: PageConnection, $dependentsConnection: PageConnection) {
+query Task($taskId: ID!, $artifactsConnection: PageConnection, $dependentsConnection: PageConnection, $taskActionsFilter: JSON) {
   task(taskId: $taskId) {
     taskId
     taskGroupId
@@ -49,7 +49,7 @@ query Task($taskId: ID!, $artifactsConnection: PageConnection, $dependentsConnec
       }
     }
 
-    taskActions {
+    taskActions(filter: $taskActionsFilter) {
       actions
       variables
       version

@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 
 /**
  * Build Pulse ConnectionString, from options on the form:

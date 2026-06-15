@@ -10,9 +10,7 @@ import (
 	"time"
 	"unsafe"
 
-	"golang.org/x/sys/windows"
-
-	"github.com/taskcluster/taskcluster/v100/workers/generic-worker/win32"
+	"github.com/taskcluster/taskcluster/v99/workers/generic-worker/win32"
 )
 
 // LoginInfo represents a logged in user session
@@ -169,7 +167,7 @@ func (loginInfo *LoginInfo) SetActiveConsoleSessionId() (err error) {
 	log.Printf("Setting active console session ID to %#x", sessionId)
 	err = win32.SetTokenInformation(
 		loginInfo.hUser,
-		windows.TokenSessionId,
+		win32.TokenSessionId,
 		(*byte)(unsafe.Pointer(&sessionId)),
 		uint32(unsafe.Sizeof(sessionId)),
 	)

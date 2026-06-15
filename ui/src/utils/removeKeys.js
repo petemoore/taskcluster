@@ -12,12 +12,13 @@ const removeKeys = (obj, keys) => {
     Object.keys(obj).forEach(prop => {
       // important check that this is objects own property
       // not from prototype prop inherited
-      if (Object.hasOwn(obj, prop)) {
+      if (Object.prototype.hasOwnProperty.call(obj, prop)) {
         switch (typeof obj[prop]) {
           case 'string':
             index = keys.indexOf(prop);
 
             if (index > -1) {
+              // eslint-disable-next-line no-param-reassign
               delete obj[prop];
             }
 
@@ -26,6 +27,7 @@ const removeKeys = (obj, keys) => {
             index = keys.indexOf(prop);
 
             if (index > -1) {
+              // eslint-disable-next-line no-param-reassign
               delete obj[prop];
             } else {
               removeKeys(obj[prop], keys);

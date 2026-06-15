@@ -1,10 +1,9 @@
 import '../../prelude.js';
 import debugFactory from 'debug';
 const debug = debugFactory('app:main');
-import assert from 'node:assert';
+import assert from 'assert';
 import { ApolloServer } from '@apollo/server';
 import { expressMiddleware } from '@as-integrations/express4';
-import compression from 'compression';
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
 import depthLimit from './validation/guardedDepthLimit.js';
 import { NoFragmentCyclesRule } from 'graphql/validation/rules/NoFragmentCyclesRule.js';
@@ -15,7 +14,7 @@ import config from '@taskcluster/lib-config';
 import libReferences from '@taskcluster/lib-references';
 import SchemaSet from '@taskcluster/lib-validate';
 import builder from './api.js';
-import { createServer } from 'node:http';
+import { createServer } from 'http';
 import { Client, pulseCredentials } from '@taskcluster/lib-pulse';
 import taskcluster from '@taskcluster/client';
 import tcdb from '@taskcluster/db';
@@ -31,7 +30,7 @@ import typeDefs from './graphql/index.js';
 import PulseEngine from './PulseEngine/index.js';
 import scanner from './login/scanner.js';
 import './monitor.js';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath } from 'url';
 
 import githubStrategy from './login/strategies/github.js';
 import mozillaAuth0Strategy from './login/strategies/mozilla-auth0.js';
@@ -190,7 +189,6 @@ const load = loader(
         // https://www.apollographql.com/docs/apollo-server/migration
         app.use(
           '/graphql',
-          compression(),
           expressMiddleware(server, {
             context,
           }),
@@ -264,7 +262,7 @@ const load = loader(
 
           debug('Expiring authorization codes');
           const count = (await db.fns.expire_authorization_codes(now))[0].expire_authorization_codes;
-          debug(`Expired ${count} authorization codes`);
+          debug('Expired ' + count + ' authorization codes');
         });
       },
     },
@@ -278,7 +276,7 @@ const load = loader(
 
           debug('Expiring access tokens');
           const count = (await db.fns.expire_access_tokens(now))[0].expire_access_tokens;
-          debug(`Expired ${count} access tokens`);
+          debug('Expired ' + count + ' access tokens');
         });
       },
     },
@@ -289,7 +287,7 @@ const load = loader(
         return monitor.oneShot('cleanup-expire-session-storage', async () => {
           debug('Expiring session storage entries');
           const count = (await db.fns.expire_sessions())[0].expire_sessions;
-          debug(`Expired ${count} session storage entries`);
+          debug('Expired ' + count + ' session storage entries');
         });
       },
     },

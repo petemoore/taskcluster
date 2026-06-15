@@ -1,5 +1,5 @@
-import fs from 'node:fs';
-import path from 'node:path';
+import fs from 'fs';
+import path from 'path';
 import { SYNTAX_ERROR } from './constants.js';
 
 export const ignorePgErrors = async (promise, ...codes) => {
@@ -19,7 +19,7 @@ export const dollarQuote = str => {
     if (str.indexOf(quote) === -1) {
       return quote + str + quote;
     }
-    i = `${i}x`;
+    i = i + 'x';
   }
 };
 
@@ -59,7 +59,7 @@ export const annotateError = (query, err) => {
       line++;
     }
     if (line < queryLines.length) {
-      const caret = `${" ".repeat(position)}^`;
+      const caret = " ".repeat(position) + "^";
       queryLines.splice(line + 1, 0, caret);
     }
 
@@ -70,7 +70,7 @@ export const annotateError = (query, err) => {
 
   // show hints or details from this error in the debug log, to help
   // debugging issues..
-  for (const p of ['hint', 'detail', 'where', 'code']) {
+  for (let p of ['hint', 'detail', 'where', 'code']) {
     if (err[p]) {
       err.message += `\n${p.toUpperCase()}: ${err[p]}`;
     }
@@ -184,7 +184,7 @@ export class ETA {
     }
 
     const rate = this.rate();
-    if (Number.isNaN(rate) || !rate) {
+    if (isNaN(rate) || !rate) {
       return undefined;
     }
 

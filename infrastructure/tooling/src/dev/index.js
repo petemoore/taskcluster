@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import path from 'node:path';
+import path from 'path';
 import _ from 'lodash';
 import { readRepoYAML, writeRepoYAML } from '../utils/index.js';
 import inquirer from 'inquirer';
@@ -36,7 +36,7 @@ export const readUserConfig = async () => {
 };
 
 export const init = async (options) => {
-  const configTmpl = await readRepoYAML(path.join('dev-docs', 'dev-config-example.yml'));
+  let configTmpl = await readRepoYAML(path.join('dev-docs', 'dev-config-example.yml'));
   let userConfig = await readUserConfig();
 
   const prompts = [];
@@ -45,7 +45,7 @@ export const init = async (options) => {
   await rabbitPrompts({ userConfig, prompts, configTmpl });
   await postgresPrompts({ userConfig, prompts, configTmpl });
 
-  const answer = await inquirer.prompt(prompts);
+  let answer = await inquirer.prompt(prompts);
 
   userConfig = await awsResources({ userConfig, answer, configTmpl });
   userConfig = await taskclusterResources({ userConfig, answer, configTmpl });
@@ -74,7 +74,7 @@ export const dbUpgrade = async (options) => {
   const meta = userConfig.meta || {};
 
   const { dbVersion } = options;
-  const toVersion = dbVersion ? parseInt(dbVersion, 10) : undefined;
+  const toVersion = dbVersion ? parseInt(dbVersion) : undefined;
 
   const { adminDbUrl, usernamePrefix } = dbParams(meta);
   const showProgress = message => {
@@ -89,8 +89,8 @@ export const dbDowngrade = async (options) => {
   const meta = userConfig.meta || {};
 
   const { dbVersion } = options;
-  const toVersion = parseInt(dbVersion, 10);
-  if (!dbVersion.match(/^[0-9]+$/) || Number.isNaN(toVersion)) {
+  const toVersion = parseInt(dbVersion);
+  if (!dbVersion.match(/^[0-9]+$/) || isNaN(toVersion)) {
     throw new Error('Missing or invalid --db-version');
   }
 

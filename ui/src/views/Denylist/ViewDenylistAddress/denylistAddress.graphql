@@ -1,5 +1,5 @@
-query DenylistedNotifications($searchTerm: String) {
-  listDenylistAddresses(searchTerm: $searchTerm) {
+query DenylistedNotifications($filter: JSON) {
+  listDenylistAddresses(filter: $filter) {
     edges {
       node {
         notificationAddress

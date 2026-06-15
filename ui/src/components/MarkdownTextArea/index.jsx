@@ -103,7 +103,7 @@ export default class MarkdownTextArea extends Component {
     this.setState({ value: event.target.value });
   };
 
-  handleTabChange = (_event, value) => {
+  handleTabChange = (event, value) => {
     this.setState({ tabIndex: value });
   };
 
