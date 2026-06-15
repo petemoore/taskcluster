@@ -1,5 +1,5 @@
-import assert from 'node:assert';
-import crypto from 'node:crypto';
+import assert from 'assert';
+import crypto from 'crypto';
 import _ from 'lodash';
 import libUrls from 'taskcluster-lib-urls';
 import slugid from 'slugid';
@@ -495,7 +495,7 @@ export class Provider {
       try {
         await error.create(this.db);
       } catch (err) {
-        if (err?.code !== 'EntityAlreadyExists') {
+        if (!err || err.code !== 'EntityAlreadyExists') {
           throw err;
         }
         const existing = await this.WorkerPoolError.get(this.db, { errorId, workerPoolId: workerPool.workerPoolId });

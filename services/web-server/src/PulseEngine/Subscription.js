@@ -80,7 +80,7 @@ export default class Subscription {
         // also raised as exceptions and handled that way)
         bindChannel.on('error', () => {});
         try {
-          for (const { pattern, exchange } of subscriptions) {
+          for (let { pattern, exchange } of subscriptions) {
             await bindChannel.bindQueue(queueName, exchange, pattern);
           }
         } catch (err) {
@@ -110,7 +110,8 @@ export default class Subscription {
           };
 
           if (
-            amqpMsg.properties?.headers &&
+            amqpMsg.properties &&
+            amqpMsg.properties.headers &&
             Array.isArray(amqpMsg.properties.headers.cc)
           ) {
             message.cc = amqpMsg.properties.headers.cc;

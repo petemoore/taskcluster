@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import url from 'node:url';
+import url from 'url';
 import libUrls from 'taskcluster-lib-urls';
 import typeis from 'type-is';
 import Debug from 'debug';
@@ -64,7 +64,7 @@ export const validateSchemas = ({ validator, absoluteSchemas, rootUrl, serviceNa
       }
       const error = validator(req.body, input);
       if (error) {
-        debug(`Input schema validation error: ${error}`);
+        debug('Input schema validation error: ' + error);
         return res.reportError(
           'InputValidationError',
           error,
@@ -85,9 +85,9 @@ export const validateSchemas = ({ validator, absoluteSchemas, rootUrl, serviceNa
       if (output) {
         const error = validator(json, output);
         if (error) {
-          debug(`Output schema validation error: ${error}`);
+          debug('Output schema validation error: ' + error);
           /** @type {Error & Record<string, any>} */
-          const err = new Error(`Output schema validation error: ${error}`);
+          const err = new Error('Output schema validation error: ' + error);
           err.schema = libUrls.schema(rootUrl, serviceName, output);
           err.url = req.url;
           err.payload = json;
