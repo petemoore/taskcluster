@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 
 /**
  * Handle API end-point request
@@ -10,7 +10,7 @@ import assert from 'node:assert';
  * @param {{
  *   entry: import('../../@types/index.d.ts').APIEntryOptions<TContext>,
  *   context: Record<string, any>,
- *   monitor: import('@taskcluster/lib-monitor').Monitor
+ *   monitor: import('taskcluster-lib-monitor').Monitor
  * }} options
  * @returns {import('../../@types/index.d.ts').APIRequestHandler<TContext>}
  */
@@ -18,7 +18,7 @@ export const callHandler = ({ entry, context, monitor }) => {
   assert(entry.handler, 'No handler is provided');
   return (req, res, next) => {
     Promise.resolve(null).then(() => {
-      // @ts-expect-error - we check this above already
+      // @ts-ignore - we check this above already
       return entry.handler.call(req.tcContext, req, res);
     }).then(() => {
       if (!req.public && !req.satisfyingScopes) {

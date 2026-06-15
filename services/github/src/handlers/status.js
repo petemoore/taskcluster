@@ -11,9 +11,8 @@ import {
 } from '../constants.js';
 
 import QueueLock from '../queue-lock.js';
-import utils from '../utils.js';
-const { markdownLog, markdownAnchor } = utils;
-import { requestArtifact, buildArtifactUrl } from './requestArtifact.js';
+import { markdownLog, markdownAnchor, extractLog } from '../utils.js';
+import { requestArtifact } from './requestArtifact.js';
 import { taskUI, makeDebug, taskLogUI, GithubCheck, getTimeDifference, taskGroupUI, buildUrl, buildLogUrl } from './utils.js';
 
 /**
@@ -44,7 +43,7 @@ const qLock = new QueueLock({
  * @returns {Promise<void>}
  **/
 export async function statusHandler(message) {
-  const { taskGroupId, state, runs, taskId, retriesLeft } = message.payload.status;
+  const { taskGroupId, state, runs, taskId } = message.payload.status;
   let { runId } = message.payload;
   runId = typeof runId === 'undefined' ? 0 : runId;
   const { reasonResolved } = runs[runId] || {};
@@ -55,15 +54,10 @@ export async function statusHandler(message) {
   let debug = makeDebug(this.monitor, { taskGroupId, taskId });
   debug(`Handling state change for task ${taskId} in group ${taskGroupId}, reason=${reasonResolved || state || 'taskDefined'}`, { exchange: message.exchange });
 
-  // check if it was the last try
-  let conclusion = CONCLUSIONS[reasonResolved || state];
-  if (reasonResolved === 'intermittent-task' && retriesLeft === 0) {
-    conclusion = 'failure';
-    debug(`Intermittent task ${taskId} has no retries left, marking as failure instead of neutral`);
-  }
+  const conclusion = CONCLUSIONS[reasonResolved || state];
   const checkRunStatus = conclusion ? CHECK_RUN_STATES.COMPLETED : TASK_STATE_TO_CHECK_RUN_STATE[state];
 
-  const [build] = await this.context.db.fns.get_github_build_pr(taskGroupId);
+  let [build] = await this.context.db.fns.get_github_build_pr(taskGroupId);
   if (!build) {
     debug(`No github build is associated with task group ${taskGroupId}. Most likely this was triggered by periodic cron hook, which doesn't require github event / check suite.`);
     releaseLock();
@@ -125,6 +119,7 @@ export async function statusHandler(message) {
         debug,
         instGithub,
         build,
+        scopes: taskDefinition.scopes,
       });
     };
 
@@ -132,7 +127,8 @@ export async function statusHandler(message) {
     const textArtifactName = extraCheckRun?.textArtifactName || CUSTOM_CHECKRUN_TEXT_ARTIFACT_NAME;
     const annotationsArtifactName = extraCheckRun?.annotationsArtifactName || CUSTOM_CHECKRUN_ANNOTATIONS_ARTIFACT_NAME;
 
-    const [ customCheckRunText, customCheckRunAnnotationsText ] = await Promise.all([
+    const [ liveLogText, customCheckRunText, customCheckRunAnnotationsText ] = await Promise.all([
+      fetchArtifact(LIVE_BACKING_LOG_ARTIFACT_NAME),
       fetchArtifact(textArtifactName),
       fetchArtifact(annotationsArtifactName),
     ]);
@@ -164,7 +160,6 @@ export async function statusHandler(message) {
       details_url: taskUI(this.context.cfg.taskcluster.rootUrl, taskGroupId, taskId),
       status: checkRunStatus,
       conclusion,
-      started_at: runs[runId]?.started,
 
       output_title: outputTitle || `${this.context.cfg.app.statusContext} (${event_type.split('.')[0]})`,
       output_summary: outputSummary || taskDefinition.metadata.description,
@@ -210,7 +205,6 @@ export async function statusHandler(message) {
       output.addText(`Task Execution Time: ${taskExecutionTime ?? "n/a"}`);
       output.addText(`Task Status: **${runs[runId]?.state ?? "n/a"}**`);
       output.addText(`Reason Resolved: **${runs[runId]?.reasonResolved ?? "n/a"}**`);
-      output.addText(`TaskId: **${taskId}**`);
       output.addText(`RunId: **${runId}**`);
     }
 
@@ -246,23 +240,8 @@ export async function statusHandler(message) {
     if (customCheckRunText) {
       output.addText(customCheckRunText);
     }
-    if (!taskDefined && runId !== undefined) {
-      try {
-        const url = buildArtifactUrl(this.queueClient, { taskId, runId, artifactName: LIVE_BACKING_LOG_ARTIFACT_NAME });
-        const response = await fetch(url, { redirect: 'follow' });
-        if (response.ok) {
-          const logText = await utils.extractLog(
-            response.body, 20, 200, githubCheck.output.getRemainingMaxSize(),
-          );
-          if (logText) {
-            output.addText(markdownLog(logText));
-          }
-        } else {
-          await response.body?.cancel();
-        }
-      } catch (e) {
-        await this.monitor.reportError(e);
-      }
+    if (liveLogText) {
+      output.addText(markdownLog(extractLog(liveLogText, 20, 200, githubCheck.output.getRemainingMaxSize())));
     }
 
     let [checkRun] = await this.context.db.fns.get_github_check_by_task_group_and_task_id(taskGroupId, taskId);

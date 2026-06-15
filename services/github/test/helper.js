@@ -1,13 +1,13 @@
-import http from 'node:http';
-import fs from 'node:fs';
+import http from 'http';
+import fs from 'fs';
 import _ from 'lodash';
 import sinon from 'sinon';
 import builder from '../src/api.js';
-import taskcluster from '@taskcluster/client';
+import taskcluster from 'taskcluster-client';
 import mainLoad from '../src/main.js';
 import fakeGithubAuth from './github-auth.js';
 
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 
 const load = testing.stickyLoader(mainLoad);
 
@@ -17,7 +17,7 @@ const helper = {
 };
 export default helper;
 
-suiteSetup(async () => {
+suiteSetup(async function() {
   load.inject('profile', 'test');
   load.inject('process', 'test');
 });
@@ -32,20 +32,20 @@ helper.secrets = new testing.Secrets({
 
 // Build an http request from a json file with fields describing
 // headers and a body
-helper.jsonHttpRequest = (jsonFile, options) => {
-  const defaultOptions = {
+helper.jsonHttpRequest = function(jsonFile, options) {
+  let defaultOptions = {
     hostname: 'localhost',
     port: 60415,
     path: '/api/github/v1/github',
     method: 'POST',
   };
   options = _.defaultsDeep(options, defaultOptions);
-  const jsonData = JSON.parse(fs.readFileSync(jsonFile));
+  let jsonData = JSON.parse(fs.readFileSync(jsonFile));
   options.headers = jsonData.headers;
 
-  return new Promise((accept, reject) => {
+  return new Promise(function(accept, reject) {
     try {
-      const req = http.request(options, accept);
+      let req = http.request(options, accept);
       req.write(JSON.stringify(jsonData.body));
       req.end();
     } catch (e) {
@@ -67,16 +67,16 @@ helper.withPulse = (mock, skipping) => {
  * This is reset before each test.  Call this before withServer.
  */
 helper.withFakeGithub = (mock, skipping) => {
-  suiteSetup(() => {
+  suiteSetup(function() {
     load.inject('github', fakeGithubAuth());
   });
 
-  suiteTeardown(() => {
+  suiteTeardown(function() {
     load.remove('github');
   });
 
-  setup(async () => {
-    const fakeGithub = await load('github');
+  setup(async function() {
+    let fakeGithub = await load('github');
     fakeGithub.resetStubs();
   });
 };
@@ -94,11 +94,11 @@ helper.withFakeQueue = (mock, skipping) => {
     },
   });
 
-  suiteSetup(() => {
+  suiteSetup(function() {
     load.inject('queueClient', fakeQueueClient());
   });
 
-  suiteTeardown(() => {
+  suiteTeardown(function() {
     load.remove('queueClient');
   });
 };
@@ -112,7 +112,7 @@ helper.withFakeQueue = (mock, skipping) => {
 helper.withServer = (mock, skipping) => {
   let webServer;
 
-  suiteSetup(async () => {
+  suiteSetup(async function() {
     if (skipping()) {
       return;
     }
@@ -137,7 +137,7 @@ helper.withServer = (mock, skipping) => {
     webServer = await load('server');
   });
 
-  suiteTeardown(async () => {
+  suiteTeardown(async function() {
     if (skipping()) {
       return;
     }
@@ -150,7 +150,7 @@ helper.withServer = (mock, skipping) => {
 };
 
 helper.resetTables = (mock, skipping) => {
-  setup('reset tables', async () => {
+  setup('reset tables', async function() {
     await testing.resetTables({ tableNames: [
       'github_builds',
       'github_checks',

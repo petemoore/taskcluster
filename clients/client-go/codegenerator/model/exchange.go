@@ -2,9 +2,8 @@ package model
 
 import (
 	"fmt"
-	"strings"
 
-	"github.com/taskcluster/taskcluster/v100/tools/jsonschema2go/text"
+	"github.com/taskcluster/taskcluster/v86/tools/jsonschema2go/text"
 )
 
 ////////////////////////////////////////////////////////////////////////
@@ -35,8 +34,7 @@ func (exchange *Exchange) Name() string {
 }
 
 func (exchange *Exchange) String() string {
-	var result strings.Builder
-	fmt.Fprintf(&result,
+	result := fmt.Sprintf(
 		"Version         = '%v'\n"+
 			"Schema          = '%v'\n"+
 			"Title           = '%v'\n"+
@@ -46,9 +44,9 @@ func (exchange *Exchange) String() string {
 		exchange.Description, exchange.ExchangePrefix,
 	)
 	for i, entry := range exchange.Entries {
-		fmt.Fprintf(&result, "Entry %-6v= \n%v", i, entry.String())
+		result += fmt.Sprintf("Entry %-6v= \n%v", i, entry.String())
 	}
-	return result.String()
+	return result
 }
 
 func (exchange *Exchange) postPopulate(apiDef *APIDefinition) {
@@ -93,11 +91,9 @@ func (entry *ExchangeEntry) String() string {
 			"    Entry Description = '%v'\n",
 		entry.Type, entry.Exchange, entry.Name, entry.Title,
 		entry.Description)
-	var loopResult strings.Builder
 	for i, element := range entry.RoutingKey {
-		fmt.Fprintf(&loopResult, "    Routing Key Element %-6v= \n%v", i, element.String())
+		result += fmt.Sprintf("    Routing Key Element %-6v= \n%v", i, element.String())
 	}
-	result += loopResult.String()
 	result += fmt.Sprintf("    Entry Schema      = '%v'\n", entry.Schema)
 	result += fmt.Sprintf("    Entry SchemaURL   = '%v'\n", entry.schemaURL)
 	return result
@@ -161,16 +157,14 @@ func (exchange *Exchange) generateAPICode(exchangeName string) string {
 import (
 	"reflect"
 	"strings"
-	tcclient "github.com/taskcluster/taskcluster/v100/clients/client-go"
+	tcclient "github.com/taskcluster/taskcluster/v86/clients/client-go"
 )
 
 `
 	exchange.apiDef.members = make(map[string]bool, len(exchange.Entries))
-	var loopContent strings.Builder
 	for _, entry := range exchange.Entries {
-		loopContent.WriteString(entry.generateAPICode())
+		content += entry.generateAPICode()
 	}
-	content += loopContent.String()
 
 	content += `
 func generateRoutingKey(x any) string {

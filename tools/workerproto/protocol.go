@@ -23,12 +23,12 @@ type Protocol struct {
 	startedMutex sync.Mutex
 
 	// tracking for whether this protocol is intialized
-	initializedChan chan struct{}
-	initializedOnce sync.Once
+	initialized     bool
+	initializedCond sync.Cond
 
 	// tracking for EOF from the read side of the transport
-	eofChan chan struct{}
-	eofOnce sync.Once
+	eof     bool
+	eofCond sync.Cond
 }
 
 func NewProtocol(transport Transport) *Protocol {
@@ -37,8 +37,13 @@ func NewProtocol(transport Transport) *Protocol {
 		localCapabilities:  EmptyCapabilities(),
 		remoteCapabilities: EmptyCapabilities(),
 		callbacks:          make(map[string][]MessageCallback),
-		initializedChan:    make(chan struct{}),
-		eofChan:            make(chan struct{}),
+		initialized:        false,
+		initializedCond: sync.Cond{
+			L: &sync.Mutex{},
+		},
+		eofCond: sync.Cond{
+			L: &sync.Mutex{},
+		},
 	}
 }
 
@@ -100,14 +105,20 @@ func (prot *Protocol) Start(asWorker bool) {
 // where the worker does not support the protocol, this method can be used to indicate that
 // the protocol is "initialized" with no capabilities.
 func (prot *Protocol) SetInitialized() {
-	prot.initializedOnce.Do(func() {
-		close(prot.initializedChan)
-	})
+	// announce that we are now initialized
+	prot.initializedCond.L.Lock()
+	defer prot.initializedCond.L.Unlock()
+	prot.initialized = true
+	prot.initializedCond.Broadcast()
 }
 
 // Wait until this protocol is initialized.
 func (prot *Protocol) WaitUntilInitialized() {
-	<-prot.initializedChan
+	prot.initializedCond.L.Lock()
+	defer prot.initializedCond.L.Unlock()
+	for !prot.initialized {
+		prot.initializedCond.Wait()
+	}
 }
 
 // Add the given capability to the local capabilities
@@ -129,7 +140,11 @@ func (prot *Protocol) Capable(c string) bool {
 
 // Wait until all message have been read from the transport.
 func (prot *Protocol) WaitForEOF() {
-	<-prot.eofChan
+	prot.eofCond.L.Lock()
+	defer prot.eofCond.L.Unlock()
+	for !prot.eof {
+		prot.eofCond.Wait()
+	}
 }
 
 // Send a message.  This happens without waiting for initialization; as the
@@ -143,9 +158,10 @@ func (prot *Protocol) recvLoop() {
 	for {
 		msg, ok := prot.transport.Recv()
 		if !ok {
-			prot.eofOnce.Do(func() {
-				close(prot.eofChan)
-			})
+			prot.eofCond.L.Lock()
+			prot.eof = true
+			prot.eofCond.Broadcast()
+			prot.eofCond.L.Unlock()
 			return
 		}
 		callbacks, ok := prot.callbacks[msg.Type]

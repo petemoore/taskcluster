@@ -1,12 +1,12 @@
 import sinon from 'sinon';
-import { strict as assert } from 'node:assert';
-import testing from '@taskcluster/lib-testing';
+import { strict as assert } from 'assert';
+import testing from 'taskcluster-lib-testing';
 import helper from './helper.js';
 import { CloudAPI } from '../src/providers/cloudapi.js';
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-suite(testing.suiteName(), () => {
+suite(testing.suiteName(), function() {
   let cloud;
 
   const initCloudApi = async (options = {}) => {
@@ -28,7 +28,7 @@ suite(testing.suiteName(), () => {
           };
         } else if (err.code === 403 || err.code >= 500) {
           return {
-            backoff: _backoffDelay * 2 ** tries,
+            backoff: _backoffDelay * Math.pow(2, tries),
             reason: 'errors',
             level: 'warning',
           };
@@ -42,7 +42,7 @@ suite(testing.suiteName(), () => {
     cloud = await initCloudApi();
   });
 
-  test('non existing queue', async () => {
+  test('non existing queue', async function() {
     try {
       await cloud.enqueue('nonexisting', () => {});
     } catch (err) {
@@ -52,12 +52,12 @@ suite(testing.suiteName(), () => {
     throw new Error('should have thrown an error');
   });
 
-  test('simple', async () => {
+  test('simple', async function() {
     const result = await cloud.enqueue('query', () => 5);
     assert.equal(result, 5);
   });
 
-  test('one 500', async () => {
+  test('one 500', async function() {
     const remote = sinon.stub();
     remote.onCall(0).throws({ code: 500 });
     remote.onCall(1).returns(10);
@@ -65,7 +65,7 @@ suite(testing.suiteName(), () => {
     assert.equal(result, 10);
     assert.equal(remote.callCount, 2);
   });
-  test('multiple 500', async () => {
+  test('multiple 500', async function() {
     const remote = sinon.stub();
     remote.onCall(0).throws({ code: 500 });
     remote.onCall(1).throws({ code: 520 });
@@ -75,7 +75,7 @@ suite(testing.suiteName(), () => {
     assert.equal(result, 15);
     assert.equal(remote.callCount, 4);
   });
-  test('500s forever should throw', async () => {
+  test('500s forever should throw', async function() {
     const remote = sinon.stub();
     remote.throws({ code: 500 });
 
@@ -89,8 +89,8 @@ suite(testing.suiteName(), () => {
     throw new Error('should have thrown an error');
   });
 
-  test('operations timing out', async () => {
-    const cloudWithTimeout = await initCloudApi({ timeout: 1 });
+  test('operations timing out', async function() {
+    const cloudWithTimeout = await initCloudApi({ timeout: 1, throwOnTimeout: true });
     const remote = sinon.stub();
     remote.onCall(0).resolves(sleep(5));
 
@@ -103,13 +103,13 @@ suite(testing.suiteName(), () => {
     assert.equal(remote.callCount, 1);
   });
 
-  test('metrics not counted if not enabled', async () => {
+  test('metrics not counted if not enabled', async function() {
     cloud = await initCloudApi({ collectMetrics: false });
     await cloud.enqueue('query', () => 5);
     assert.equal(cloud.metrics.total, 0);
   });
 
-  test('metrics should be collected and logged', async () => {
+  test('metrics should be collected and logged', async function () {
     const monitor = await helper.load('monitor');
     cloud = await initCloudApi({ collectMetrics: true, monitor });
 

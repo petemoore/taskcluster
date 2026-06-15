@@ -1,24 +1,19 @@
 import _ from 'lodash';
 import makeDebug from 'debug';
 const debug = makeDebug('app:queue');
-import assert from 'node:assert';
+import assert from 'assert';
 import slugid from 'slugid';
-import taskcluster from '@taskcluster/client';
-import { UNIQUE_VIOLATION } from '@taskcluster/lib-postgres';
+import taskcluster from 'taskcluster-client';
 
 /** Get seconds until `target` relative to now (by default).  This rounds up
  * and always waits at least one second, to avoid races in tests where
  * everything happens in a matter of milliseconds. */
-const secondsTo = (target, relativeTo = new Date()) => {
-  const delta = Math.ceil((target.getTime() - relativeTo.getTime()) / 1000);
+let secondsTo = (target, relativeTo = new Date()) => {
+  let delta = Math.ceil((target.getTime() - relativeTo.getTime()) / 1000);
   return Math.max(delta, 1);
 };
 
-/** Priority to constant number.
- *
- * This mapping is duplicated in the SQL `CASE` expression inside the
- * `queue_pending_tasks_add_for_task` helper in `db/versions/0124.yml`.
- * If you add or reorder priority tiers, update both. */
+/** Priority to constant number */
 const PRIORITY_TO_CONSTANT = {
   highest: 7,
   'very-high': 6,
@@ -80,7 +75,7 @@ export class QueueService {
     assert(workerId, 'workerId must be given');
     assert(typeof runId === 'number', 'runId must be a number');
     assert(takenUntil instanceof Date, 'takenUntil must be a date');
-    assert(Number.isFinite(takenUntil.getTime()), 'takenUntil must be a valid date');
+    assert(isFinite(takenUntil), 'takenUntil must be a valid date');
 
     await this.db.fns.queue_claimed_task_put(
       taskId,
@@ -207,25 +202,19 @@ export class QueueService {
     assert(taskGroupId, 'taskGroupId must be given');
     assert(schedulerId, 'schedulerId must be given');
     assert(deadline instanceof Date, 'deadline must be a date');
-    assert(Number.isFinite(deadline.getTime()), 'deadline must be a valid date');
+    assert(isFinite(deadline), 'deadline must be a valid date');
 
-    const delay = Math.floor(this.deadlineDelay / 1000);
+    let delay = Math.floor(this.deadlineDelay / 1000);
     debug('Put deadline message to be visible in %s seconds',
       secondsTo(deadline) + delay);
 
-    try {
-      await this.db.fns.queue_task_deadline_put(
-        taskGroupId,
-        taskId,
-        schedulerId,
-        deadline.toJSON(), // this is to be checked against task record if it didn't change
-        taskcluster.fromNow(`${secondsTo(deadline) + delay} seconds`), // this is slightly after deadline
-      );
-    } catch (err) {
-      if (err.code !== UNIQUE_VIOLATION) {
-        throw err;
-      }
-    }
+    await this.db.fns.queue_task_deadline_put(
+      taskGroupId,
+      taskId,
+      schedulerId,
+      deadline.toJSON(), // this is to be checked against task record if it didn't change
+      taskcluster.fromNow(`${secondsTo(deadline) + delay} seconds`), // this is slightly after deadline
+    );
   }
 
   /**
@@ -273,15 +262,7 @@ export class QueueService {
   }
 
   /**
-   * Enqueue message about a new pending task in appropriate queue.
-   *
-   * As of db v124 the production code paths that transition a run to
-   * `pending` enqueue atomically inside the DB fn itself (see
-   * `queue_pending_tasks_add_for_task` in `db/versions/0124.yml`). This
-   * method is retained for test setup in
-   * `services/queue/test/queueservice_test.js`, which pre-populates
-   * `queue_pending_tasks` without going through a real task state
-   * transition.
+   * Enqueue message about a new pending task in appropriate queue
    *
    * The `task` argument is an object with the properties:
    *  - `taskId`
@@ -298,7 +279,7 @@ export class QueueService {
     assert(task.deadline instanceof Date, 'Expected task.deadline');
 
     // // Find the time to deadline
-    const timeToDeadline = secondsTo(task.deadline);
+    let timeToDeadline = secondsTo(task.deadline);
     // If deadline is reached, we don't care to publish a message about the task
     // being pending.
     if (timeToDeadline === 1) {

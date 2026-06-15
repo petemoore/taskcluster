@@ -1,13 +1,13 @@
 import _ from 'lodash';
 import request from 'superagent';
 import hawk from 'hawk';
-import assert from 'node:assert';
-import SchemaSet from '@taskcluster/lib-validate';
-import { App } from '@taskcluster/lib-app';
+import assert from 'assert';
+import SchemaSet from 'taskcluster-lib-validate';
+import { App } from 'taskcluster-lib-app';
 import { APIBuilder } from '../src/index.js';
 import { monitor } from './helper.js';
-import testing from '@taskcluster/lib-testing';
-import path from 'node:path';
+import testing from 'taskcluster-lib-testing';
+import path from 'path';
 import debugFactory from 'debug';
 const debug = debugFactory('auth_test');
 
@@ -80,7 +80,7 @@ suite(testing.suiteName(), function() {
   });
 
   const testEndpoint = ({ method, route, name, scopes = null, handler, handlerBuilder, tests }) => {
-    const sideEffects = {};
+    let sideEffects = {};
     builder.declare({
       method,
       route,
@@ -109,7 +109,7 @@ suite(testing.suiteName(), function() {
       const url = buildUrl(params);
       const auth = buildHawk(id);
       test(label, async () => {
-        for (const key of Object.keys(sideEffects)) {
+        for (let key of Object.keys(sideEffects)) {
           delete sideEffects[key];
         }
         try {
@@ -235,7 +235,7 @@ suite(testing.suiteName(), function() {
         label: 'request scopes from caller',
         id: 'test-client',
         tester: (auth, url) => requestWithHawk(url, auth)
-          .then((res) => {
+          .then(function(res) {
             assert(res.ok, 'Request failed');
             assert(res.body.scopes.length === 1, 'wrong number of scopes');
             assert(res.body.scopes[0] === 'service:magic', 'failed scopes');
@@ -410,7 +410,7 @@ suite(testing.suiteName(), function() {
         label: 'client has sufficient scopes',
         id: 'admin',
         tester: (auth, url) => requestWithHawk(url, auth)
-          .then((res) => {
+          .then(function(res) {
             assert(res.body.clientId === 'admin');
             return res;
           }),

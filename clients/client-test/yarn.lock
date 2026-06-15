@@ -2,7 +2,7 @@
 # Manual changes might be lost - proceed with caution!
 
 __metadata:
-  version: 9
+  version: 8
   cacheKey: 10c0
 
 "@gar/promisify@npm:^1.1.3":
@@ -32,22 +32,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@taskcluster/client-test@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "@taskcluster/client-test@workspace:."
-  dependencies:
-    http-proxy: "npm:^1.18.0"
-    mocha: "npm:^10.2.0"
-    nock: "npm:^13.5.5"
-    taskcluster-lib-scopes: "npm:^11.0.0"
-    taskcluster-lib-urls: "npm:^13.0.0"
-  languageName: unknown
-  linkType: soft
-
 "@tootallnate/once@npm:2":
-  version: 2.0.1
-  resolution: "@tootallnate/once@npm:2.0.1"
-  checksum: 10c0/23b01a341485be711c602077936d70f8e695405bb88ab4433dc6d1e6cb4556401518789574d399eded790b70b27738136c9a8f02df7ae4219f4ba28bb22d586b
+  version: 2.0.0
+  resolution: "@tootallnate/once@npm:2.0.0"
+  checksum: 10c0/073bfa548026b1ebaf1659eb8961e526be22fa77139b10d60e712f46d2f0f05f4e6c8bec62a087d41088ee9e29faa7f54838568e475ab2f776171003c3920858
   languageName: node
   linkType: hard
 
@@ -445,12 +433,12 @@ __metadata:
   linkType: hard
 
 "follow-redirects@npm:^1.0.0":
-  version: 1.16.0
-  resolution: "follow-redirects@npm:1.16.0"
+  version: 1.15.6
+  resolution: "follow-redirects@npm:1.15.6"
   peerDependenciesMeta:
     debug:
       optional: true
-  checksum: 10c0/a1e2900163e6f1b4d1ed5c221b607f41decbab65534c63fe7e287e40a5d552a6496e7d9d7d976fa4ba77b4c51c11e5e9f683f10b43011ea11e442ff128d0e181
+  checksum: 10c0/9ff767f0d7be6aa6870c82ac79cf0368cd73e01bbc00e9eb1c2a16fbb198ec105e3c9b6628bb98e9f3ac66fe29a957b9645bcb9a490bb7aa0d35f908b6b85071
   languageName: node
   linkType: hard
 
@@ -1126,9 +1114,9 @@ __metadata:
   linkType: hard
 
 "picomatch@npm:^2.0.4, picomatch@npm:^2.2.1":
-  version: 2.3.2
-  resolution: "picomatch@npm:2.3.2"
-  checksum: 10c0/a554d1709e59be97d1acb9eaedbbc700a5c03dbd4579807baed95100b00420bc729335440ef15004ae2378984e2487a7c1cebd743cfdb72b6fa9ab69223c0d61
+  version: 2.3.1
+  resolution: "picomatch@npm:2.3.1"
+  checksum: 10c0/26c02b8d06f03206fc2ab8d16f19960f2ff9e81a658f831ecb656d8f17d9edc799e8364b1f4a7873e89d9702dff96204be0fa26fe4181f6843f040f819dac4be
   languageName: node
   linkType: hard
 
@@ -1370,6 +1358,97 @@ __metadata:
   languageName: node
   linkType: hard
 
+"taskcluster-client-test@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "taskcluster-client-test@workspace:."
+  dependencies:
+    http-proxy: "npm:^1.18.0"
+    mocha: "npm:^10.2.0"
+    nock: "npm:^13.5.5"
+    taskcluster-client: "link:../client"
+    taskcluster-db: "link:db"
+    taskcluster-lib-api: "link:../libraries/api"
+    taskcluster-lib-app: "link:../libraries/app"
+    taskcluster-lib-config: "link:../libraries/config"
+    taskcluster-lib-iterate: "link:../libraries/iterate"
+    taskcluster-lib-loader: "link:../libraries/loader"
+    taskcluster-lib-monitor: "link:../libraries/monitor"
+    taskcluster-lib-postgres: "link:../libraries/postgres"
+    taskcluster-lib-pulse: "link:../libraries/pulse"
+    taskcluster-lib-references: "link:../libraries/references"
+    taskcluster-lib-scopes: "npm:^11.0.0"
+    taskcluster-lib-testing: "link:../libraries/testing"
+    taskcluster-lib-urls: "npm:^13.0.0"
+    taskcluster-lib-validate: "link:../libraries/validate"
+  languageName: unknown
+  linkType: soft
+
+"taskcluster-client@link:../client::locator=taskcluster-client-test%40workspace%3A.":
+  version: 0.0.0-use.local
+  resolution: "taskcluster-client@link:../client::locator=taskcluster-client-test%40workspace%3A."
+  languageName: node
+  linkType: soft
+
+"taskcluster-db@link:db::locator=taskcluster-client-test%40workspace%3A.":
+  version: 0.0.0-use.local
+  resolution: "taskcluster-db@link:db::locator=taskcluster-client-test%40workspace%3A."
+  languageName: node
+  linkType: soft
+
+"taskcluster-lib-api@link:../libraries/api::locator=taskcluster-client-test%40workspace%3A.":
+  version: 0.0.0-use.local
+  resolution: "taskcluster-lib-api@link:../libraries/api::locator=taskcluster-client-test%40workspace%3A."
+  languageName: node
+  linkType: soft
+
+"taskcluster-lib-app@link:../libraries/app::locator=taskcluster-client-test%40workspace%3A.":
+  version: 0.0.0-use.local
+  resolution: "taskcluster-lib-app@link:../libraries/app::locator=taskcluster-client-test%40workspace%3A."
+  languageName: node
+  linkType: soft
+
+"taskcluster-lib-config@link:../libraries/config::locator=taskcluster-client-test%40workspace%3A.":
+  version: 0.0.0-use.local
+  resolution: "taskcluster-lib-config@link:../libraries/config::locator=taskcluster-client-test%40workspace%3A."
+  languageName: node
+  linkType: soft
+
+"taskcluster-lib-iterate@link:../libraries/iterate::locator=taskcluster-client-test%40workspace%3A.":
+  version: 0.0.0-use.local
+  resolution: "taskcluster-lib-iterate@link:../libraries/iterate::locator=taskcluster-client-test%40workspace%3A."
+  languageName: node
+  linkType: soft
+
+"taskcluster-lib-loader@link:../libraries/loader::locator=taskcluster-client-test%40workspace%3A.":
+  version: 0.0.0-use.local
+  resolution: "taskcluster-lib-loader@link:../libraries/loader::locator=taskcluster-client-test%40workspace%3A."
+  languageName: node
+  linkType: soft
+
+"taskcluster-lib-monitor@link:../libraries/monitor::locator=taskcluster-client-test%40workspace%3A.":
+  version: 0.0.0-use.local
+  resolution: "taskcluster-lib-monitor@link:../libraries/monitor::locator=taskcluster-client-test%40workspace%3A."
+  languageName: node
+  linkType: soft
+
+"taskcluster-lib-postgres@link:../libraries/postgres::locator=taskcluster-client-test%40workspace%3A.":
+  version: 0.0.0-use.local
+  resolution: "taskcluster-lib-postgres@link:../libraries/postgres::locator=taskcluster-client-test%40workspace%3A."
+  languageName: node
+  linkType: soft
+
+"taskcluster-lib-pulse@link:../libraries/pulse::locator=taskcluster-client-test%40workspace%3A.":
+  version: 0.0.0-use.local
+  resolution: "taskcluster-lib-pulse@link:../libraries/pulse::locator=taskcluster-client-test%40workspace%3A."
+  languageName: node
+  linkType: soft
+
+"taskcluster-lib-references@link:../libraries/references::locator=taskcluster-client-test%40workspace%3A.":
+  version: 0.0.0-use.local
+  resolution: "taskcluster-lib-references@link:../libraries/references::locator=taskcluster-client-test%40workspace%3A."
+  languageName: node
+  linkType: soft
+
 "taskcluster-lib-scopes@npm:^11.0.0":
   version: 11.0.0
   resolution: "taskcluster-lib-scopes@npm:11.0.0"
@@ -1379,12 +1458,24 @@ __metadata:
   languageName: node
   linkType: hard
 
+"taskcluster-lib-testing@link:../libraries/testing::locator=taskcluster-client-test%40workspace%3A.":
+  version: 0.0.0-use.local
+  resolution: "taskcluster-lib-testing@link:../libraries/testing::locator=taskcluster-client-test%40workspace%3A."
+  languageName: node
+  linkType: soft
+
 "taskcluster-lib-urls@npm:^13.0.0":
   version: 13.0.1
   resolution: "taskcluster-lib-urls@npm:13.0.1"
   checksum: 10c0/4801205a499f11cd4950506848421a14d1f06f0093df4492254ef7c292772167b37089a9aa37d48753fa914ff71c15b7eaf344fef84ae7e90957aa37ccf8bd45
   languageName: node
   linkType: hard
+
+"taskcluster-lib-validate@link:../libraries/validate::locator=taskcluster-client-test%40workspace%3A.":
+  version: 0.0.0-use.local
+  resolution: "taskcluster-lib-validate@link:../libraries/validate::locator=taskcluster-client-test%40workspace%3A."
+  languageName: node
+  linkType: soft
 
 "to-regex-range@npm:^5.0.1":
   version: 5.0.1

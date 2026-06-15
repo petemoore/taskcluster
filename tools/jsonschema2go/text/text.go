@@ -92,18 +92,17 @@ func Indent(text, indent string) string {
 		return text
 	}
 	if text[len(text)-1:] == "\n" {
-		var result strings.Builder
+		result := ""
 		for j := range strings.SplitSeq(text[:len(text)-1], "\n") {
-			result.WriteString(indent + j + "\n")
+			result += indent + j + "\n"
 		}
-		return result.String()
+		return result
 	}
-	var result strings.Builder
+	result := ""
 	for j := range strings.SplitSeq(strings.TrimRight(text, "\n"), "\n") {
-		result.WriteString(indent + j + "\n")
+		result += indent + j + "\n"
 	}
-	s := result.String()
-	return s[:len(s)-1]
+	return result[:len(result)-1]
 }
 
 // Underline returns the provided text together with a new line character and a
@@ -184,11 +183,11 @@ func GoIdentifierFrom(name string, exported bool, blacklist map[string]bool) (id
 			return !unicode.IsLetter(c) && !unicode.IsNumber(c) && c != '_'
 		},
 	) {
-		var caseAdaptedWord strings.Builder
+		caseAdaptedWord := ""
 		for j, subWord := range camelcase.Split(word) {
-			caseAdaptedWord.WriteString(fixCase(subWord, i == 0 && j == 0 && !exported))
+			caseAdaptedWord += fixCase(subWord, i == 0 && j == 0 && !exported)
 		}
-		identifier += caseAdaptedWord.String()
+		identifier += caseAdaptedWord
 	}
 
 	if strings.IndexFunc(

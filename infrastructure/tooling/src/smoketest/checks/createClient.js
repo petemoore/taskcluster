@@ -1,4 +1,4 @@
-import taskcluster from '@taskcluster/client';
+import taskcluster from 'taskcluster-client';
 import { retryAssertionFailures } from '../util.js';
 
 export const scopeExpression = {
@@ -21,7 +21,7 @@ tasks.push({
     const auth = new taskcluster.Auth(taskcluster.fromEnvVars());
     const randomId = taskcluster.slugid();
 
-    const clientId = `project/taskcluster/smoketest/${randomId}`;
+    let clientId = `project/taskcluster/smoketest/${randomId}`;
     const payload = {
       "deleteOnExpiration": true,
       "expires": taskcluster.fromNowJSON('1 hour'),

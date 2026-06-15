@@ -1,14 +1,14 @@
-import { strict as assert } from 'node:assert';
-import testing from '@taskcluster/lib-testing';
-import tc from '@taskcluster/client';
+import { strict as assert } from 'assert';
+import testing from 'taskcluster-lib-testing';
+import tc from 'taskcluster-client';
 const { fromNow } = tc;
 import helper from '../helper.js';
 import slugid from 'slugid';
 
-suite(testing.suiteName(), () => {
+suite(testing.suiteName(), function () {
   helper.withDbForProcs({ serviceName: 'secrets' });
 
-  setup('reset table', async () => {
+  setup('reset table', async function () {
     await helper.withDbClient(async client => {
       await client.query('delete from secrets');
       await client.query('delete from audit_history');
@@ -24,7 +24,7 @@ suite(testing.suiteName(), () => {
     };
   }
 
-  helper.dbTest('create and get', async (db, isFake) => {
+  helper.dbTest('create and get', async function (db, isFake) {
     for await (const s of Object.values(secrets)) {
       await db.fns.upsert_secret(s.name, db.encrypt({
         value: Buffer.from(JSON.stringify(s.encrypted_secret), 'utf8'),
@@ -40,7 +40,7 @@ suite(testing.suiteName(), () => {
       }
     }
   });
-  helper.dbTest('list', async (db, isFake) => {
+  helper.dbTest('list', async function (db, isFake) {
     for await (const s of Object.values(secrets)) {
       await db.fns.upsert_secret(s.name, db.encrypt({
         value: Buffer.from(JSON.stringify(s.encrypted_secret), 'utf8'),
@@ -54,7 +54,7 @@ suite(testing.suiteName(), () => {
       assert(s.expires > new Date());
     });
   });
-  helper.dbTest('delete', async (db, isFake) => {
+  helper.dbTest('delete', async function (db, isFake) {
     for await (const s of Object.values(secrets)) {
       await db.fns.upsert_secret(s.name, db.encrypt({
         value: Buffer.from(JSON.stringify(s.encrypted_secret), 'utf8'),
@@ -71,7 +71,7 @@ suite(testing.suiteName(), () => {
     });
     assert.deepEqual([], await db.fns.get_secret('secret-9'));
   });
-  helper.dbTest('update', async (db, isFake) => {
+  helper.dbTest('update', async function (db, isFake) {
     for await (const s of Object.values(secrets)) {
       await db.fns.upsert_secret(s.name, db.encrypt({
         value: Buffer.from(JSON.stringify(s.encrypted_secret), 'utf8'),
@@ -98,15 +98,13 @@ suite(testing.suiteName(), () => {
       }
     }
   });
-  helper.dbTest('expire', async (db, isFake) => {
+  helper.dbTest('expire', async function (db, isFake) {
     for await (const s of Object.values(secrets)) {
       await db.fns.upsert_secret(s.name, db.encrypt({
         value: Buffer.from(JSON.stringify(s.encrypted_secret), 'utf8'),
       }), s.expires);
     }
-    const res = await db.fns.expire_secrets_return_names();
-    assert.equal(res.length, 6);
-    assert.deepEqual(res, Array.from({ length: 6 }).map((_, i) => ({ name: `secret-${i}` })));
+    await db.fns.expire_secrets();
     for await (const s of Object.values(secrets)) {
       const [secret] = await db.fns.get_secret(s.name);
       if (s.expires < new Date()) {
@@ -121,7 +119,7 @@ suite(testing.suiteName(), () => {
       assert.equal(count, '4');
     });
   });
-  helper.dbTest('insert into secrets in audit history', async (db, isFake) => {
+  helper.dbTest('insert into secrets in audit history', async function (db, isFake) {
 
     await db.fns.insert_secrets_audit_history(
       'secret/1',

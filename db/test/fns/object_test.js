@@ -1,22 +1,22 @@
-import tc from '@taskcluster/client';
+import tc from 'taskcluster-client';
 const { fromNow } = tc;
 import _ from 'lodash';
-import { strict as assert } from 'node:assert';
+import { strict as assert } from 'assert';
 import helper from '../helper.js';
-import testing from '@taskcluster/lib-testing';
-import { CHECK_VIOLATION, UNIQUE_VIOLATION, FOREIGN_KEY_VIOLATION } from '@taskcluster/lib-postgres';
-import taskcluster from '@taskcluster/client';
+import testing from 'taskcluster-lib-testing';
+import { CHECK_VIOLATION, UNIQUE_VIOLATION, FOREIGN_KEY_VIOLATION } from 'taskcluster-lib-postgres';
+import taskcluster from 'taskcluster-client';
 
-suite(testing.suiteName(), () => {
+suite(testing.suiteName(), function() {
   helper.withDbForProcs({ serviceName: 'object' });
 
-  setup('truncate tables', async () => {
+  setup('truncate tables', async function() {
     await helper.withDbClient(async client => {
       await client.query('truncate objects, object_hashes');
     });
   });
 
-  helper.dbTest('create_object same object twice should not raise exception', async (db, isFake) => {
+  helper.dbTest('create_object same object twice should not raise exception', async function(db, isFake) {
     const expires = fromNow('1 year');
     await db.deprecatedFns.create_object('foo', 'projectId', 'backendId', {}, expires);
     await db.deprecatedFns.create_object('foo', 'projectId', 'backendId', {}, expires);
@@ -32,7 +32,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  helper.dbTest('create_object with conflict should P0004', async (db, isFake) => {
+  helper.dbTest('create_object with conflict should P0004', async function(db, isFake) {
     const expires = fromNow('1 year');
     await db.deprecatedFns.create_object('foo', 'projectId', 'backendId', {}, expires);
     await assert.rejects(
@@ -50,7 +50,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  helper.dbTest('create_object', async (db, isFake) => {
+  helper.dbTest('create_object', async function(db, isFake) {
     const expires = fromNow('1 year');
     await db.deprecatedFns.create_object('foo', 'projectId', 'backendId', {}, expires);
 
@@ -65,7 +65,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  helper.dbTest('create_object_for_upload', async (db, isFake) => {
+  helper.dbTest('create_object_for_upload', async function(db, isFake) {
     const expires = fromNow('1 year');
     const uploadExpires = fromNow('1 day');
     const uploadId = taskcluster.slugid();
@@ -84,7 +84,7 @@ suite(testing.suiteName(), () => {
     });
   });
 
-  helper.dbTest('create_object_for_upload is idempotent', async (db, isFake) => {
+  helper.dbTest('create_object_for_upload is idempotent', async function(db, isFake) {
     const expires = fromNow('1 year');
     const uploadExpires = fromNow('1 day');
     const uploadId = taskcluster.slugid();
@@ -92,7 +92,7 @@ suite(testing.suiteName(), () => {
     await db.fns.create_object_for_upload('foo', 'projectId', 'backendId', uploadId, uploadExpires, {}, expires);
   });
 
-  helper.dbTest('create_object_for_upload fails if called again with new uploadId', async (db, isFake) => {
+  helper.dbTest('create_object_for_upload fails if called again with new uploadId', async function(db, isFake) {
     const expires = fromNow('1 year');
     const uploadExpires = fromNow('1 day');
     let uploadId = taskcluster.slugid();
@@ -104,10 +104,10 @@ suite(testing.suiteName(), () => {
       err => err.code === UNIQUE_VIOLATION);
   });
 
-  helper.dbTest('create_object_for_upload fails if two objects use the same uploadId', async (db, isFake) => {
+  helper.dbTest('create_object_for_upload fails if two objects use the same uploadId', async function(db, isFake) {
     const expires = fromNow('1 year');
     const uploadExpires = fromNow('1 day');
-    const uploadId = taskcluster.slugid();
+    let uploadId = taskcluster.slugid();
 
     await db.fns.create_object_for_upload('foo', 'projectId', 'backendId', uploadId, uploadExpires, {}, expires);
     await assert.rejects(
@@ -115,10 +115,10 @@ suite(testing.suiteName(), () => {
       err => err.code === UNIQUE_VIOLATION);
   });
 
-  helper.dbTest('object_upload_complete', async (db, isFake) => {
+  helper.dbTest('object_upload_complete', async function(db, isFake) {
     const expires = fromNow('1 year');
     const uploadExpires = fromNow('1 day');
-    const uploadId = taskcluster.slugid();
+    let uploadId = taskcluster.slugid();
 
     await db.fns.create_object_for_upload('foo', 'projectId', 'backendId', uploadId, uploadExpires, {}, expires);
     await db.fns.object_upload_complete('foo', uploadId);
@@ -133,7 +133,7 @@ suite(testing.suiteName(), () => {
 
   const insertData = async samples => {
     await helper.withDbClient(async client => {
-      for (const s of samples) {
+      for (let s of samples) {
         await client.query(`
             insert into objects (name, data, backend_id, project_id, upload_id, upload_expires, expires)
             values ($1, $2, $3, $4, $5, $6, $7)`,
@@ -142,7 +142,7 @@ suite(testing.suiteName(), () => {
     });
   };
 
-  helper.dbTest('get_expired_objects returns only expired rows (including upload_expires)', async (db) => {
+  helper.dbTest('get_expired_objects returns only expired rows (including upload_expires)', async function(db) {
     const expires = fromNow('-1 day');
     const uploadExpires = fromNow('-2 day');
     const future = fromNow('1 day');
@@ -192,7 +192,7 @@ suite(testing.suiteName(), () => {
     ]);
   });
 
-  helper.dbTest('get_expired_objects pagination', async (db) => {
+  helper.dbTest('get_expired_objects pagination', async function(db) {
     await insertData(_.range(100).flatMap(i => ([{
       name: `object-${i}-not-expired`,
       backend_id: 'be-not-expired',
@@ -219,7 +219,7 @@ suite(testing.suiteName(), () => {
       if (res.length === 0) {
         break;
       }
-      for (const { name } of res) {
+      for (let { name } of res) {
         gotNames.push(name);
         startAt = name;
       }
@@ -229,7 +229,7 @@ suite(testing.suiteName(), () => {
     assert.equal(iterations, 11);
   });
 
-  helper.dbTest('get_object', async (db) => {
+  helper.dbTest('get_object', async function(db) {
     const expires = fromNow('1 day');
     await insertData([
       {
@@ -253,7 +253,7 @@ suite(testing.suiteName(), () => {
     ]);
   });
 
-  helper.dbTest('get_object_with_upload', async (db) => {
+  helper.dbTest('get_object_with_upload', async function(db) {
     const expires = fromNow('1 day');
     await insertData([
       {
@@ -281,7 +281,7 @@ suite(testing.suiteName(), () => {
     ]);
   });
 
-  helper.dbTest('get_object_with_upload that is still uploading', async (db) => {
+  helper.dbTest('get_object_with_upload that is still uploading', async function(db) {
     const expires = fromNow('1 day');
     const uploadId = taskcluster.slugid();
     const uploadExpires = fromNow('1 hour');
@@ -311,12 +311,12 @@ suite(testing.suiteName(), () => {
     ]);
   });
 
-  helper.dbTest('get_object_with_upload that does not exist', async (db) => {
+  helper.dbTest('get_object_with_upload that does not exist', async function(db) {
     const res = await db.fns.get_object_with_upload('nosuch');
     assert.deepEqual(res, []);
   });
 
-  helper.dbTest('delete_object', async (db) => {
+  helper.dbTest('delete_object', async function(db) {
     const expires = fromNow('1 day');
     await insertData([
       {
@@ -333,13 +333,13 @@ suite(testing.suiteName(), () => {
     assert.deepEqual(res, []);
   });
 
-  helper.dbTest('delete_object that does not exist', async (db) => {
+  helper.dbTest('delete_object that does not exist', async function(db) {
     await db.fns.delete_object('nosuch');
     const res = await db.fns.get_object_with_upload('nosuch');
     assert.deepEqual(res, []);
   });
 
-  helper.dbTest('delete_object with hashes', async (db) => {
+  helper.dbTest('delete_object with hashes', async function(db) {
     const expires = fromNow('1 day');
     const uploadId = taskcluster.slugid();
     await insertData([
@@ -353,7 +353,7 @@ suite(testing.suiteName(), () => {
     assert.deepEqual(res, []);
   });
 
-  helper.dbTest('add object hashes simple case', async (db) => {
+  helper.dbTest('add object hashes simple case', async function(db) {
     const expires = fromNow('1 day');
     const uploadId = taskcluster.slugid();
     await insertData([
@@ -365,7 +365,7 @@ suite(testing.suiteName(), () => {
       [{ algorithm: 'sha3', hash: '123' }, { algorithm: 'sha5', hash: 'abcde' }]);
   });
 
-  helper.dbTest('add object hashes to a finished object', async (db) => {
+  helper.dbTest('add object hashes to a finished object', async function(db) {
     const expires = fromNow('1 day');
     await insertData([
       { name: 'object-1', backend_id: 'be', project_id: 'prj', data: { }, expires, upload_id: null },
@@ -379,7 +379,7 @@ suite(testing.suiteName(), () => {
       []);
   });
 
-  helper.dbTest('add and get object hashes add more hashes with different algorithms', async (db) => {
+  helper.dbTest('add and get object hashes add more hashes with different algorithms', async function(db) {
     const expires = fromNow('1 day');
     const uploadId = taskcluster.slugid();
     await insertData([
@@ -397,7 +397,7 @@ suite(testing.suiteName(), () => {
       ]);
   });
 
-  helper.dbTest('add object hashes add more hashes with overlapping algorithms, same hashes', async (db) => {
+  helper.dbTest('add object hashes add more hashes with overlapping algorithms, same hashes', async function(db) {
     const expires = fromNow('1 day');
     const uploadId = taskcluster.slugid();
     await insertData([
@@ -414,7 +414,7 @@ suite(testing.suiteName(), () => {
       ]);
   });
 
-  helper.dbTest('add object hashes add more hashes with overlapping algorithms, conflicting hashes', async (db) => {
+  helper.dbTest('add object hashes add more hashes with overlapping algorithms, conflicting hashes', async function(db) {
     const expires = fromNow('1 day');
     const uploadId = taskcluster.slugid();
     await insertData([
@@ -433,7 +433,7 @@ suite(testing.suiteName(), () => {
       ]);
   });
 
-  helper.dbTest('add object hashes for nonexistent object fails', async (db) => {
+  helper.dbTest('add object hashes for nonexistent object fails', async function(db) {
     await assert.rejects(
       () => db.fns.add_object_hashes('foo', JSON.stringify({ 'sha5': 'abcde' })),
       err => err.code === FOREIGN_KEY_VIOLATION);

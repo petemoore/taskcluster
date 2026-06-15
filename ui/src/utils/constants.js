@@ -19,6 +19,7 @@ import ListStatusIcon from 'mdi-react/FormatListChecksIcon';
 import AccountHeartOutlineIcon from 'mdi-react/AccountHeartOutlineIcon';
 import { join } from 'path';
 
+// eslint-disable-next-line import/prefer-default-export
 export const ARTIFACTS_SHOW_MAX = 10;
 export const ARTIFACTS_PAGE_SIZE = 1000;
 export const DEPENDENTS_PAGE_SIZE = 25;
@@ -61,8 +62,8 @@ export const THEME = {
 };
 export const CONTENT_MAX_WIDTH = 2000;
 
-export const VALID_TASK =
-  /^[A-Za-z0-9_-]{8}[Q-T][A-Za-z0-9_-][CGKOSWaeimquy26-][A-Za-z0-9_-]{10}[AQgw]$/;
+// eslint-disable-next-line max-len
+export const VALID_TASK = /^[A-Za-z0-9_-]{8}[Q-T][A-Za-z0-9_-][CGKOSWaeimquy26-][A-Za-z0-9_-]{10}[AQgw]$/;
 export const TASKS_CREATE_STORAGE_KEY = 'tasks:create';
 export const ISO_8601_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/;
 export const TASK_STATE = {
@@ -133,6 +134,7 @@ export const MIMETYPE_ICONS = [
   [FileMusicIcon, [/^audio\//]],
   [FileIcon, [/.*/]],
 ];
+export const ACTIONS_JSON_KNOWN_KINDS = ['task', 'hook'];
 // Before doing a mutation on a task, be sure to
 // remove parent fields added by the GraphQL gateway.
 export const TASK_ADDED_FIELDS = [
@@ -203,6 +205,9 @@ export const DENYLIST_NOTIFICATION_TYPES = {
 export const KNOWN_ACRONYMS = ['IRC', 'API'];
 export const AUTH_STORE = '@@TASKCLUSTER_WEB_AUTH';
 export const AUTH_STARTED = '@@TASKCLUSTER_AUTH_STARTED';
+// The delay (in milliseconds) for `setTimeout` is a 32 bit signed quantity,
+// which limits it to 2^31-1 ms (2147483647 ms) or 24.855 days.
+export const MAX_SET_TIMEOUT_DELAY = 2 ** 31 - 1;
 export const GROUP_NOTIFY_TASK_FAILED_KEY = 'group-notify-task-failed';
 export const GROUP_NOTIFY_SUCCESS_KEY = 'group-notify-success';
 
@@ -303,6 +308,16 @@ const payloadCommand = [
 ];
 
 export const TASK_PAYLOAD_SCHEMAS = {
+  'docker-worker': {
+    label: 'Docker worker',
+    type: 'docker-worker',
+    schema: 'v1/payload.json',
+    samplePayload: {
+      image: 'ubuntu:latest',
+      command: payloadCommand,
+      maxRunTime: 60 + 30,
+    },
+  },
   'generic-insecure-posix': {
     label: 'Generic worker insecure posix',
     type: 'generic-worker',

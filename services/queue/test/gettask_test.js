@@ -1,11 +1,11 @@
 import slugid from 'slugid';
-import assert from 'node:assert';
-import taskcluster from '@taskcluster/client';
+import assert from 'assert';
+import taskcluster from 'taskcluster-client';
 import assume from 'assume';
 import helper from './helper.js';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 
-helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
+helper.secrets.mockSuite(testing.suiteName(), ['aws'], function (mock, skipping) {
   helper.withDb(mock, skipping);
   helper.withAmazonIPRanges(mock, skipping);
   helper.withPulse(mock, skipping);
@@ -62,7 +62,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     return { taskId: slugid.v4(), task };
   };
 
-  setup(async () => {
+  setup(async function () {
     taskId = slugid.v4();
     await helper.queue.createTask(taskId, taskDef);
   });
@@ -87,7 +87,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     await helper.queue.createTask(taskId4, task4);
     task4 = await helper.queue.task(taskId4);
 
-    const res = await helper.queue.tasks({ taskIds: [taskId2, taskId3, taskId4] });
+    let res = await helper.queue.tasks({ taskIds: [taskId2, taskId3, taskId4] });
     let tasks = res.tasks;
 
     // Convert to object for easy comparison. See `tasks-response.yml`
@@ -147,7 +147,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     await helper.queue.createTask(taskId4, task4);
     task4 = await helper.queue.status(taskId4);
 
-    const res = await helper.queue.statuses({ taskIds: [taskId2, taskId3, taskId4] });
+    let res = await helper.queue.statuses({ taskIds: [taskId2, taskId3, taskId4] });
     let statuses = res.statuses;
 
     // Convert to object for easy comparison. See `tasks-statuses-response.yml`

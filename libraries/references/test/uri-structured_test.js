@@ -1,16 +1,16 @@
-import fs from 'node:fs/promises';
-import assert from 'node:assert';
+import fs from 'fs/promises';
+import assert from 'assert';
 import References from '../src/index.js';
 import { readUriStructured, writeUriStructured } from '../src/uri-structured.js';
 import mockFs from 'mock-fs';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 
-suite(testing.suiteName(), () => {
-  teardown(() => {
+suite(testing.suiteName(), function() {
+  teardown(function() {
     mockFs.restore();
   });
 
-  test('writes files', async () => {
+  test('writes files', async function() {
     mockFs({});
 
     // write some data to check later that it's deleted
@@ -35,7 +35,7 @@ suite(testing.suiteName(), () => {
     assert.equal(await fs.readFile('/refdata/abc.json'), '"abc"');
   });
 
-  test('reads files', async () => {
+  test('reads files', async function() {
     mockFs({
       '/data/schemas/common/foo.json': '{"foo": "true"}',
       '/data/references/something/bar.json': '{"bar": "true"}',
@@ -50,7 +50,7 @@ suite(testing.suiteName(), () => {
     }]);
   });
 
-  test('fromUriStructured', async () => {
+  test('fromUriStructured', async function() {
     mockFs({
       '/data/schemas/common/foo.json':
         '{"foo": "true", "$id": "/schemas/common/foo.json", "$schema": "http://json-schema.org/draft-06/schema#"}',

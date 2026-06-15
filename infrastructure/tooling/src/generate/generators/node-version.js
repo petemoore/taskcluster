@@ -1,5 +1,5 @@
 import {
-  readRepoJSON,
+  readRepoFile,
   modifyRepoFile,
   writeRepoFile,
   modifyRepoJSON,
@@ -16,8 +16,8 @@ tasks.push({
   title: 'Node Version',
   provides: ['target-node-version'],
   run: async (requirements, utils) => {
-    const nodeVersion = (await readRepoJSON('package.json')).engines.node;
-    if (!nodeVersion?.match(/[0-9.]+/)) {
+    const nodeVersion = JSON.parse(await readRepoFile('package.json')).engines.node;
+    if (!nodeVersion || !nodeVersion.match(/[0-9.]+/)) {
       throw new Error(`invalid node version ${nodeVersion} in package.json`);
     }
     utils.step({ title: `Setting node version ${nodeVersion}` });
@@ -28,22 +28,23 @@ tasks.push({
         /^( *node: ')[0-9.]+(')$/m,
         `$1${nodeVersion}$2`));
 
-    for (const file of [
+    [
       'Dockerfile',
+      'workers/docker-worker/test/images/test/Dockerfile',
       'ui/Dockerfile',
       'taskcluster/docker/browser-test/Dockerfile',
       'taskcluster/docker/ci/Dockerfile',
       'taskcluster/docker/rabbit-test/Dockerfile',
-    ]) {
+    ].forEach(async file => {
       utils.status({ message: file });
       await modifyRepoFile(file,
         contents => contents.replace(
           /^FROM node:[0-9.]+(.*)$/gm,
           `FROM node:${nodeVersion}$1`));
-    }
+    });
 
     utils.status({ message: '.nvmrc' });
-    await writeRepoFile('.nvmrc', `${nodeVersion}\n`);
+    await writeRepoFile('.nvmrc', nodeVersion + '\n');
 
     utils.status({ message: 'dev-docs/development-process.md' });
     await modifyRepoFile('dev-docs/development-process.md',
@@ -57,18 +58,19 @@ tasks.push({
         /^( *NODE_VERSION *= *")[0-9.]+(")$/m,
         `$1${nodeVersion}$2`));
 
-    for (const file of [
+    [
       'ui/package.json',
+      'workers/docker-worker/package.json',
       'clients/client/package.json',
       'clients/client-test/package.json',
-    ]) {
+    ].forEach(async file => {
       utils.status({ message: file });
       await modifyRepoJSON(file,
         contents => {
           contents.engines.node = nodeVersion;
           return contents;
         });
-    }
+    });
 
     utils.status({ message: 'cloudbuild.yaml' });
     await modifyRepoYAML('cloudbuild.yaml',
@@ -87,21 +89,22 @@ tasks.push({
   title: 'Yarn Version',
   provides: ['target-yarn-version'],
   run: async (requirements, utils) => {
-    const yarnVersion = (await readRepoJSON('package.json')).packageManager;
-    if (!yarnVersion?.match(/yarn@[0-9.]+/)) {
+    const yarnVersion = JSON.parse(await readRepoFile('package.json')).packageManager;
+    if (!yarnVersion || !yarnVersion.match(/yarn@[0-9.]+/)) {
       throw new Error(`invalid yarn version ${yarnVersion} in package.json`);
     }
     utils.step({ title: `Setting yarn version ${yarnVersion}` });
 
-    for (const file of [
+    [
       'ui/package.json',
-    ]) {
+      'workers/docker-worker/package.json',
+    ].forEach(file => {
       utils.status({ message: file });
-      await modifyRepoJSON(file,
+      modifyRepoJSON(file,
         contents => {
           contents.packageManager = yarnVersion;
           return contents;
         });
-    }
+    });
   },
 });

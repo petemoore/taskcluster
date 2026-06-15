@@ -1,6 +1,6 @@
-import taskcluster from '@taskcluster/client';
-import crypto from 'node:crypto';
-import assert from 'node:assert';
+import taskcluster from 'taskcluster-client';
+import crypto from 'crypto';
+import assert from 'assert';
 import helper from '../helper/index.js';
 
 const responseSchema = 'https://tc-testing.example.com/schemas/object/v1/create-upload-response.json#/properties/uploadMethod';
@@ -37,7 +37,7 @@ export const testDataInlineUpload = ({
     (suiteDefinition || (() => {})).call(this);
 
     let backend;
-    suiteSetup(async () => {
+    suiteSetup(async function() {
       const backends = await helper.load('backends');
       backend = backends.get(backendId);
     });
@@ -53,7 +53,7 @@ export const testDataInlineUpload = ({
     };
 
     for (const length of [0, 1024]) {
-      test(`upload an object (length=${length})`, async () => {
+      test(`upload an object (length=${length})`, async function() {
         const data = crypto.randomBytes(length);
         const name = helper.testObjectName(prefix);
 
@@ -76,7 +76,7 @@ export const testDataInlineUpload = ({
     }
 
     if (!omit.includes('htmlContentDisposition')) {
-      test(`upload of type text/html has attachment disposition`, async () => {
+      test(`upload of type text/html has attachment disposition`, async function() {
         const data = crypto.randomBytes(256);
         const name = helper.testObjectName(prefix);
 

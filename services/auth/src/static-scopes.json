@@ -12,9 +12,6 @@
       "assume:repo:github.com/*",
       "assume:scheduler-id:taskcluster-github/*",
       "queue:cancel-task-group:taskcluster-github/*",
-      "queue:get-artifact:public/github/customCheckRunAnnotations.json",
-      "queue:get-artifact:public/github/customCheckRunText.md",
-      "queue:get-artifact:public/logs/live_backing.log",
       "queue:list-artifacts:*",
       "queue:list-task-group:*",
       "queue:route:checks",
@@ -102,8 +99,7 @@
       "secrets:get:worker-pool:*",
       "secrets:get:worker-type:*",
       "worker-manager:remove-worker:*",
-      "worker-manager:reregister-worker:*",
-      "worker-manager:should-worker-terminate:*"
+      "worker-manager:reregister-worker:*"
     ]
   },
   {

@@ -6,30 +6,26 @@ TASKCLUSTER_* variables
 import os
 import secrets
 
-import base
 import pytest
 
 import taskcluster
-from taskcluster import Object, download, upload
+from taskcluster import Object, upload, download
+import base
 
 
 def shouldSkip():
-    vars = ["TASKCLUSTER_" + x for x in ("ROOT_URL", "CLIENT_ID", "ACCESS_TOKEN")]
+    vars = ['TASKCLUSTER_' + x for x in ('ROOT_URL', 'CLIENT_ID', 'ACCESS_TOKEN')]
     if all(v in os.environ for v in vars):
         return False
 
-    if "NO_SKIP_TESTS" in os.environ:
-        raise RuntimeError(
-            "NO_SKIP_TESTS is set but TASKCLUSTER_{ROOT_URL,CLIENT_ID,ACCESS_TOKEN} are not"
-        )
+    if 'NO_SKIP_TESTS' in os.environ:
+        raise RuntimeError('NO_SKIP_TESTS is set but TASKCLUSTER_{ROOT_URL,CLIENT_ID,ACCESS_TOKEN} are not')
 
     return True
 
 
 pytestmark = [
-    pytest.mark.skipif(
-        shouldSkip(), reason="Skipping tests that require real credentials"
-    ),
+    pytest.mark.skipif(shouldSkip(), reason="Skipping tests that require real credentials"),
 ]
 
 
@@ -41,19 +37,17 @@ def objectService():
     tests.  If creating a new client for these tests, consult the scopes in the
     function body.
     """
-    return Object(
-        {
-            "rootUrl": base.REAL_ROOT_URL,
-            "credentials": {
-                "clientId": os.environ["TASKCLUSTER_CLIENT_ID"],
-                "accessToken": os.environ["TASKCLUSTER_ACCESS_TOKEN"],
-            },
-            "authorizedScopes": [
-                "object:upload:taskcluster:taskcluster/test/client-py/*",
-                "object:download:taskcluster/test/client-py/*",
-            ],
-        }
-    )
+    return Object({
+        'rootUrl': base.REAL_ROOT_URL,
+        'credentials': {
+            'clientId': os.environ['TASKCLUSTER_CLIENT_ID'],
+            'accessToken': os.environ['TASKCLUSTER_ACCESS_TOKEN'],
+        },
+        'authorizedScopes': [
+            "object:upload:taskcluster:taskcluster/test/client-py/*",
+            "object:download:taskcluster/test/client-py/*",
+        ],
+    })
 
 
 def test_small_upload_download(objectService):
@@ -76,15 +70,16 @@ def do_over_wire_buf_test(data, objectService):
         name=name,
         contentType="text/plain",
         contentLength=len(data),
-        expires=taskcluster.fromNow("1 hour"),
+        expires=taskcluster.fromNow('1 hour'),
         data=data,
-        objectService=objectService,
-    )
+        objectService=objectService)
 
-    got, contentType = download.downloadToBuf(name=name, objectService=objectService)
+    got, contentType = download.downloadToBuf(
+        name=name,
+        objectService=objectService)
 
     assert got == data
-    assert contentType == "text/plain"
+    assert contentType == 'text/plain'
 
 
 def test_file_upload_download(objectService, tmp_path):
@@ -102,18 +97,18 @@ def test_file_upload_download(objectService, tmp_path):
             name=name,
             contentType="text/plain",
             contentLength=len(data),
-            expires=taskcluster.fromNow("1 hour"),
+            expires=taskcluster.fromNow('1 hour'),
             file=file,
-            objectService=objectService,
-        )
+            objectService=objectService)
 
     with open(dest, "wb") as file:
         contentType = download.downloadToFile(
-            name=name, file=file, objectService=objectService
-        )
+            name=name,
+            file=file,
+            objectService=objectService)
 
     with open(dest, "rb") as f:
         got = f.read()
 
     assert got == data
-    assert contentType == "text/plain"
+    assert contentType == 'text/plain'

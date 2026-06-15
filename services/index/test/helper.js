@@ -1,18 +1,17 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import builder from '../src/api.js';
-import taskcluster from '@taskcluster/client';
+import taskcluster from 'taskcluster-client';
 import loadMain from '../src/main.js';
-import { globalAgent } from 'node:http';
-import { satisfiesExpression } from 'taskcluster-lib-scopes';
+import { globalAgent } from 'http';
 
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 
 export const load = testing.stickyLoader(loadMain);
 
 const helper = { load };
 export default helper;
 
-suiteSetup(async () => {
+suiteSetup(async function() {
   load.inject('profile', 'test');
   load.inject('process', 'test');
 });
@@ -47,7 +46,7 @@ helper.withPulse = withPulse;
  * The component is available at `helper.queue`.
  */
 export const withFakeQueue = (mock, skipping) => {
-  suiteSetup(() => {
+  suiteSetup(function() {
     if (skipping()) {
       return;
     }
@@ -57,32 +56,6 @@ export const withFakeQueue = (mock, skipping) => {
   });
 };
 helper.withFakeQueue = withFakeQueue;
-
-let anonymousScopes = [];
-
-helper.setAnonymousScopes = (scopes) => {
-  anonymousScopes = scopes;
-};
-
-export const withFakeAnonymousScopeCache = (mock, skipping) => {
-  suiteSetup(() => {
-    if (skipping()) {
-      return;
-    }
-
-    load.inject('isPublicArtifact', (artifactName) => {
-      return satisfiesExpression(anonymousScopes, `queue:get-artifact:${artifactName}`);
-    });
-  });
-
-  setup(() => {
-    if (skipping()) {
-      return;
-    }
-    anonymousScopes = [];
-  });
-};
-helper.withFakeAnonymousScopeCache = withFakeAnonymousScopeCache;
 
 /**
  * Set up an API server.  Call this after withDb, so the server
@@ -94,7 +67,7 @@ helper.withFakeAnonymousScopeCache = withFakeAnonymousScopeCache;
 export const withServer = (mock, skipping) => {
   let webServer;
 
-  suiteSetup(async () => {
+  suiteSetup(async function() {
     if (skipping()) {
       return;
     }
@@ -120,11 +93,11 @@ export const withServer = (mock, skipping) => {
       };
       // if called as scopes('none'), don't pass credentials at all
       if (scopes && scopes[0] !== 'none') {
-        options.credentials = {
+        options['credentials'] = {
           clientId: 'test-client',
           accessToken: 'none',
         };
-        options.authorizedScopes = scopes.length > 0 ? scopes : undefined;
+        options['authorizedScopes'] = scopes.length > 0 ? scopes : undefined;
       }
       helper.index = new helper.Index(options);
     };
@@ -132,7 +105,7 @@ export const withServer = (mock, skipping) => {
     webServer = await load('server');
   });
 
-  setup(async () => {
+  setup(async function() {
     if (skipping()) {
       return;
     }
@@ -140,7 +113,7 @@ export const withServer = (mock, skipping) => {
     helper.scopes();
   });
 
-  suiteTeardown(async () => {
+  suiteTeardown(async function() {
     if (skipping()) {
       return;
     }
@@ -159,7 +132,6 @@ helper.withServer = withServer;
  */
 const stubbedQueue = () => {
   const tasks = {};
-  const artifacts = {};
   const queue = new taskcluster.Queue({
     rootUrl: helper.rootUrl,
     credentials: {
@@ -172,28 +144,18 @@ const stubbedQueue = () => {
         assert(task, `fake queue has no task ${taskId}`);
         return task;
       },
-      latestArtifact: async (taskId, name) => {
-        const key = `${taskId}/${name}`;
-        const artifact = artifacts[key];
-        assert(artifact, `fake queue has no artifact ${key}`);
-        return artifact;
-      },
     },
   });
 
-  queue.addTask = (taskId, task) => {
+  queue.addTask = function(taskId, task) {
     tasks[taskId] = task;
-  };
-
-  queue.setArtifact = (taskId, name, response) => {
-    artifacts[`${taskId}/${name}`] = response;
   };
 
   return queue;
 };
 
 export const resetTables = (mock, skipping) => {
-  setup('reset tables', async () => {
+  setup('reset tables', async function() {
     await testing.resetTables({ tableNames: [
       'indexed_tasks',
       'index_namespaces',

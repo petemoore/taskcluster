@@ -1,6 +1,6 @@
 import _ from 'lodash';
-import assert from 'node:assert';
-import taskcluster from '@taskcluster/client';
+import assert from 'assert';
+import taskcluster from 'taskcluster-client';
 import debugFactory from 'debug';
 const debug = debugFactory('tc-lib-testing:secrets');
 
@@ -18,15 +18,15 @@ class Secrets {
     let cfg;
 
     // load secrets, if running in a task
-    const env = Object.assign({}, process.env);
+    let env = Object.assign({}, process.env);
     if (process.env.TASK_ID) {
       debug('fetching test secrets');
       Object.assign(env, await this._fetchSecrets());
     }
 
     // find a value for each secret
-    for (const name of Object.keys(this.secrets)) {
-      for (const secret of this.secrets[name]) {
+    for (let name of Object.keys(this.secrets)) {
+      for (let secret of this.secrets[name]) {
         if (!secret.name) {
           secret.name = secret.env;
         }
@@ -64,10 +64,10 @@ class Secrets {
     }
 
     // Remove variables from process.env, so that nothing can use them directly. In
-    // particular, @taskcluster/client will happiliy use TASKCLUSTER_* from the env,
+    // particular, taskcluster-client will happiliy use TASKCLUSTER_* from the env,
     // allowing bugs to slip through where the values are not passed explicitly
-    for (const name of Object.keys(this.secrets)) {
-      for (const secret of this.secrets[name]) {
+    for (let name of Object.keys(this.secrets)) {
+      for (let secret of this.secrets[name]) {
         if (secret.env) {
           debug(`removing $${secret.env} from environment`);
           delete process.env[secret.env];
@@ -82,7 +82,7 @@ class Secrets {
     const secrets = {};
 
     const client = new taskcluster.Secrets({ rootUrl: process.env.TASKCLUSTER_PROXY_URL });
-    for (const secretName of this.secretName) {
+    for (let secretName of this.secretName) {
       try {
         const res = await client.get(secretName);
         Object.assign(secrets, res.secret);
@@ -122,7 +122,7 @@ class Secrets {
     // if no secrets are required, just run this as a regular suite with no "(real)" suffix
     if (secretList.length === 0) {
       suite(title, function() {
-        suiteSetup(async () => {
+        suiteSetup(async function() {
           if (that.load) {
             that.load.save();
           }
@@ -130,7 +130,7 @@ class Secrets {
 
         fn.call(this, false, () => skipping);
 
-        suiteTeardown(() => {
+        suiteTeardown(function() {
           if (that.load) {
             that.load.restore();
           }
@@ -144,7 +144,7 @@ class Secrets {
     }
 
     suite(`${title} (mock)`, function() {
-      suiteSetup(async () => {
+      suiteSetup(async function() {
         skipping = false;
         await that.setup();
         if (that.load) {
@@ -163,7 +163,7 @@ class Secrets {
 
       fn.call(this, true, () => skipping);
 
-      suiteTeardown(() => {
+      suiteTeardown(function() {
         if (that.load) {
           that.load.restore();
         }
@@ -202,7 +202,7 @@ class Secrets {
 
       fn.call(this, false, () => skipping);
 
-      suiteTeardown(() => {
+      suiteTeardown(function() {
         if (saveOccured) {
           that.load.restore();
         }

@@ -1,5 +1,5 @@
-import testing from '@taskcluster/lib-testing';
-import path from 'node:path';
+import testing from 'taskcluster-lib-testing';
+import path from 'path';
 
 const __dirname = new URL('.', import.meta.url).pathname;
 
@@ -31,11 +31,6 @@ suite(testing.suiteName(), () => {
       {
         schema: 'v1/config-azure.json#',
         path: 'sample-azure-config.json',
-        success: true,
-      },
-      {
-        schema: 'v1/config-azure.json#',
-        path: 'sample-azure-arm-config.json',
         success: true,
       },
     ],

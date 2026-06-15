@@ -1,5 +1,5 @@
-import taskcluster from '@taskcluster/client';
-import assert from 'node:assert';
+import taskcluster from 'taskcluster-client';
+import assert from 'assert';
 
 export const scopeExpression = {
   AllOf: [
@@ -17,7 +17,7 @@ tasks.push({
     'target-purge-cache',
   ],
   run: async () => {
-    const purge = new taskcluster.PurgeCache(taskcluster.fromEnvVars());
+    let purge = new taskcluster.PurgeCache(taskcluster.fromEnvVars());
     const workerPoolId = 'built-in/succeed';
     const payload = {
       cacheName: 'smoketest-cache',

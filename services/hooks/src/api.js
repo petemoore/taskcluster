@@ -1,7 +1,7 @@
 import { CronExpressionParser as parser } from 'cron-parser';
-import taskcluster from '@taskcluster/client';
-import { APIBuilder, paginateResults } from '@taskcluster/lib-api';
-import { UNIQUE_VIOLATION } from '@taskcluster/lib-postgres';
+import taskcluster from 'taskcluster-client';
+import { APIBuilder, paginateResults } from 'taskcluster-lib-api';
+import { UNIQUE_VIOLATION } from 'taskcluster-lib-postgres';
 import nextDate from '../src/nextdate.js';
 import _ from 'lodash';
 import Ajv from 'ajv';
@@ -16,8 +16,6 @@ export const AUDIT_ENTRY_TYPE = Object.freeze({
   },
 });
 
-const SLUGID_PATTERN = /^[A-Za-z0-9_-]{8}[Q-T][A-Za-z0-9_-][CGKOSWaeimquy26-][A-Za-z0-9_-]{10}[AQgw]$/;
-
 const builder = new APIBuilder({
   title: 'Hooks Service',
   description: [
@@ -28,7 +26,7 @@ const builder = new APIBuilder({
   apiVersion: 'v1',
   params: {
     hookGroupId: /^[a-zA-Z0-9-_]{1,1000}$/,
-    hookId: /^[a-zA-Z0-9-_/]{1,1000}$/,
+    hookId: /^[a-zA-Z0-9-_\/]{1,1000}$/,
   },
   context: ['db', 'taskcreator', 'publisher', 'denylist', 'monitor'],
 });
@@ -41,6 +39,7 @@ builder.declare({
   route: '/hooks',
   name: 'listHookGroups',
   scopes: 'hooks:list-hooks:',
+  idempotent: true,
   category: 'Hooks',
   output: 'list-hook-groups-response.yml',
   title: 'List hook groups',
@@ -49,9 +48,13 @@ builder.declare({
     'This endpoint will return a list of all hook groups with at least one hook.',
   ].join('\n'),
 }, async function(req, res) {
-  const hookGroups = await this.db.fns.get_hook_groups();
-  const groups = hookGroups.map(row => row.hook_group_id);
-  return res.reply({ groups });
+  const groups = new Set();
+  const hooks = (await this.db.fns.get_hooks(null, null, null, null)).map(hookUtils.fromDb);
+
+  hooks.forEach(hook => {
+    groups.add(hook.hookGroupId);
+  });
+  return res.reply({ groups: Array.from(groups) });
 });
 
 /** Get hooks in a given group **/
@@ -60,6 +63,7 @@ builder.declare({
   route: '/hooks/:hookGroupId',
   name: 'listHooks',
   scopes: 'hooks:list-hooks:<hookGroupId>',
+  idempotent: true,
   category: 'Hooks',
   output: 'list-hooks-response.yml',
   title: 'List hooks in a given group',
@@ -85,6 +89,7 @@ builder.declare({
   route: '/hooks/:hookGroupId/:hookId',
   name: 'hook',
   scopes: 'hooks:get:<hookGroupId>:<hookId>',
+  idempotent: true,
   output: 'hook-definition.yml',
   title: 'Get hook definition',
   category: 'Hooks',
@@ -103,7 +108,7 @@ builder.declare({
   }
 
   // Reply with the hook definition
-  const definition = hookUtils.definition(hook);
+  let definition = hookUtils.definition(hook);
   return res.reply(definition);
 });
 
@@ -183,6 +188,7 @@ builder.declare({
   method: 'put',
   route: '/hooks/:hookGroupId/:hookId',
   name: 'createHook',
+  idempotent: true,
   scopes: { AllOf:
     ['hooks:modify-hook:<hookGroupId>/<hookId>', 'assume:hook-id:<hookGroupId>/<hookId>'],
   },
@@ -220,7 +226,7 @@ builder.declare({
   await req.authorize({ hookGroupId, hookId });
 
   // Validate cron-parser expressions
-  for (const schedElement of hookDef.schedule) {
+  for (let schedElement of hookDef.schedule) {
     try {
       parser.parse(schedElement);
     } catch (err) {
@@ -230,27 +236,27 @@ builder.declare({
   }
 
   // Handle an invalid schema
-  const valid = ajv.validateSchema(hookDef.triggerSchema);
+  let valid = ajv.validateSchema(hookDef.triggerSchema);
   if (!valid) {
 
     const errors = [];
 
     for (let index = 0; index < ajv.errors.length; index++) {
-      errors.push(` * Property ${ajv.errors[index].dataPath} ${ajv.errors[index].message}`);
+      errors.push(' * Property ' + ajv.errors[index].dataPath + ' ' + ajv.errors[index].message);
     }
 
     return res.reportError('InputError', '{{message}}', {
-      message: `triggerSchema is not a valid JSON schema:\n${errors.join('\n')}`,
+      message: 'triggerSchema is not a valid JSON schema:\n' + errors.join('\n'),
     });
   }
 
-  const denied = await isDeniedBinding({
+  let denied = await isDeniedBinding({
     bindings: hookDef.bindings || [],
     denylist: this.denylist,
   });
   if (denied) {
     return res.reportError('InputError', '{{message}}', {
-      message: `One or more of the exchanges below have been denied access to hooks\n${JSON.stringify(hookDef.bindings)}`,
+      message: 'One or more of the exchanges below have been denied access to hooks\n' + JSON.stringify(hookDef.bindings),
     });
   }
 
@@ -297,7 +303,7 @@ builder.declare({
 
     if (!_.isEqual(hookDef, hookUtils.definition(existingHook))) {
       return res.reportError('RequestConflict',
-        `hook \`${hookGroupId}/${hookId}\` already exists.`,
+        'hook `' + hookGroupId + '/' + hookId + '` already exists.',
         {});
     }
   }
@@ -313,6 +319,7 @@ builder.declare({
   method: 'post',
   route: '/hooks/:hookGroupId/:hookId',
   name: 'updateHook',
+  idempotent: true,
   scopes: { AllOf:
     ['hooks:modify-hook:<hookGroupId>/<hookId>', 'assume:hook-id:<hookGroupId>/<hookId>'],
   },
@@ -353,23 +360,23 @@ builder.declare({
   }
 
   //Handle an invalid schema
-  const valid = ajv.validateSchema(hookDef.triggerSchema);
+  let valid = ajv.validateSchema(hookDef.triggerSchema);
 
   if (!valid) {
     const errors = [];
 
     for (let index = 0; index < ajv.errors.length; index++) {
-      errors.push(` * Property ${ajv.errors[index].dataPath} ${ajv.errors[index].message}`);
+      errors.push(' * Property ' + ajv.errors[index].dataPath + ' ' + ajv.errors[index].message);
     }
 
     return res.reportError('InputError', '{{message}}', {
-      message: `triggerSchema is not a valid JSON schema:\n${errors.join('\n')}`,
+      message: 'triggerSchema is not a valid JSON schema:\n' + errors.join('\n'),
     });
   }
 
   // Attempt to modify properties of the hook
   const schedule = hookDef.schedule ? hookDef.schedule : [];
-  for (const schedElement of schedule) {
+  for (let schedElement of schedule) {
     try {
       parser.parse(schedElement);
     } catch (err) {
@@ -379,13 +386,13 @@ builder.declare({
   }
   hookDef.bindings = _.defaultTo(hookDef.bindings, hook.bindings);
 
-  const denied = await isDeniedBinding({
+  let denied = await isDeniedBinding({
     bindings: hookDef.bindings,
     denylist: this.denylist,
   });
   if (denied) {
     return res.reportError('InputError', '{{message}}', {
-      message: `One or more of the exchanges below have been denied access to hooks\n${JSON.stringify(hookDef.bindings)}`,
+      message: 'One or more of the exchanges below have been denied access to hooks\n' + JSON.stringify(hookDef.bindings),
     });
   }
 
@@ -418,7 +425,7 @@ builder.declare({
     AUDIT_ENTRY_TYPE.HOOK.UPDATED,
   );
 
-  const definition = hookUtils.definition(hook);
+  let definition = hookUtils.definition(hook);
   await this.publisher.hookUpdated({ hookGroupId, hookId });
 
   return res.reply(definition);
@@ -429,6 +436,7 @@ builder.declare({
   method: 'delete',
   route: '/hooks/:hookGroupId/:hookId',
   name: 'removeHook',
+  idempotent: true,
   scopes: 'hooks:modify-hook:<hookGroupId>/<hookId>',
   title: 'Delete a hook',
   stability: 'stable',
@@ -478,12 +486,9 @@ builder.declare({
   description: [
     'This endpoint will trigger the creation of a task from a hook definition.',
     '',
-    'The HTTP payload must match the hook\'s `triggerSchema`.  If it does, it is',
+    'The HTTP payload must match the hook\s `triggerSchema`.  If it does, it is',
     'provided as the `payload` property of the JSON-e context used to render the',
     'task template.',
-    '',
-    'Optionally, a `taskId` can be provided in the payload which the hook task',
-    'will use. It must be unique and follow the slugid format.',
   ].join('\n'),
 }, async function(req, res) {
   const hookGroupId = req.params.hookGroupId;
@@ -594,12 +599,9 @@ builder.declare({
   description: [
     'This endpoint triggers a defined hook with a valid token.',
     '',
-    'The HTTP payload must match the hook\'s `triggerSchema`.  If it does, it is',
+    'The HTTP payload must match the hook\s `triggerSchema`.  If it does, it is',
     'provided as the `payload` property of the JSON-e context used to render the',
     'task template.',
-    '',
-    'Optionally, a `taskId` can be provided in the payload which the hook task',
-    'will use. It must be unique and follow the slugid format.',
   ].join('\n'),
 }, async function(req, res) {
   const payload = req.body;
@@ -637,25 +639,15 @@ const triggerHookCommon = async function({ req, res, hook, payload, clientId, fi
   //Using ajv lib to check if the context respect the triggerSchema
   const validate = ajv.compile(hook.triggerSchema);
 
-  const valid = validate(payload);
+  let valid = validate(payload);
   if (!valid) {
     return res.reportError('InputError', '{{message}}', {
       message: ajv.errorsText(validate.errors, { separator: '; ' }),
     });
   }
 
-  const options = {};
-  if (payload.taskId) {
-    if (!SLUGID_PATTERN.test(payload.taskId)) {
-      return res.reportError('InputError', 'Invalid taskId format: {{taskId}}', {
-        taskId: payload.taskId,
-      });
-    }
-    options.taskId = payload.taskId;
-  }
-
   try {
-    resp = await this.taskcreator.fire(hook, context, options);
+    resp = await this.taskcreator.fire(hook, context);
     if (!resp) {
       // hook did not produce a response, so return an empty object
       return res.reply({});
@@ -671,7 +663,7 @@ const triggerHookCommon = async function({ req, res, hook, payload, clientId, fi
       // for compatibility, provide the taskId at the path it was at before #4437.
       status: { taskId },
     });
-  } else if (error.body?.requestInfo) {
+  } else if (error.body && error.body.requestInfo) {
     // handle errors from createTask specially (since they are usually about scopes)
     if (error.body.requestInfo.method === 'createTask' && error.body.code === 'InsufficientScopes') {
       return res.reportError(
@@ -696,8 +688,8 @@ const triggerHookCommon = async function({ req, res, hook, payload, clientId, fi
 };
 
 const isDeniedBinding = async ({ bindings, denylist }) => {
-  for (const deny of denylist) {
-    for (const binding of bindings) {
+  for (let deny of denylist) {
+    for (let binding of bindings) {
       const denyPattern = new RegExp(`^${deny}`);
       if (denyPattern.test(binding.exchange)) {
         return true;
@@ -715,6 +707,7 @@ builder.declare({
   route: '/hooks/:hookGroupId/:hookId/last-fires',
   name: 'listLastFires',
   scopes: 'hooks:list-last-fires:<hookGroupId>/<hookId>',
+  idempotent: true,
   output: 'list-lastFires-response.yml',
   title: 'Get information about recent hook fires',
   stability: 'stable',
@@ -768,7 +761,7 @@ builder.declare({
     'This endpoint is used to check on backing services this service',
     'depends on.',
   ].join('\n'),
-}, (_req, res) => {
+}, function(_req, res) {
   // TODO: add implementation
   res.reply({});
 });

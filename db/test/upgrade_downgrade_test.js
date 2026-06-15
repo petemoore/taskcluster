@@ -1,9 +1,9 @@
-import { strict as assert } from 'node:assert';
-import testing from '@taskcluster/lib-testing';
-import tcdb from '@taskcluster/db';
+import { strict as assert } from 'assert';
+import testing from 'taskcluster-lib-testing';
+import tcdb from 'taskcluster-db';
 import helper from './helper.js';
 
-suite(testing.suiteName(), () => {
+suite(testing.suiteName(), function() {
   helper.withDbForVersion();
 
   const schema = tcdb.schema({ useDbDirectory: true });
@@ -58,21 +58,21 @@ suite(testing.suiteName(), () => {
     });
   };
 
-  test('upgrade to latest version', async () => {
+  test('upgrade to latest version', async function() {
     await helper.upgradeTo(latestVersion.version);
   });
 
-  test('downgrade to version 0', async () => {
+  test('downgrade to version 0', async function() {
     await helper.downgradeTo(0);
     await assertEmptySchema();
     await assertNoPermissions();
   });
 
-  test('upgrade to latest version again', async () => {
+  test('upgrade to latest version again', async function() {
     await helper.upgradeTo(latestVersion.version);
   });
 
-  test('downgrade to version 0', async () => {
+  test('downgrade to version 0', async function() {
     await helper.downgradeTo(0);
     await assertEmptySchema();
     await assertNoPermissions();

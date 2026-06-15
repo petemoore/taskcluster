@@ -1,6 +1,6 @@
-import { APIBuilder, paginateResults } from '@taskcluster/lib-api';
+import { APIBuilder, paginateResults } from 'taskcluster-lib-api';
 import scopeUtils from 'taskcluster-lib-scopes';
-import { UNIQUE_VIOLATION } from '@taskcluster/lib-postgres';
+import { UNIQUE_VIOLATION } from 'taskcluster-lib-postgres';
 import slugid from 'slugid';
 import _ from 'lodash';
 import createSignatureValidator from './signaturevalidator.js';
@@ -21,7 +21,6 @@ export const AUDIT_ENTRY_TYPE = Object.freeze({
     ENABLED: 'client enabled',
     DISABLED: 'client disabled',
     ACCESS_TOKEN_RESET: 'access token reset',
-    EXPIRED: 'expired',
   },
   ROLE: {
     CREATED: 'created',
@@ -81,10 +80,10 @@ const auditToJson = (audit) => ({
  * This involves building response for pagination
  */
 const rolesResponseBuilder = async (that, req, res) => {
-  const hashids = new Hashids();
+  let hashids = new Hashids();
   let continuationToken;
-  const limit = parseInt(req.query.limit, 10) || undefined;
-  const response = {};
+  let limit = parseInt(req.query.limit, 10) || undefined;
+  let response = {};
 
   // Assign the continuationToken
   if (req.query.continuationToken) {
@@ -107,7 +106,7 @@ const rolesResponseBuilder = async (that, req, res) => {
   // Load all roles
   let roles = await that.db.fns.get_roles();
 
-  const length = roles.length;
+  let length = roles.length;
 
   // Slice the list of roles based on continuationToken and limit
   if (continuationToken && limit) {
@@ -243,7 +242,7 @@ builder.declare({
     'Get information about a single client.',
   ].join('\n'),
 }, async function(req, res) {
-  const [client] = await this.db.fns.get_client(req.params.clientId);
+  let [client] = await this.db.fns.get_client(req.params.clientId);
   if (!client) {
     return res.reportError('ResourceNotFound', 'Client not found', {});
   }
@@ -282,9 +281,9 @@ builder.declare({
     'The caller\'s scopes must satisfy `scopes`.',
   ].join('\n'),
 }, async function(req, res) {
-  const clientId = req.params.clientId;
-  const input = req.body;
-  const scopes = input.scopes || [];
+  let clientId = req.params.clientId;
+  let input = req.body;
+  let scopes = input.scopes || [];
 
   // Forbid changes to static clients
   if (clientId.startsWith('static/')) {
@@ -302,7 +301,7 @@ builder.declare({
   // Check scopes
   await req.authorize({ clientId, scopes });
 
-  const accessToken = slugid.v4() + slugid.v4();
+  let accessToken = slugid.v4() + slugid.v4();
 
   try {
     await this.db.fns.create_client(
@@ -342,8 +341,8 @@ builder.declare({
   ]);
 
   // Create result with access token
-  const [client] = await this.db.fns.get_client(clientId);
-  const result = clientToJson(client, this);
+  let [client] = await this.db.fns.get_client(clientId);
+  let result = clientToJson(client, this);
   result.accessToken = this.db.decrypt({ value: client.encrypted_access_token }).toString('utf8');
   return res.reply(result);
 });
@@ -397,7 +396,7 @@ builder.declare({
   ].join('\n'),
 }, async function(req, res) {
 
-  const client_id = req.params.clientId;
+  let client_id = req.params.clientId;
 
   const { continuationToken, rows } = await paginateResults({
     query: req.query,
@@ -427,7 +426,7 @@ builder.declare({
     'you must reset the accessToken to acquire it again.',
   ].join('\n'),
 }, async function(req, res) {
-  const clientId = req.params.clientId;
+  let clientId = req.params.clientId;
 
   // Forbid changes to static clients
   if (clientId.startsWith('static/')) {
@@ -477,7 +476,7 @@ builder.declare({
   ]);
 
   // Create result with access token
-  const result = clientToJson(client, this);
+  let result = clientToJson(client, this);
   result.accessToken = this.db.decrypt({ value: client.encrypted_access_token }).toString('utf8');
   return res.reply(result);
 });
@@ -506,8 +505,8 @@ builder.declare({
     'unchanged',
   ].join('\n'),
 }, async function(req, res) {
-  const clientId = req.params.clientId;
-  const input = req.body;
+  let clientId = req.params.clientId;
+  let input = req.body;
 
   // Forbid changes to static clients
   if (clientId.startsWith('static/')) {
@@ -518,12 +517,12 @@ builder.declare({
     );
   }
 
-  if (input.scopes?.some(s => s.endsWith('**'))) {
+  if (input.scopes && input.scopes.some(s => s.endsWith('**'))) {
     return res.reportError('InputError', 'scopes must not end with `**`', {});
   }
 
   // Load client
-  const [client] = await this.db.fns.get_client(req.params.clientId);
+  let [client] = await this.db.fns.get_client(req.params.clientId);
   if (!client) {
     return res.reportError('ResourceNotFound', 'Client not found', {});
   }
@@ -592,7 +591,7 @@ builder.declare({
     'had been disabled when the corresponding identity\'s scopes changed.',
   ].join('\n'),
 }, async function(req, res) {
-  const clientId = req.params.clientId;
+  let clientId = req.params.clientId;
 
   // Forbid changes to static clients
   if (clientId.startsWith('static/')) {
@@ -661,7 +660,7 @@ builder.declare({
     'corresponding identity\'s scopes no longer satisfy the client\'s scopes.',
   ].join('\n'),
 }, async function(req, res) {
-  const clientId = req.params.clientId;
+  let clientId = req.params.clientId;
 
   // Forbid changes to static clients
   if (clientId.startsWith('static/')) {
@@ -726,7 +725,7 @@ builder.declare({
     'be deleted independently.',
   ].join('\n'),
 }, async function(req, res) {
-  const clientId = req.params.clientId;
+  let clientId = req.params.clientId;
 
   // Forbid changes to static clients
   if (clientId.startsWith('static/')) {
@@ -785,7 +784,7 @@ builder.declare({
   ].join('\n'),
 }, async function(req, res) {
   // Load all roles
-  const roles = await this.db.fns.get_roles();
+  let roles = await this.db.fns.get_roles();
   res.reply(roles.map(r => roleToJson(r, this)));
 });
 
@@ -850,7 +849,7 @@ builder.declare({
   const { response, roles } = await rolesResponseBuilder(this, req, res);
 
   // Generate a list of roleIds corresponding to the selected roles
-  const roleIds = roles.map(r => r.role_id);
+  let roleIds = roles.map(r => r.role_id);
 
   response.roleIds = roleIds;
 
@@ -873,11 +872,11 @@ builder.declare({
     'role expands to.',
   ].join('\n'),
 }, async function(req, res) {
-  const roleId = req.params.roleId;
+  let roleId = req.params.roleId;
 
   // Load role
-  const roles = await this.db.fns.get_roles();
-  const role = _.find(roles, { role_id: roleId });
+  let roles = await this.db.fns.get_roles();
+  let role = _.find(roles, { role_id: roleId });
 
   if (!role) {
     return res.reportError('ResourceNotFound', 'Role not found', {});
@@ -1110,13 +1109,13 @@ builder.declare({
     'the role exists.',
   ].join('\n'),
 }, async function(req, res) {
-  const roleId = req.params.roleId;
+  let roleId = req.params.roleId;
 
   // Check scopes
   await req.authorize({ roleId });
 
   await modifyRoles(this.db, ({ roles }) => {
-    const i = _.findIndex(roles, { role_id: roleId });
+    let i = _.findIndex(roles, { role_id: roleId });
     if (i !== -1) {
       roles.splice(i, 1);
     }
@@ -1161,7 +1160,7 @@ builder.declare({
     'roles included.',
   ].join('\n'),
 }, async function(req, res) {
-  const input = req.body;
+  let input = req.body;
   return res.reply({ scopes: this.resolver.resolve(input.scopes) });
 });
 
@@ -1180,7 +1179,9 @@ builder.declare({
     'of scopes and scope restrictions (temporary credentials, assumeScopes, client scopes,',
     'and roles).',
   ].join('\n'),
-}, async (req, res) => res.reply({ scopes: await req.scopes() }));
+}, async function(req, res) {
+  return res.reply({ scopes: await req.scopes() });
+});
 
 // Load aws and azure API implementations, these loads API and declares methods
 // on the API object exported from this file
@@ -1250,7 +1251,7 @@ builder.declare({
     signatureValidator: createSignatureValidator({
       clientLoader: async (clientId) => {
         if (clientId !== 'tester') {
-          throw new Error(`Client with clientId '${clientId}' not found`);
+          throw new Error('Client with clientId \'' + clientId + '\' not found');
         }
         return {
           clientId: 'tester',
@@ -1307,7 +1308,7 @@ builder.declare({
     signatureValidator: createSignatureValidator({
       clientLoader: async (clientId) => {
         if (clientId !== 'tester') {
-          throw new Error(`Client with clientId '${clientId}' not found`);
+          throw new Error('Client with clientId \'' + clientId + '\' not found');
         }
         return {
           clientId: 'tester',
@@ -1346,7 +1347,7 @@ builder.declare({
     'This endpoint is used to check on backing services this service',
     'depends on.',
   ].join('\n'),
-}, (_req, res) => {
+}, function(_req, res) {
   // TODO: add implementation
   res.reply({});
 });

@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	tcclient "github.com/taskcluster/taskcluster/v100/clients/client-go"
-	"github.com/taskcluster/taskcluster/v100/clients/client-go/tcqueue"
+	tcclient "github.com/taskcluster/taskcluster/v86/clients/client-go"
+	"github.com/taskcluster/taskcluster/v86/clients/client-go/tcqueue"
 )
 
 // Enumerate task status to aid life-cycle decision making
@@ -57,7 +57,8 @@ type TaskStatusManager struct {
 
 func (tsm *TaskStatusManager) DeregisterListener(listener *TaskStatusChangeListener) {
 	// https://bugzil.la/1619925
-	// This lock ensures that no new callbacks are scheduled for this listener
+	// This lock ensures that any currently executing callbacks complete before
+	// the listener is deregistered, and that no new callbacks are scheduled
 	// once this method has started.
 	tsm.Lock()
 	defer tsm.Unlock()
@@ -89,9 +90,8 @@ func (tsm *TaskStatusManager) ReportException(reason TaskUpdateReason) error {
 			tsm.stopReclaims()
 			ter := tcqueue.TaskExceptionRequest{Reason: string(reason)}
 			task.queueMux.RLock()
-			queue := task.Queue
+			tsr, err := task.Queue.ReportException(task.TaskID, strconv.FormatInt(int64(task.RunID), 10), &ter)
 			task.queueMux.RUnlock()
-			tsr, err := queue.ReportException(task.TaskID, strconv.FormatInt(int64(task.RunID), 10), &ter)
 			if err != nil {
 				log.Printf("Not able to report exception for task %v:", task.TaskID)
 				log.Printf("%v", err)
@@ -113,9 +113,8 @@ func (tsm *TaskStatusManager) ReportFailed() error {
 		func(task *TaskRun) error {
 			tsm.stopReclaims()
 			task.queueMux.RLock()
-			queue := task.Queue
+			tsr, err := task.Queue.ReportFailed(task.TaskID, strconv.FormatInt(int64(task.RunID), 10))
 			task.queueMux.RUnlock()
-			tsr, err := queue.ReportFailed(task.TaskID, strconv.FormatInt(int64(task.RunID), 10))
 			if err != nil {
 				log.Printf("Not able to report failed completion for task %v:", task.TaskID)
 				log.Printf("%v", err)
@@ -138,9 +137,8 @@ func (tsm *TaskStatusManager) ReportCompleted() error {
 			tsm.stopReclaims()
 			log.Printf("Task %v finished successfully!", task.TaskID)
 			task.queueMux.RLock()
-			queue := task.Queue
+			tsr, err := task.Queue.ReportCompleted(task.TaskID, strconv.FormatInt(int64(task.RunID), 10))
 			task.queueMux.RUnlock()
-			tsr, err := queue.ReportCompleted(task.TaskID, strconv.FormatInt(int64(task.RunID), 10))
 			if err != nil {
 				log.Printf("Not able to report successful completion for task %v:", task.TaskID)
 				log.Printf("%v", err)
@@ -161,9 +159,8 @@ func (tsm *TaskStatusManager) reclaim() error {
 		func(task *TaskRun) error {
 			log.Printf("Reclaiming task %v...", task.TaskID)
 			task.queueMux.RLock()
-			queue := task.Queue
+			tcrsp, err := task.Queue.ReclaimTask(task.TaskID, fmt.Sprintf("%d", task.RunID))
 			task.queueMux.RUnlock()
-			tcrsp, err := queue.ReclaimTask(task.TaskID, fmt.Sprintf("%d", task.RunID))
 
 			// check if an error occurred...
 			if err != nil {
@@ -286,25 +283,20 @@ func (tsm *TaskStatusManager) queryQueueForLatestStatus() {
 
 func (tsm *TaskStatusManager) updateStatus(ts TaskStatus, f func(task *TaskRun) error, fromStatuses ...TaskStatus) error {
 	tsm.Lock()
+	defer tsm.Unlock()
 	currentStatus := tsm.task.Status
 	for _, allowedStatus := range fromStatuses {
 		if currentStatus == allowedStatus {
 			e := f(tsm.task)
 			if e != nil {
 				tsm.queryQueueForLatestStatus()
-				tsm.Unlock()
 				return &TaskStatusUpdateError{
 					Message:       e.Error(),
 					CurrentStatus: tsm.task.Status,
 				}
 			}
 			tsm.task.Status = ts
-			listeners := make([]*TaskStatusChangeListener, 0, len(tsm.statusChangeListeners))
 			for listener := range tsm.statusChangeListeners {
-				listeners = append(listeners, listener)
-			}
-			tsm.Unlock()
-			for _, listener := range listeners {
 				log.Printf("Notifying listener %v of state change", listener.Name)
 				listener.Callback(ts)
 			}
@@ -313,7 +305,6 @@ func (tsm *TaskStatusManager) updateStatus(ts TaskStatus, f func(task *TaskRun) 
 	}
 	warning := fmt.Sprintf("Not updating status of task %v run %v from %v to %v. This is because you can only update to status %v if the previous status was one of: %v", tsm.task.TaskID, tsm.task.RunID, tsm.task.Status, ts, ts, fromStatuses)
 	log.Print(warning)
-	tsm.Unlock()
 	return &TaskStatusUpdateError{
 		Message:       warning,
 		CurrentStatus: tsm.task.Status,

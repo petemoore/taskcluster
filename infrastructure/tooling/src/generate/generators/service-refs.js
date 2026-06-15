@@ -1,8 +1,8 @@
-import util from 'node:util';
-import path from 'node:path';
+import util from 'util';
+import path from 'path';
 import mkdirp from 'mkdirp';
-import References from '@taskcluster/lib-references';
-import { execFile } from 'node:child_process';
+import References from 'taskcluster-lib-references';
+import { execFile } from 'child_process';
 import { rimraf } from 'rimraf';
 import { REPO_ROOT, writeRepoJSON, listServices } from '../../utils/index.js';
 const exec = util.promisify(execFile);
@@ -64,17 +64,13 @@ tasks.push({
     // combine all of the references, using a map to eliminate duplicate files
     // (the common schemas will be duplicated, for example)
     const files = new Map();
-    SERVICES.forEach(name => {
-      requirements[`refs-${name}`].forEach(({ filename, content }) => {
-        files.set(filename, content);
-      });
-    });
-    requirements['generic-worker-schemas'].forEach(({ filename, content }) => {
-      files.set(filename, content);
-    });
-    requirements['docker-worker-schemas'].forEach(({ filename, content }) => {
-      files.set(filename, content);
-    });
+    SERVICES.forEach(
+      name => requirements[`refs-${name}`].forEach(
+        ({ filename, content }) => files.set(filename, content)));
+    requirements['generic-worker-schemas'].forEach(
+      ({ filename, content }) => files.set(filename, content));
+    requirements['docker-worker-schemas'].forEach(
+      ({ filename, content }) => files.set(filename, content));
 
     // add config-values-schema, mostly so that it can be referenced in the manual
     files.set('schemas/common/values.schema.json', requirements['config-values-schema']);

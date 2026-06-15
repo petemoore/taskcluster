@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	tcclient "github.com/taskcluster/taskcluster/v100/clients/client-go"
+	tcclient "github.com/taskcluster/taskcluster/v86/clients/client-go"
 )
 
 type (
@@ -19,29 +19,23 @@ type (
 		// compressed:
 		//
 		// * 7z
-		// * aab
-		// * apk
 		// * bz2
 		// * deb
 		// * dmg
 		// * flv
 		// * gif
 		// * gz
-		// * jar
 		// * jpeg
 		// * jpg
 		// * npz
-		// * pkg
 		// * png
 		// * swf
 		// * tbz
 		// * tgz
-		// * wasm
 		// * webp
 		// * whl
 		// * woff
 		// * woff2
-		// * xpi
 		// * xz
 		// * zip
 		// * zst
@@ -92,9 +86,9 @@ type (
 		// Default:    false
 		Optional bool `json:"optional" default:"false"`
 
-		// Filesystem path of the file/directory relative to the
-		// task directory, or an absolute path.
-		// Example: `dist\regedit.exe`. It doesn't matter if
+		// Relative path of the file/directory from the task directory. Note this is not an absolute
+		// path as is typically used in docker-worker, since the absolute task directory name is not
+		// known when the task is submitted. Example: `dist\regedit.exe`. It doesn't matter if
 		// forward slashes or backslashes are used.
 		//
 		// Since: generic-worker 1.0.0
@@ -223,6 +217,16 @@ type (
 		//
 		// Default:    false
 		ChainOfTrust bool `json:"chainOfTrust" default:"false"`
+
+		// Runs docker-in-docker and binds `/var/run/docker.sock` into the container. Doesn't allow privileged mode, capabilities or host volume mounts.
+		//
+		// Default:    false
+		Dind bool `json:"dind" default:"false"`
+
+		// Uploads docker images as artifacts
+		//
+		// Default:    false
+		DockerSave bool `json:"dockerSave" default:"false"`
 
 		// This allows you to interactively run commands inside the container and attaches you to the stdin/stdout/stderr over a websocket. Can be used for SSH-like access to docker containers.
 		//
@@ -460,8 +464,7 @@ type (
 		//   * Base64Content
 		Content json.RawMessage `json:"content"`
 
-		// The filesystem location to mount the file. This can be a
-		// path relative to the task directory, or an absolute path.
+		// The filesystem location to mount the file.
 		//
 		// Since: generic-worker 5.4.0
 		File string `json:"file"`
@@ -471,16 +474,11 @@ type (
 		// Since: generic-worker 55.3.0
 		//
 		// Possible values:
-		//   * "br"
 		//   * "bz2"
 		//   * "gz"
-		//   * "lz"
 		//   * "lz4"
-		//   * "mz"
-		//   * "sz"
 		//   * "xz"
 		//   * "zst"
-		//   * "zz"
 		Format string `json:"format,omitempty"`
 	}
 
@@ -676,8 +674,6 @@ type (
 		Content json.RawMessage `json:"content"`
 
 		// The filesystem location to mount the directory volume.
-		// This can be a path relative to the task directory, or an
-		// absolute path.
 		//
 		// Since: generic-worker 5.4.0
 		Directory string `json:"directory"`
@@ -687,19 +683,12 @@ type (
 		// Since: generic-worker 5.4.0
 		//
 		// Possible values:
-		//   * "7z"
 		//   * "rar"
-		//   * "tar"
-		//   * "tar.br"
 		//   * "tar.bz2"
 		//   * "tar.gz"
-		//   * "tar.lz"
 		//   * "tar.lz4"
-		//   * "tar.mz"
-		//   * "tar.sz"
 		//   * "tar.xz"
 		//   * "tar.zst"
-		//   * "tar.zz"
 		//   * "zip"
 		Format string `json:"format"`
 	}
@@ -741,8 +730,6 @@ type (
 		Content json.RawMessage `json:"content,omitempty"`
 
 		// The filesystem location to mount the directory volume.
-		// This can be a path relative to the task directory, or an
-		// absolute path.
 		//
 		// Since: generic-worker 5.4.0
 		Directory string `json:"directory"`
@@ -752,19 +739,12 @@ type (
 		// Since: generic-worker 5.4.0
 		//
 		// Possible values:
-		//   * "7z"
 		//   * "rar"
-		//   * "tar"
-		//   * "tar.br"
 		//   * "tar.bz2"
 		//   * "tar.gz"
-		//   * "tar.lz"
 		//   * "tar.lz4"
-		//   * "tar.mz"
-		//   * "tar.sz"
 		//   * "tar.xz"
 		//   * "tar.zst"
-		//   * "tar.zz"
 		//   * "zip"
 		Format string `json:"format,omitempty"`
 	}
@@ -948,23 +928,18 @@ func JSONSchema() string {
           "description": "Content of the file to be mounted.\n\nSince: generic-worker 5.4.0"
         },
         "file": {
-          "description": "The filesystem location to mount the file. This can be a\npath relative to the task directory, or an absolute path.\n\nSince: generic-worker 5.4.0",
+          "description": "The filesystem location to mount the file.\n\nSince: generic-worker 5.4.0",
           "title": "File",
           "type": "string"
         },
         "format": {
           "description": "Compression format of the preloaded content.\n\nSince: generic-worker 55.3.0",
           "enum": [
-            "br",
             "bz2",
             "gz",
-            "lz",
             "lz4",
-            "mz",
-            "sz",
             "xz",
-            "zst",
-            "zz"
+            "zst"
           ],
           "title": "Format",
           "type": "string"
@@ -1000,26 +975,19 @@ func JSONSchema() string {
           "title": "Content"
         },
         "directory": {
-          "description": "The filesystem location to mount the directory volume.\nThis can be a path relative to the task directory, or an\nabsolute path.\n\nSince: generic-worker 5.4.0",
+          "description": "The filesystem location to mount the directory volume.\n\nSince: generic-worker 5.4.0",
           "title": "Directory",
           "type": "string"
         },
         "format": {
           "description": "Archive format of content for read only directory.\n\nSince: generic-worker 5.4.0",
           "enum": [
-            "7z",
             "rar",
-            "tar",
-            "tar.br",
             "tar.bz2",
             "tar.gz",
-            "tar.lz",
             "tar.lz4",
-            "tar.mz",
-            "tar.sz",
             "tar.xz",
             "tar.zst",
-            "tar.zz",
             "zip"
           ],
           "title": "Format",
@@ -1056,26 +1024,19 @@ func JSONSchema() string {
           "title": "Content"
         },
         "directory": {
-          "description": "The filesystem location to mount the directory volume.\nThis can be a path relative to the task directory, or an\nabsolute path.\n\nSince: generic-worker 5.4.0",
+          "description": "The filesystem location to mount the directory volume.\n\nSince: generic-worker 5.4.0",
           "title": "Directory Volume",
           "type": "string"
         },
         "format": {
           "description": "Archive format of the preloaded content (if ` + "`" + `content` + "`" + ` provided).\n\nSince: generic-worker 5.4.0",
           "enum": [
-            "7z",
             "rar",
-            "tar",
-            "tar.br",
             "tar.bz2",
             "tar.gz",
-            "tar.lz",
             "tar.lz4",
-            "tar.mz",
-            "tar.sz",
             "tar.xz",
             "tar.zst",
-            "tar.zz",
             "zip"
           ],
           "title": "Format",
@@ -1101,7 +1062,7 @@ func JSONSchema() string {
             "additionalProperties": false,
             "properties": {
               "contentEncoding": {
-                "description": "Content-Encoding for the artifact. If not provided, ` + "`" + `gzip` + "`" + ` will be used, except for the\nfollowing file extensions, where ` + "`" + `identity` + "`" + ` will be used, since they are already\ncompressed:\n\n* 7z\n* aab\n* apk\n* bz2\n* deb\n* dmg\n* flv\n* gif\n* gz\n* jar\n* jpeg\n* jpg\n* npz\n* pkg\n* png\n* swf\n* tbz\n* tgz\n* wasm\n* webp\n* whl\n* woff\n* woff2\n* xpi\n* xz\n* zip\n* zst\n\nNote, setting ` + "`" + `contentEncoding` + "`" + ` on a directory artifact will apply the same content\nencoding to all the files contained in the directory.\n\nSince: generic-worker 16.2.0",
+                "description": "Content-Encoding for the artifact. If not provided, ` + "`" + `gzip` + "`" + ` will be used, except for the\nfollowing file extensions, where ` + "`" + `identity` + "`" + ` will be used, since they are already\ncompressed:\n\n* 7z\n* bz2\n* deb\n* dmg\n* flv\n* gif\n* gz\n* jpeg\n* jpg\n* npz\n* png\n* swf\n* tbz\n* tgz\n* webp\n* whl\n* woff\n* woff2\n* xz\n* zip\n* zst\n\nNote, setting ` + "`" + `contentEncoding` + "`" + ` on a directory artifact will apply the same content\nencoding to all the files contained in the directory.\n\nSince: generic-worker 16.2.0",
                 "enum": [
                   "identity",
                   "gzip"
@@ -1132,7 +1093,7 @@ func JSONSchema() string {
                 "type": "boolean"
               },
               "path": {
-                "description": "Filesystem path of the file/directory relative to the\ntask directory, or an absolute path.\nExample: ` + "`" + `dist\\regedit.exe` + "`" + `. It doesn't matter if\nforward slashes or backslashes are used.\n\nSince: generic-worker 1.0.0",
+                "description": "Relative path of the file/directory from the task directory. Note this is not an absolute\npath as is typically used in docker-worker, since the absolute task directory name is not\nknown when the task is submitted. Example: ` + "`" + `dist\\regedit.exe` + "`" + `. It doesn't matter if\nforward slashes or backslashes are used.\n\nSince: generic-worker 1.0.0",
                 "title": "Artifact location",
                 "type": "string"
               },
@@ -1440,6 +1401,18 @@ func JSONSchema() string {
               "default": false,
               "description": "Artifacts named chain-of-trust.json and chain-of-trust.json.sig should be generated which will include information for downstream tasks to build a level of trust for the artifacts produced by the task and the environment it ran in.",
               "title": "Enable generation of ed25519-signed Chain of Trust artifacts",
+              "type": "boolean"
+            },
+            "dind": {
+              "default": false,
+              "description": "Runs docker-in-docker and binds ` + "`" + `/var/run/docker.sock` + "`" + ` into the container. Doesn't allow privileged mode, capabilities or host volume mounts.",
+              "title": "Docker in Docker",
+              "type": "boolean"
+            },
+            "dockerSave": {
+              "default": false,
+              "description": "Uploads docker images as artifacts",
+              "title": "Docker save",
               "type": "boolean"
             },
             "interactive": {

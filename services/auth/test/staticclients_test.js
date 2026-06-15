@@ -1,12 +1,12 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import debugFactory from 'debug';
 const debug = debugFactory('test:static-clients');
 import helper from './helper.js';
 import assume from 'assume';
-import testing from '@taskcluster/lib-testing';
+import testing from 'taskcluster-lib-testing';
 import { syncStaticClients } from '../src/static-clients.js';
 
-helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], (mock, skipping) => {
+helper.secrets.mockSuite(testing.suiteName(), ['azure', 'gcp'], function(mock, skipping) {
   helper.withDb(mock, skipping);
   helper.withCfg(mock, skipping);
   helper.withPulse(mock, skipping);

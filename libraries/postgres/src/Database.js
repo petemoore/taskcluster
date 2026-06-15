@@ -1,12 +1,12 @@
 import _ from 'lodash';
 import pg from 'pg';
 const { Pool } = pg;
-import crypto from 'node:crypto';
+import crypto from 'crypto';
 import { annotateError } from './util.js';
 import Keyring from './Keyring.js';
-import { strict as assert } from 'node:assert';
+import { strict as assert } from 'assert';
 import { READ, WRITE, DUPLICATE_OBJECT, UNDEFINED_TABLE } from './constants.js';
-import { MonitorManager } from '@taskcluster/lib-monitor';
+import { MonitorManager } from 'taskcluster-lib-monitor';
 import pgConnectionString from 'pg-connection-string';
 const { parse: parseConnectionString } = pgConnectionString;
 
@@ -115,7 +115,7 @@ class Database {
         collection = this.deprecatedFns;
       }
 
-      // @ts-expect-error method name is known to be correct for DbFunctions
+      // @ts-ignore method name is known to be correct for DbFunctions
       collection[method.name] = async (...args) => {
         if (serviceName !== method.serviceName && method.mode !== READ) {
           throw new Error(
@@ -220,7 +220,7 @@ class Database {
       showProgress('...updating users');
       await db._withClient('admin', async client => {
         // make sure all services have basic levels of access..
-        for (const serviceName of schema.access.serviceNames()) {
+        for (let serviceName of schema.access.serviceNames()) {
           const username = `${usernamePrefix}_${serviceName.replace(/-/g, '_')}`;
           // always grant read access to tcversion
           await client.query(`grant select on tcversion to ${username}`);
@@ -316,7 +316,7 @@ class Database {
    */
   static async _checkPermissions({ db, schema, usernamePrefix }) {
     await db._withClient('admin', async (client) => {
-      const usernamePattern = `${usernamePrefix.replace('_', '\\_')}\\_%`;
+      const usernamePattern = usernamePrefix.replace('_', '\\_') + '\\_%';
       // determine current permissions in the form ["username: priv on table"].
       // This includes information from the column_privileges table as if it
       // was granting access to the entire table. We never use column
@@ -340,7 +340,7 @@ class Database {
         res.rows.map(row => `${row.grantee}: ${row.privilege_type} on ${row.table_name}`));
 
       const expectedPrivs = new Set();
-      for (const serviceName of schema.access.serviceNames()) {
+      for (let serviceName of schema.access.serviceNames()) {
         const username = `${usernamePrefix}_${serviceName.replace(/-/g, '_')}`;
 
         // calculate the expected privs based on access.yml
@@ -358,13 +358,13 @@ class Database {
       }
 
       const issues = [];
-      for (const cur of currentPrivs) {
+      for (let cur of currentPrivs) {
         if (!expectedPrivs.has(cur)) {
           issues.push(`unexpected database user grant: ${cur}`);
         }
       }
 
-      for (const exp of expectedPrivs) {
+      for (let exp of expectedPrivs) {
         if (!currentPrivs.has(exp)) {
           issues.push(`missing database user grant: ${exp}`);
         }
@@ -483,9 +483,9 @@ class Database {
   /** @private */
   async _createExtensions() {
     await this._withClient('admin', async client => {
-      for (const ext of EXTENSIONS) {
+      for (let ext of EXTENSIONS) {
         try {
-          await client.query(`create extension ${ext}`);
+          await client.query('create extension ' + ext);
         } catch (err) {
           // ignore errors from the extension already being installed
           if (err.code !== DUPLICATE_OBJECT) {
@@ -542,7 +542,7 @@ class Database {
       };
 
       /// post-process the DB URL a little bit
-      const config = parseConnectionString(dbUrl);
+      let config = parseConnectionString(dbUrl);
       if (config.ssl === true) {
         // As of node-pg 8.x, SSL connections with `ssl=1` try to verify the SSL
         // connection's certificate chain.  In most cases, this doesn't work, so
@@ -598,8 +598,8 @@ class Database {
     this.monitor = monitor;
 
     this.pools = /** @type {Record<DbAccessMode, pg.Pool>} */({});
-    for (const mode of Object.keys(urlsByMode)) {
-      // @ts-expect-error mode is of a type DbAccessMode
+    for (let mode of Object.keys(urlsByMode)) {
+      // @ts-ignore mode is of a type DbAccessMode
       this.pools[mode] = makePool(urlsByMode[mode]);
     }
 
@@ -636,7 +636,7 @@ class Database {
     // next attempt to use the client, but we have to handle them anyway
     // or Node will kill the process.  However, when this happens we must
     // pass the error back to the pool or it won't know the client is bad.
-    let clientError;
+    let clientError = undefined;
     const handleError = err => clientError = err;
     client.on('error', handleError);
     const wrapped = {
@@ -645,7 +645,7 @@ class Database {
        * @param {...any[]} args
        * @returns {Promise<pg.QueryResult>}
        */
-      query: async (query, ...args) => {
+      query: async function(query, ...args) {
         try {
           // it is important to keep await here, as we need to catch the error
           return await client.query(query, ...args);
@@ -790,10 +790,10 @@ class Database {
   decrypt({ value }) {
     const key = this.keyring.getCryptoKey(value.kid, 'aes-256');
 
-    const n = value.__bufchunks_val;
+    const n = value['__bufchunks_val'];
     const chunks = [];
     for (let i = 0; i < n; i++) {
-      chunks[i] = Buffer.from(value[`__buf${i}_val`], 'base64');
+      chunks[i] = Buffer.from(value['__buf' + i + '_val'], 'base64');
     }
     const buffer = Buffer.concat(chunks);
 
