@@ -51,7 +51,7 @@ const getArtifactFollowingLinks = async function({ taskId, runId, name, req, res
     // Load artifact meta-data from table storage
     const artifact = artifactUtils.fromDbRows(await this.db.fns.get_queue_artifact_2(taskId, runId, name));
 
-    if (!artifact?.present) {
+    if (!artifact || !artifact.present) {
       return res.reportError('ResourceNotFound', 'Artifact not found', {});
     }
 
@@ -85,12 +85,12 @@ const generateS3Url = async function({ artifact, skipCDN, req }) {
   let url;
 
   // First, let's figure out which region the request is coming from
-  const region = this.regionResolver.getRegion(req);
-  const prefix = artifact.details.prefix;
-  const bucket = artifact.details.bucket;
+  let region = this.regionResolver.getRegion(req);
+  let prefix = artifact.details.prefix;
+  let bucket = artifact.details.bucket;
 
   if (this.signPublicArtifactUrls || bucket === this.privateBucket.bucket) {
-    const bucketObject = (bucket === this.privateBucket.bucket) ?
+    let bucketObject = (bucket === this.privateBucket.bucket) ?
       this.privateBucket : this.publicBucket;
     url = await bucketObject.createSignedGetUrl(prefix, {
       expires: 30 * 60,
@@ -169,19 +169,19 @@ export const loadArtifactsRoutes = (builder) => {
       'artifacts can be set to expire a few days later.',
     ].join('\n'),
   }, async function(req, res) {
-    const taskId = req.params.taskId;
-    const runId = parseInt(req.params.runId, 10);
-    const name = req.params.name;
-    const input = req.body;
-    const storageType = input.storageType;
-    const contentType = input.contentType || 'application/binary';
-    const contentLength = input.contentLength ?? null;
+    let taskId = req.params.taskId;
+    let runId = parseInt(req.params.runId, 10);
+    let name = req.params.name;
+    let input = req.body;
+    let storageType = input.storageType;
+    let contentType = input.contentType || 'application/binary';
+    let contentLength = input.contentLength ?? null;
 
     // Find expiration date
-    const expires = new Date(input.expires);
+    let expires = new Date(input.expires);
 
     // Validate expires it is in the future
-    const past = new Date();
+    let past = new Date();
     past.setMinutes(past.getMinutes() - 15);
     if (expires.getTime() < past.getTime()) {
       return res.reportError('InputError',
@@ -190,7 +190,7 @@ export const loadArtifactsRoutes = (builder) => {
     }
 
     // Load Task entity
-    const task = await Task.get(this.db, taskId);
+    let task = await Task.get(this.db, taskId);
 
     // Handle cases where the task doesn't exist
     if (!task) {
@@ -200,7 +200,7 @@ export const loadArtifactsRoutes = (builder) => {
     }
 
     // Check presence of the run
-    const run = task.runs[runId];
+    let run = task.runs[runId];
     if (!run) {
       return res.reportError('InputError',
         'Run not found',
@@ -266,8 +266,8 @@ export const loadArtifactsRoutes = (builder) => {
     // NOTE: isPublic is a relic from before RFC#165.  If signPublicArtifactUrls is set,
     // then this value has no effect.  With the advent of the Object service, this relic
     // will disappear.
-    const isPublic = /^public\//.test(name);
-    const details = {};
+    let isPublic = /^public\//.test(name);
+    let details = {};
     let present = false;
     let uploadId, objectName;
     switch (storageType) {
@@ -319,7 +319,7 @@ export const loadArtifactsRoutes = (builder) => {
         break;
 
       default:
-        throw new Error(`Unknown storageType: ${storageType}`);
+        throw new Error('Unknown storageType: ' + storageType);
     }
 
     let artifact;
@@ -344,7 +344,7 @@ export const loadArtifactsRoutes = (builder) => {
       // Load original Artifact entity
       const original = artifactUtils.fromDbRows(await this.db.fns.get_queue_artifact_2(taskId, runId, name));
 
-      const ok = createArtifactCallsCompatible(original, { storageType, contentType, expires, details });
+      let ok = createArtifactCallsCompatible(original, { storageType, contentType, expires, details });
 
       if (!ok) {
         return res.reportError('RequestConflict',
@@ -414,7 +414,7 @@ export const loadArtifactsRoutes = (builder) => {
 
       case 's3': {
       // Reply with signed S3 URL
-        const expiry = new Date(Date.now() + 45 * 60 * 1000);
+        let expiry = new Date(new Date().getTime() + 45 * 60 * 1000);
         let bucket = null;
         if (artifact.details.bucket === this.publicBucket.bucket) {
           bucket = this.publicBucket;
@@ -423,7 +423,7 @@ export const loadArtifactsRoutes = (builder) => {
           bucket = this.privateBucket;
         }
         // Create put URL
-        const putUrl = await bucket.createPutUrl(
+        let putUrl = await bucket.createPutUrl(
           artifact.details.prefix, {
             contentType: artifact.contentType,
             expires: 45 * 60 + 10, // Add 10 sec for clock drift
@@ -443,7 +443,7 @@ export const loadArtifactsRoutes = (builder) => {
         return res.reply({ storageType });
 
       default:
-        throw new Error(`Unknown storageType: ${artifact.storageType}`);
+        throw new Error('Unknown storageType: ' + artifact.storageType);
     }
   });
 
@@ -477,7 +477,7 @@ export const loadArtifactsRoutes = (builder) => {
       Task.get(this.db, taskId),
     ]);
 
-    if (!artifact_row || !task?.runs[runId]) {
+    if (!artifact_row || !task || !task.runs[runId]) {
       return res.reportError(
         'ResourceNotFound',
         'Artifact with taskId `{{taskId}}`, runId {{runId}}, name `{{name}}` not found',
@@ -552,7 +552,7 @@ export const loadArtifactsRoutes = (builder) => {
    * names is used internally for tracking artifact names that have already been seen
    * when traversing links.
    */
-  const replyWithArtifactDownload = async function({ taskId, runId, name, req, res, names }) {
+  let replyWithArtifactDownload = async function({ taskId, runId, name, req, res, names }) {
     const artifact = await getArtifactFollowingLinks.call(this, { taskId, runId, name, req, res });
 
     const { storageType } = artifact;
@@ -596,7 +596,7 @@ export const loadArtifactsRoutes = (builder) => {
     if (storageType === 's3') {
       // We have a header to skip the CDN (cloudfront) for those requests
       // which require it
-      const skipCDNHeader = (req.headers['x-taskcluster-skip-cdn'] || '').toLowerCase();
+      let skipCDNHeader = (req.headers['x-taskcluster-skip-cdn'] || '').toLowerCase();
 
       let skipCDN = false;
       if (skipCDNHeader === 'true' || skipCDNHeader === '1') {
@@ -633,7 +633,7 @@ export const loadArtifactsRoutes = (builder) => {
     }
 
     // We should never arrive here
-    const err = new Error(`Unknown artifact storageType: ${storageType}`);
+    let err = new Error('Unknown artifact storageType: ' + storageType);
     err.artifact = artifactUtils.serialize(artifact);
     this.monitor.reportError(err);
   };
@@ -701,9 +701,9 @@ export const loadArtifactsRoutes = (builder) => {
       '* x-taskcluster-artifact-storage-type: the storage type.  Example: s3',
     ].join('\n'),
   }, async function(req, res) {
-    const taskId = req.params.taskId;
-    const runId = parseInt(req.params.runId, 10);
-    const name = req.params.name;
+    let taskId = req.params.taskId;
+    let runId = parseInt(req.params.runId, 10);
+    let name = req.params.name;
 
     return replyWithArtifactDownload.call(this, { taskId, runId, name, req, res, names: [name] });
   });
@@ -775,13 +775,13 @@ export const loadArtifactsRoutes = (builder) => {
       'the latest run. Otherwise, just use the most convenient API end-point.',
     ].join('\n'),
   }, async function(req, res) {
-    const taskId = req.params.taskId;
-    const name = req.params.name;
+    let taskId = req.params.taskId;
+    let name = req.params.name;
 
     // check permisison before possibly returning a 404 for the task or run
     await req.authorize({ names: [name] });
 
-    const runId = await getLatestRunId.call(this, { taskId, res });
+    let runId = await getLatestRunId.call(this, { taskId, res });
 
     return replyWithArtifactDownload.call(this, { taskId, runId, name, req, res, names: [name] });
   });
@@ -799,7 +799,7 @@ export const loadArtifactsRoutes = (builder) => {
       }),
     });
 
-    const result = {
+    let result = {
       artifacts: artifacts.rows.map(r => artifactUtils.serialize(artifactUtils.fromDb(r))),
     };
     if (artifacts.continuationToken) {
@@ -832,9 +832,9 @@ export const loadArtifactsRoutes = (builder) => {
       'you may limit this with the query-string parameter `limit`.',
     ].join('\n'),
   }, async function(req, res) {
-    const taskId = req.params.taskId;
-    const runId = parseInt(req.params.runId, 10);
-    const latestRunId = await getLatestRunId.call(this, { taskId, res });
+    let taskId = req.params.taskId;
+    let runId = parseInt(req.params.runId, 10);
+    let latestRunId = await getLatestRunId.call(this, { taskId, res });
 
     // Check that we have the run
     if (runId < 0 || runId > latestRunId) {
@@ -872,8 +872,8 @@ export const loadArtifactsRoutes = (builder) => {
       'you may limit this with the query-string parameter `limit`.',
     ].join('\n'),
   }, async function(req, res) {
-    const taskId = req.params.taskId;
-    const runId = await getLatestRunId.call(this, { taskId, res });
+    let taskId = req.params.taskId;
+    let runId = await getLatestRunId.call(this, { taskId, res });
 
     return await replyWithArtifactsList.call(this, { query: req.query, taskId, runId, res });
   });
@@ -889,7 +889,7 @@ export const loadArtifactsRoutes = (builder) => {
     const artifact = artifactUtils.fromDbRows(
       await this.db.fns.get_queue_artifact_2(taskId, runId, name));
 
-    if (!artifact?.present) {
+    if (!artifact || !artifact.present) {
       return res.reportError('ResourceNotFound', 'Artifact not found', {});
     }
 
@@ -990,7 +990,7 @@ export const loadArtifactsRoutes = (builder) => {
 
       default: {
         // (note: links should have been evaluated already)
-        const err = new Error(`Unknown artifact storageType: ${storageType}`);
+        let err = new Error('Unknown artifact storageType: ' + storageType);
         err.artifact = artifactUtils.serialize(artifact);
         this.monitor.reportError(err);
       }

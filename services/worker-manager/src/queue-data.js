@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import _ from 'lodash';
 import { paginateResults } from '@taskcluster/lib-api';
 

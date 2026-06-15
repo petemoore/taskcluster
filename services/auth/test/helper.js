@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import debugFactory from 'debug';
 const debug = debugFactory('test-helper');
 import _ from 'lodash';
@@ -6,7 +6,7 @@ import builder from '../src/api.js';
 import taskcluster from '@taskcluster/client';
 import { default as mainLoad } from '../src/main.js';
 import slugid from 'slugid';
-import fs from 'node:fs/promises';
+import fs from 'fs/promises';
 import { v4 } from 'uuid';
 import { APIBuilder } from '@taskcluster/lib-api';
 import SchemaSet from '@taskcluster/lib-validate';
@@ -14,14 +14,14 @@ import makeSentryManager from './../src/sentrymanager.js';
 import { syncStaticClients } from '../src/static-clients.js';
 import { stickyLoader, Secrets, withMonitor } from '@taskcluster/lib-testing';
 import * as libTesting from '@taskcluster/lib-testing';
-import { URL } from 'node:url';
-import path from 'node:path';
+import { URL } from 'url';
+import path from 'path';
 
 export const load = stickyLoader(mainLoad);
 
 const __dirname = new URL('.', import.meta.url).pathname;
 
-suiteSetup(async () => {
+suiteSetup(async function() {
   process.env.GCP_ALLOWED_SERVICE_ACCOUNTS = JSON.stringify([
     'invalid@mozilla.com',
   ]);
@@ -68,7 +68,7 @@ helper.withCfg = (mock, skipping) => {
   if (skipping()) {
     return;
   }
-  suiteSetup(async () => {
+  suiteSetup(async function() {
     if (skipping()) {
       return;
     }
@@ -95,7 +95,7 @@ helper.withCfg = (mock, skipping) => {
     }
   });
 
-  suiteTeardown(async () => {
+  suiteTeardown(async function() {
     if (skipping()) {
       return;
     }
@@ -113,7 +113,7 @@ helper.withDb = (mock, skipping) => {
  */
 helper.withSentry = (mock, skipping) => {
   const sentryOrgs = {};
-  suiteSetup(async () => {
+  suiteSetup(async function() {
     if (skipping()) {
       return;
     }
@@ -181,7 +181,7 @@ testServiceBuilder.declare({
   title: 'Get Resource',
   category: 'Auth Service',
   description: '...',
-}, (req, res) => {
+}, function(req, res) {
   res.status(200).json({
     message: 'Hello World',
   });
@@ -199,7 +199,7 @@ testServiceBuilder.declare({
 helper.withServers = (mock, skipping) => {
   let webServer;
 
-  suiteSetup(async () => {
+  suiteSetup(async function() {
     if (skipping()) {
       return;
     }
@@ -258,7 +258,7 @@ helper.withServers = (mock, skipping) => {
     helper.setupScopes();
   });
 
-  suiteTeardown(async () => {
+  suiteTeardown(async function() {
     if (skipping()) {
       return;
     }
@@ -381,7 +381,7 @@ helper.withGcp = (mock, skipping) => {
 };
 
 helper.resetTables = (mock, skipping) => {
-  setup('reset tables', async () => {
+  setup('reset tables', async function() {
     await libTesting.resetTables({ tableNames: [
       'roles',
       'clients',

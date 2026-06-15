@@ -2,8 +2,8 @@ import express from 'express';
 import _ from 'lodash';
 import debugFactory from 'debug';
 const debug = debugFactory('base:app');
-import assert from 'node:assert';
-import http from 'node:http';
+import assert from 'assert';
+import http from 'http';
 import sslify from 'express-sslify';
 import hsts from 'hsts';
 import csp from 'content-security-policy';
@@ -63,7 +63,7 @@ const createServer = function() {
         debug('Error getting connections', err);
         return;
       }
-      debug(`Connections open: ${count}`);
+      debug('Connections open: ' + count);
     });
     server.terminate()
       .then(() => {
@@ -100,7 +100,7 @@ const createServer = function() {
         // where new connections arrive between the two calls
         server.closeAllConnections();
       }).then(() => {
-        debug(`Server terminated on port ${this.get('port')}`);
+        debug('Server terminated on port ' + this.get('port'));
       });
     };
 
@@ -109,7 +109,7 @@ const createServer = function() {
 
     // Listen
     server.listen(this.get('port'), () => {
-      debug(`Server listening on port ${this.get('port')}`);
+      debug('Server listening on port ' + this.get('port'));
       accept(server);
     });
 
