@@ -1,4 +1,4 @@
-import path from 'node:path';
+import path from 'path';
 import libUrls from 'taskcluster-lib-urls';
 import { CHECK_RUN_STATES } from '../constants.js';
 
@@ -201,7 +201,7 @@ export const isCollaborator = async (instGithub, organization, repository, login
 export const getTimeDifference = (timestamp1, timestamp2) => {
 
   const isValidDate = (date) => {
-    return !Number.isNaN(Date.parse(date));
+    return !isNaN(Date.parse(date));
   };
 
   if (timestamp1 === undefined || timestamp2 === undefined) {
@@ -223,7 +223,7 @@ export const getTimeDifference = (timestamp1, timestamp2) => {
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
 
-  const parts = [];
+  let parts = [];
 
   if (days > 0) {parts.push(`${days} day${days > 1 ? 's' : ''}`);}
   if (hours % 24 > 0) {parts.push(`${hours % 24} hour${hours % 24 > 1 ? 's' : ''}`);}

@@ -1,8 +1,8 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import builder from '../src/api.js';
 import taskcluster from '@taskcluster/client';
 import loadMain from '../src/main.js';
-import { globalAgent } from 'node:http';
+import { globalAgent } from 'http';
 import { satisfiesExpression } from 'taskcluster-lib-scopes';
 
 import testing from '@taskcluster/lib-testing';
@@ -12,7 +12,7 @@ export const load = testing.stickyLoader(loadMain);
 const helper = { load };
 export default helper;
 
-suiteSetup(async () => {
+suiteSetup(async function() {
   load.inject('profile', 'test');
   load.inject('process', 'test');
 });
@@ -47,7 +47,7 @@ helper.withPulse = withPulse;
  * The component is available at `helper.queue`.
  */
 export const withFakeQueue = (mock, skipping) => {
-  suiteSetup(() => {
+  suiteSetup(function() {
     if (skipping()) {
       return;
     }
@@ -65,7 +65,7 @@ helper.setAnonymousScopes = (scopes) => {
 };
 
 export const withFakeAnonymousScopeCache = (mock, skipping) => {
-  suiteSetup(() => {
+  suiteSetup(function() {
     if (skipping()) {
       return;
     }
@@ -75,7 +75,7 @@ export const withFakeAnonymousScopeCache = (mock, skipping) => {
     });
   });
 
-  setup(() => {
+  setup(function() {
     if (skipping()) {
       return;
     }
@@ -94,7 +94,7 @@ helper.withFakeAnonymousScopeCache = withFakeAnonymousScopeCache;
 export const withServer = (mock, skipping) => {
   let webServer;
 
-  suiteSetup(async () => {
+  suiteSetup(async function() {
     if (skipping()) {
       return;
     }
@@ -120,11 +120,11 @@ export const withServer = (mock, skipping) => {
       };
       // if called as scopes('none'), don't pass credentials at all
       if (scopes && scopes[0] !== 'none') {
-        options.credentials = {
+        options['credentials'] = {
           clientId: 'test-client',
           accessToken: 'none',
         };
-        options.authorizedScopes = scopes.length > 0 ? scopes : undefined;
+        options['authorizedScopes'] = scopes.length > 0 ? scopes : undefined;
       }
       helper.index = new helper.Index(options);
     };
@@ -132,7 +132,7 @@ export const withServer = (mock, skipping) => {
     webServer = await load('server');
   });
 
-  setup(async () => {
+  setup(async function() {
     if (skipping()) {
       return;
     }
@@ -140,7 +140,7 @@ export const withServer = (mock, skipping) => {
     helper.scopes();
   });
 
-  suiteTeardown(async () => {
+  suiteTeardown(async function() {
     if (skipping()) {
       return;
     }
@@ -181,11 +181,11 @@ const stubbedQueue = () => {
     },
   });
 
-  queue.addTask = (taskId, task) => {
+  queue.addTask = function(taskId, task) {
     tasks[taskId] = task;
   };
 
-  queue.setArtifact = (taskId, name, response) => {
+  queue.setArtifact = function(taskId, name, response) {
     artifacts[`${taskId}/${name}`] = response;
   };
 
@@ -193,7 +193,7 @@ const stubbedQueue = () => {
 };
 
 export const resetTables = (mock, skipping) => {
-  setup('reset tables', async () => {
+  setup('reset tables', async function() {
     await testing.resetTables({ tableNames: [
       'indexed_tasks',
       'index_namespaces',

@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import taskcluster from '@taskcluster/client';
 import { default as _load } from '../src/main.js';
 import { stickyLoader } from '@taskcluster/lib-testing';
@@ -7,7 +7,7 @@ const load = stickyLoader(_load);
 const helper = { load };
 export default helper;
 
-suiteSetup(async () => {
+suiteSetup(async function() {
   load.inject('profile', 'test');
   load.inject('process', 'test');
 });
@@ -22,7 +22,7 @@ suiteSetup(async () => {
 helper.rootUrl = 'http://localhost:8080';
 
 helper.withFakeQueue = () => {
-  suiteSetup(() => {
+  suiteSetup(function() {
     const queue = stubbedQueue(helper);
     load.inject('queue', queue);
   });
@@ -52,7 +52,7 @@ const stubbedQueue = (fakeQueue) => {
       accessToken: 'none',
     },
     fake: {
-      task: async (taskId) => {
+      task: async function (taskId) {
         const task = tasks[taskId];
         assert(task, `fake queue has no task ${taskId}`);
         return task;

@@ -1,5 +1,5 @@
-import assert from 'node:assert';
-import http from 'node:http';
+import assert from 'assert';
+import http from 'http';
 import { Counter, Gauge, Histogram, Summary, Registry as PromClientRegistry, Pushgateway } from 'prom-client';
 
 /**
@@ -173,14 +173,14 @@ export class PrometheusPlugin {
         break;
       case 'histogram':
         if (buckets) {
-          // @ts-expect-error
+          // @ts-ignore
           metricOptions.buckets = buckets;
         }
         metric = new Histogram(metricOptions);
         break;
       case 'summary':
         if (percentiles) {
-          // @ts-expect-error
+          // @ts-ignore
           metricOptions.percentiles = percentiles;
         }
         metric = new Summary(metricOptions);

@@ -1,5 +1,5 @@
 import semver from 'semver';
-import path from 'node:path';
+import path from 'path';
 import { ChangeLog } from '../changelog/index.js';
 
 import {
@@ -59,7 +59,7 @@ export default ({ tasks, cmdOptions, credentials }) => {
         throw new Error(`Version ${pkgJson.version} in package.json is not valid`);
       }
 
-      const level = requirements.changelog.level();
+      const level = requirements['changelog'].level();
 
       return {
         'release-version': semver.inc(pkgJson.version, level),
@@ -122,7 +122,7 @@ export default ({ tasks, cmdOptions, credentials }) => {
     run: async (requirements, utils) => {
       const changed = [];
 
-      for (const file of await gitLsFiles({ patterns: ['**/package.json', 'package.json'] })) {
+      for (let file of await gitLsFiles({ patterns: ['**/package.json', 'package.json'] })) {
         utils.status({ message: `Update ${file}` });
         await modifyRepoJSON(file, contents => {
           contents.version = requirements['release-version'];
@@ -231,7 +231,7 @@ export default ({ tasks, cmdOptions, credentials }) => {
         'workers/generic-worker/**.sh',
         'workers/generic-worker/**.cmd',
       ];
-      for (const file of await gitLsFiles({ patterns: goFiles })) {
+      for (let file of await gitLsFiles({ patterns: goFiles })) {
         await modifyRepoFile(file, contents =>
           contents.replace(/(github.com\/taskcluster\/taskcluster\/v)\d+/g, `$1${major}`));
         changed.push(file);
@@ -282,7 +282,7 @@ export default ({ tasks, cmdOptions, credentials }) => {
 
       // append this TC release version and DB version to the list of releases
       await modifyRepoFile(releasesFile,
-        content => `${content.trim()}\n${tcVersion}: ${dbVersion}\n`);
+        content => content.trim() + `\n${tcVersion}: ${dbVersion}\n`);
 
       return {
         // load the whole txt file into `db-releases`
@@ -367,12 +367,12 @@ export default ({ tasks, cmdOptions, credentials }) => {
       await writeRepoFile('CHANGELOG.md',
         oldCL.slice(0, breakpoint) +
           `\n## v${requirements['release-version']}\n\n` +
-          (await requirements.changelog.format()) +
+          (await requirements['changelog'].format()) +
           '\n' +
           oldCL.slice(breakpoint));
       changed.push('CHANGELOG.md');
 
-      for (const filename of requirements.changelog.filenames()) {
+      for (let filename of requirements['changelog'].filenames()) {
         await removeRepoFile(filename);
         changed.push(filename);
       }

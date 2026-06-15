@@ -1,6 +1,6 @@
-import { promisify } from 'node:util';
+import { promisify } from 'util';
 import md from 'md-directory';
-import { join } from 'node:path';
+import { join } from 'path';
 import { REPO_ROOT, writeRepoJSON } from '../../utils/index.js';
 
 const mdParseDir = promisify(md.parseDir);
@@ -54,7 +54,7 @@ function sort(a, b) {
 
 function sortChildren(children) {
   // recursively sort child nodes
-  if (children?.length) {
+  if (children && children.length) {
     children.map(child => sortChildren(child.children));
   }
 
@@ -64,31 +64,29 @@ function sortChildren(children) {
 let prevNode = null;
 // Traverse the nodes in order, setting `up`, `next`, and `prev` links
 function addNav(node, parentNode) {
-  if (parentNode?.path) {
+  if (parentNode && parentNode.path) {
     node.up = {
       path: parentNode.path,
-      title: (parentNode.data?.title) || parentNode.name,
+      title: (parentNode.data && parentNode.data.title) || parentNode.name,
     };
   }
 
-  if (prevNode?.path) {
+  if (prevNode && prevNode.path) {
     node.prev = {
       path: prevNode.path,
-      title: (prevNode.data?.title) || prevNode.name,
+      title: (prevNode.data && prevNode.data.title) || prevNode.name,
     };
 
     prevNode.next = {
       path: node.path,
-      title: (node.data?.title) || node.name,
+      title: (node.data && node.data.title) || node.name,
     };
   }
 
   prevNode = node;
   parentNode = node;
 
-  node.children.forEach(child => {
-    addNav(child, parentNode);
-  });
+  node.children.forEach(child => addNav(child, parentNode));
 }
 
 function makeToc({ files, rootPath }) {
@@ -157,7 +155,7 @@ export const tasks = [{
   requires: ['target-gw-docs', 'target-worker-runner'],
   provides: ['docs-toc'],
   run: async (requirements, utils) => {
-    const filesWithExtensions = await mdParseDir(DOCS_DIR, { dirnames: true, filter: '**/*.mdx' });
+    const filesWithExtensions = await mdParseDir(DOCS_DIR, { dirnames: true, filter: '**\/*.mdx' });
     // strip .md and .mdx extensions from those filenames..
     const files = Object.assign({},
       ...Object.entries(filesWithExtensions)

@@ -1,11 +1,11 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import _ from 'lodash';
 import taskcluster from '@taskcluster/client';
 import forge from 'node-forge';
-import crypto from 'node:crypto';
+import crypto from 'crypto';
 import got from 'got';
-import net from 'node:net';
-import { rootCertificates } from 'node:tls';
+import net from 'net';
+import { rootCertificates } from 'tls';
 import { WorkerPool, Worker } from '../../data.js';
 import azureApi from './azure-api.js';
 import { ApiError, Provider } from '../provider.js';
@@ -49,8 +49,6 @@ const InstanceStates = {
 const failProvisioningStates = new Set(['Failed', 'Deleting', 'Canceled', 'Deallocating']);
 
 const DEPLOYMENT_METHOD_ARM = 'arm-template';
-const UNKNOWN_METRIC_LABEL = 'unknown';
-const MAX_METRIC_LABEL_LENGTH = 200;
 const maxInstanceView404Streak = 2;
 // Per Azure Certificate Authority details, these are the HTTP AIA hosts
 // clients may need to reach for Azure certificate chain building.
@@ -92,77 +90,6 @@ export function isAllowedAiaLocation(location) {
   return allowedAiaLocations.some(entry =>
     hostname === entry.hostname &&
     (!entry.pathPrefix || parsedUrl.pathname.startsWith(entry.pathPrefix)));
-}
-
-function metricLabel(value) {
-  if (value === undefined || value === null || value === '') {
-    return UNKNOWN_METRIC_LABEL;
-  }
-  if (typeof value === 'object') {
-    return UNKNOWN_METRIC_LABEL;
-  }
-  return String(value).slice(0, MAX_METRIC_LABEL_LENGTH);
-}
-
-function firstMetricLabel(...values) {
-  for (const value of values) {
-    const label = metricLabel(value);
-    if (label !== UNKNOWN_METRIC_LABEL) {
-      return label;
-    }
-  }
-  return UNKNOWN_METRIC_LABEL;
-}
-
-function armParameterValue(parameters, name) {
-  const param = parameters?.[name];
-  if (param && typeof param === 'object' && 'value' in param) {
-    return param.value;
-  }
-  return param;
-}
-
-function extractAzureMetricError(error) {
-  const queue = [
-    error?.response?.parsedBody?.error,
-    error?.parsedBody?.error,
-    error?.body?.error,
-    error?.error,
-    error,
-  ];
-  const seen = new Set();
-  let fallbackError;
-
-  while (queue.length > 0) {
-    const current = queue.shift();
-    if (!current || typeof current !== 'object' || seen.has(current)) {
-      continue;
-    }
-    seen.add(current);
-
-    if (!fallbackError && (current.code || current.message || current.target)) {
-      fallbackError = current;
-    }
-
-    for (const nested of [
-      current.response?.parsedBody?.error,
-      current.parsedBody?.error,
-      current.body?.error,
-      current.error,
-    ]) {
-      if (nested && typeof nested === 'object') {
-        queue.push(nested);
-      }
-    }
-
-    if (Array.isArray(current.details) && current.details.length > 0) {
-      queue.push(...current.details);
-    } else if (current.code || current.message || current.target) {
-      return current;
-    }
-  }
-
-  return fallbackError;
 }
 
 export class AzureProvider extends Provider {
@@ -238,7 +165,7 @@ export class AzureProvider extends Provider {
   }
 
   async setup() {
-    const {
+    let {
       clientId,
       secret,
       domain,
@@ -274,7 +201,7 @@ export class AzureProvider extends Provider {
           }
           return { backoff, reason: 'rateLimit', level: 'notice' };
         } else if (err.statusCode >= 500) { // For 500s, let's take a shorter backoff
-          return { backoff: _backoffDelay * 2 ** tries, reason: 'errors', level: 'warning' };
+          return { backoff: _backoffDelay * Math.pow(2, tries), reason: 'errors', level: 'warning' };
         }
         // If we don't want to do anything special here, just throw and let the
         // calling code figure out what to do
@@ -286,9 +213,7 @@ export class AzureProvider extends Provider {
 
     // Load root certificates from Node, which get them from the Mozilla CA store.
     this.caStore = forge.pki.createCaStore();
-    rootCertificates.forEach(pem => {
-      this.addRootCertPem(pem);
-    });
+    rootCertificates.forEach(pem => this.addRootCertPem(pem));
 
     // load known microsoft intermediate certs from disk
     loadCertificates().forEach(cert => {
@@ -300,7 +225,7 @@ export class AzureProvider extends Provider {
       }
     });
 
-    const credentials = new azureApi.ClientSecretCredential(domain, clientId, secret);
+    let credentials = new azureApi.ClientSecretCredential(domain, clientId, secret);
     this.computeClient = new azureApi.ComputeManagementClient(credentials, subscriptionId);
     this.networkClient = new azureApi.NetworkManagementClient(credentials, subscriptionId);
     this.resourcesClient = new azureApi.ResourceManagementClient(credentials, subscriptionId);
@@ -376,7 +301,7 @@ export class AzureProvider extends Provider {
     const { workerPoolId } = workerPool;
     const workerInfo = workerPoolStats?.forProvision() ?? {};
     const workerInfoByWorkerGroup = workerPoolStats?.forProvisionByWorkerGroup() ?? new Map();
-    const toSpawn = await this.estimator.simple({
+    let toSpawn = await this.estimator.simple({
       workerPoolId,
       providerId: this.providerId,
       ...workerPool.config,
@@ -484,7 +409,7 @@ export class AzureProvider extends Provider {
 
     // osDisk is required.  Azure would name it for us, but we give it a name up-front
     // so that we can delete it on de-provisioning
-    const osDisk = {
+    let osDisk = {
       ...cfg.storageProfile.osDisk,
       name: `disk-${nameSuffix}-os`,
     };
@@ -495,10 +420,10 @@ export class AzureProvider extends Provider {
     // disk, since that would try to share the same disk among multiple vms,
     // but give each disk a unique name so that we can find it later to
     // delete it.
-    const dataDisks = [];
+    let dataDisks = [];
     if (_.has(cfg, 'storageProfile.dataDisks')) {
       let i = 1;
-      for (const disk of cfg.storageProfile.dataDisks) {
+      for (let disk of cfg.storageProfile.dataDisks) {
         const name = `disk-${nameSuffix}-${i++}`;
         disks.push({ name, id: true });
         dataDisks.push({ ...disk, name });
@@ -531,7 +456,7 @@ export class AzureProvider extends Provider {
     const needPublicIp = cfg?.workerManager?.publicIp ?? false;
     const skipPublicIp = !needPublicIp;
 
-    const providerData = {
+    let providerData = {
       location: cfg.location,
       resourceGroupName: this.providerConfig.resourceGroupName,
       workerConfig: cfg.workerConfig,
@@ -706,14 +631,6 @@ export class AzureProvider extends Provider {
         error: err,
       });
 
-      this.#recordAzureArmDeploymentError({
-        worker,
-        errorKind: 'creation-error',
-        error: err,
-        statusCode: err?.statusCode ?? err?.response?.status,
-        provisioningOperation: 'Create',
-      });
-
       await this.reportError({
         workerPool,
         kind: 'creation-error',
@@ -734,38 +651,6 @@ export class AzureProvider extends Provider {
       });
       await this.removeWorker({ worker, reason: `ARM Deployment failure: ${err.message}` });
     }
-  }
-
-  #recordAzureArmDeploymentError({
-    worker,
-    errorKind,
-    error,
-    statusCode,
-    provisioningState,
-    provisioningOperation,
-    targetResource,
-  }) {
-    const azureError = extractAzureMetricError(error);
-    const parameters = worker.providerData?.armDeployment?.parameters ?? {};
-
-    // Still emit a sample when Azure did not provide a structured error body.
-    // The labels below will fall back to the top-level error or "unknown".
-    this.monitor.metric.azureArmDeploymentError(1, {
-      providerId: this.providerId,
-      workerPoolId: worker.workerPoolId,
-      workerGroup: firstMetricLabel(worker.workerGroup, worker.providerData?.location),
-      errorKind: metricLabel(errorKind),
-      errorCode: firstMetricLabel(azureError?.code, error?.code, error?.name),
-      statusCode: firstMetricLabel(statusCode, error?.statusCode, error?.response?.status),
-      provisioningState: metricLabel(provisioningState),
-      provisioningOperation: metricLabel(provisioningOperation),
-      targetResourceType: metricLabel(targetResource?.resourceType),
-      vmSize: firstMetricLabel(
-        armParameterValue(parameters, 'vmSize'),
-        worker.providerData?.vm?.config?.hardwareProfile?.vmSize,
-      ),
-      priority: firstMetricLabel(armParameterValue(parameters, 'priority'), worker.providerData?.vm?.config?.priority),
-    });
   }
 
   /**
@@ -882,7 +767,7 @@ export class AzureProvider extends Provider {
 
       // Deployment is likely still in progress - check status or operation might be expired or failed
       if (worker.providerData.deployment.operation) {
-        const op = await this.handleOperation({
+        let op = await this.handleOperation({
           op: worker.providerData.deployment.operation,
           errors: this.errors[worker.workerPoolId],
           monitor,
@@ -963,16 +848,6 @@ export class AzureProvider extends Provider {
         trackingId: properties.trackingId,
         timestamp: properties.timestamp,
       });
-
-      this.#recordAzureArmDeploymentError({
-        worker,
-        errorKind: 'arm-deployment-error',
-        error: operationError ?? status,
-        statusCode: properties.statusCode,
-        provisioningState: properties.provisioningState ?? status.status,
-        provisioningOperation: properties.provisioningOperation,
-        targetResource: properties.targetResource,
-      });
     }
 
     if (failingOperations.length === 0 && !defaultMessage) {
@@ -990,15 +865,6 @@ export class AzureProvider extends Provider {
     }
 
     const workerPool = await WorkerPool.get(this.db, worker.workerPoolId);
-
-    if (failingOperations.length === 0) {
-      this.#recordAzureArmDeploymentError({
-        worker,
-        errorKind: 'arm-deployment-error',
-        error: deployment.properties?.error ?? { message: defaultMessage },
-        provisioningState: deployment.properties?.provisioningState,
-      });
-    }
 
     await this.reportError({
       workerPool,
@@ -1128,10 +994,10 @@ export class AzureProvider extends Provider {
     // signature is base64-encoded DER-format PKCS#7 / CMS message
 
     // decode base64, load DER, extract PKCS#7 message
-    const decodedMessage = Buffer.from(document, 'base64');
+    let decodedMessage = Buffer.from(document, 'base64');
     let message;
     try {
-      const asn1 = forge.asn1.fromDer(forge.util.createBuffer(decodedMessage));
+      let asn1 = forge.asn1.fromDer(forge.util.createBuffer(decodedMessage));
       message = forge.pkcs7.messageFromAsn1(asn1);
     } catch (err) {
       this.monitor.log.registrationErrorWarning({
@@ -1169,7 +1035,7 @@ export class AzureProvider extends Provider {
 
     // verify that the message is properly signed
     try {
-      const verifier = crypto.createVerify('RSA-SHA256');
+      let verifier = crypto.createVerify('RSA-SHA256');
       verifier.update(Buffer.from(content));
       assert(verifier.verify(pem, sig, 'binary'));
     } catch (err) {
@@ -1520,7 +1386,7 @@ export class AzureProvider extends Provider {
       return false;
     }
 
-    const body = resp.parsedBody;
+    let body = resp.parsedBody;
     if (body) {
       // status is guaranteed to exist if the operation was found
       if (body.status === 'InProgress') {
@@ -1568,7 +1434,7 @@ export class AzureProvider extends Provider {
     if (!_.has(worker.providerData, resourceType)) {
       throw new Error(`Error provisioning worker: providerData does not contain resourceType ${resourceType}`);
     }
-    const typeData = worker.providerData[resourceType];
+    let typeData = worker.providerData[resourceType];
 
     const debug = message => monitor.debug({
       message,
@@ -1581,7 +1447,7 @@ export class AzureProvider extends Provider {
     if (!typeData.id) {
       try {
         debug('querying resource by name');
-        const resource = await this._enqueue('query', () => client.get(
+        let resource = await this._enqueue('query', () => client.get(
           worker.providerData.resourceGroupName,
           typeData.name,
         ));
@@ -1610,7 +1476,7 @@ export class AzureProvider extends Provider {
         // if we've made the request
         // we should have an operation, check status
         if (typeData.operation) {
-          const op = await this.handleOperation({
+          let op = await this.handleOperation({
             op: typeData.operation,
             errors: this.errors[worker.workerPoolId],
             monitor,
@@ -1635,7 +1501,7 @@ export class AzureProvider extends Provider {
     if (!typeData.id) {
       debug('creating resource');
       // we need to create the resource
-      const resourceRequest = await this._enqueue('query', () => client.beginCreateOrUpdate(
+      let resourceRequest = await this._enqueue('query', () => client.beginCreateOrUpdate(
         worker.providerData.resourceGroupName,
         typeData.name,
         { ...resourceConfig, tags: worker.providerData.tags },
@@ -1676,7 +1542,7 @@ export class AzureProvider extends Provider {
 
     try {
       // IP
-      const ipConfig = {
+      let ipConfig = {
         location: worker.providerData.location,
         publicIPAllocationMethod: 'Static',
         sku: { name: 'Standard' },
@@ -1700,7 +1566,7 @@ export class AzureProvider extends Provider {
       }
 
       // NIC
-      const nicConfig = {
+      let nicConfig = {
         location: worker.providerData.location,
         ipConfigurations: [
           {
@@ -1716,7 +1582,7 @@ export class AzureProvider extends Provider {
         ],
       };
       // set up the VM network interface config
-      const nicModifyFunc = (w, nic) => {
+      let nicModifyFunc = (w, nic) => {
         w.providerData.vm.config.networkProfile.networkInterfaces = [
           {
             id: nic.id,
@@ -1780,7 +1646,7 @@ export class AzureProvider extends Provider {
           launchConfigId: worker.launchConfigId,
         });
       }
-      await this.removeWorker({ worker, reason: `${titleString}: ${err.message}` });
+      await this.removeWorker({ worker, reason: titleString + `: ${err.message}` });
     }
   }
 
@@ -1935,8 +1801,8 @@ export class AzureProvider extends Provider {
         // It's possible for a newly-requested VM to be running (PowerState/running), but have failed
         // provisioning.  These state codes have the form `ProvisioningState/failed/<SomeCode>`.
         // We allow the user to ignore specific codes via ignoreFailedProvisioningStates.
-        const ignore = new Set(worker.providerData.ignoreFailedProvisioningStates || []);
-        const failedProvisioningCodes = powerStates
+        let ignore = new Set(worker.providerData.ignoreFailedProvisioningStates || []);
+        let failedProvisioningCodes = powerStates
           .filter(state => state.startsWith('ProvisioningState/failed/'))
           .map(state => state.split('/')[2])
           .filter(code => !ignore.has(code));
@@ -2048,15 +1914,13 @@ export class AzureProvider extends Provider {
       }),
     );
 
-    Object.entries(this.seenByWorkerGroup).forEach(([workerPoolId, seenByGroup]) => {
-      Object.entries(seenByGroup).forEach(([workerGroup, seen]) => {
+    Object.entries(this.seenByWorkerGroup).forEach(([workerPoolId, seenByGroup]) =>
+      Object.entries(seenByGroup).forEach(([workerGroup, seen]) =>
         this.monitor.metric.scanSeen(seen, {
           providerId: this.providerId,
           workerPoolId,
           workerGroup,
-        });
-      });
-    });
+        })));
   }
 
   /**
@@ -2177,7 +2041,7 @@ export class AzureProvider extends Provider {
           resource = worker.providerData[resourceType];
         }
         resource.id = false;
-        const pollState = deleteRequest.getOperationState();
+        let pollState = deleteRequest.getOperationState();
         if (pollState?.config?.operationLocation) {
           resource.operation = pollState?.config?.operationLocation;
         }
@@ -2267,7 +2131,7 @@ export class AzureProvider extends Provider {
       // VM must be deleted before disk
       // VM must be deleted before NIC
       // NIC must be deleted before IP
-      const vmDeleted = await this.deprovisionResource({
+      let vmDeleted = await this.deprovisionResource({
         worker,
         client: this.computeClient.virtualMachines,
         resourceType: 'vm',
@@ -2276,7 +2140,7 @@ export class AzureProvider extends Provider {
       if (!vmDeleted || worker.providerData.vm.id) {
         return;
       }
-      const nicDeleted = await this.deprovisionResource({
+      let nicDeleted = await this.deprovisionResource({
         worker,
         client: this.networkClient.networkInterfaces,
         resourceType: 'nic',
@@ -2285,7 +2149,7 @@ export class AzureProvider extends Provider {
       if (!nicDeleted || worker.providerData.nic.id) {
         return;
       }
-      const ipDeleted = await this.deprovisionResource({
+      let ipDeleted = await this.deprovisionResource({
         worker,
         client: this.networkClient.publicIPAddresses,
         resourceType: 'ip',
@@ -2298,7 +2162,7 @@ export class AzureProvider extends Provider {
       // handles deleting osDisks and dataDisks
       let disksDeleted = true;
       for (let i = 0; i < worker.providerData.disks.length; i++) {
-        const success = await this.deprovisionResource({
+        let success = await this.deprovisionResource({
           worker,
           client: this.computeClient.disks,
           resourceType: 'disks',
@@ -2310,7 +2174,7 @@ export class AzureProvider extends Provider {
         }
       }
       // check for un-deleted disks
-      if (!disksDeleted || _.some(worker.providerData.disks.map(i => i.id))) {
+      if (!disksDeleted || _.some(worker.providerData.disks.map(i => i['id']))) {
         return;
       }
 
@@ -2318,7 +2182,7 @@ export class AzureProvider extends Provider {
       // it might be deleted after successful deployment by us
       if (worker.providerData.deploymentMethod === DEPLOYMENT_METHOD_ARM && worker.providerData.deployment?.name) {
         if (!worker.providerData.keepDeployment) {
-          const deploymentDeleted = await this.deprovisionResource({
+          let deploymentDeleted = await this.deprovisionResource({
             worker,
             client: this.deploymentsClient.deployments,
             resourceType: 'deployment',

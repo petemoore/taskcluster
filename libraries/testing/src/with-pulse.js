@@ -1,14 +1,14 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import { QlobberTrue } from 'qlobber';
-import EventEmitter from 'node:events';
+import EventEmitter from 'events';
 import debug from 'debug';
 
 export default ({ helper, skipping, namespace }) => {
   let client;
   const debugPulseAssertion = debug('withPulse');
 
-  suiteSetup('withPulse', async () => {
-    if (skipping?.()) {
+  suiteSetup('withPulse', async function() {
+    if (skipping && skipping()) {
       return;
     }
 
@@ -28,9 +28,8 @@ export default ({ helper, skipping, namespace }) => {
     helper.assertPulseMessage = (exchange, check) => {
       if (!matchingMessageExists(exchange, check)) {
         debugPulseAssertion(`${client.messages.length} pulse messages recorded:`);
-        client.messages.forEach(({ exchange, routingKey }) => {
-          debugPulseAssertion(`${exchange} - ${routingKey}`);
-        });
+        client.messages.forEach(({ exchange, routingKey }) =>
+          debugPulseAssertion(`${exchange} - ${routingKey}`));
         throw new Error(`No matching messages found with exchange ${exchange}`);
       }
     };
@@ -38,9 +37,8 @@ export default ({ helper, skipping, namespace }) => {
     helper.assertNoPulseMessage = (exchange, check) => {
       if (matchingMessageExists(exchange, check)) {
         debugPulseAssertion(`${client.messages.length} pulse messages recorded:`);
-        client.messages.forEach(({ exchange, routingKey }) => {
-          debugPulseAssertion(`${exchange} - ${routingKey}`);
-        });
+        client.messages.forEach(({ exchange, routingKey }) =>
+          debugPulseAssertion(`${exchange} - ${routingKey}`));
         throw new Error(`Matching messages found with exchange ${exchange}`);
       }
     };
@@ -57,8 +55,8 @@ export default ({ helper, skipping, namespace }) => {
       // Find consumers that match this message.  NOTE: we do this matching here and not
       // in tc-lib-pulse because qlobber is a devDependency and is not available in
       // production code.
-      for (const cons of client.consumers) {
-        for (const binding of cons.bindings) {
+      for (let cons of client.consumers) {
+        for (let binding of cons.bindings) {
           if (binding.exchange === exchange) {
             // use Qlobber in a really inefficient manner to match the routing key
             const q = new QlobberTrue();
@@ -72,18 +70,17 @@ export default ({ helper, skipping, namespace }) => {
       }
       if (!delivered) {
         debugPulseAssertion(`${client.consumers.length} consumers registered:`);
-        client.consumers.forEach(cons => {
-          debugPulseAssertion(`- ${cons.bindings.map(({ exchange, routingKeyPattern }) =>
-            `${exchange} - ${routingKeyPattern}`).join('; ')}`);
-        });
+        client.consumers.forEach(cons =>
+          debugPulseAssertion('- ' + cons.bindings.map(({ exchange, routingKeyPattern }) =>
+            `${exchange} - ${routingKeyPattern}`).join('; ')));
 
         throw new Error('Fake message not delivered to any consumers');
       }
     };
   });
 
-  setup('withPulse', () => {
-    if (skipping?.()) {
+  setup('withPulse', function() {
+    if (skipping && skipping()) {
       return;
     }
 

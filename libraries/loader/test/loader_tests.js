@@ -1,12 +1,12 @@
 import assume from 'assume';
 import subject from '../src/index.js';
-import assert from 'node:assert';
+import assert from 'assert';
 
 suite('component loader', () => {
   test('should load a single component with a static value', async () => {
-    const a = { a: 1 };
+    let a = { a: 1 };
 
-    const load = subject({
+    let load = subject({
       test: { setup: () => a },
     });
 
@@ -14,9 +14,9 @@ suite('component loader', () => {
   });
 
   test('should load a single component with setup function', async () => {
-    const a = { a: 1 };
+    let a = { a: 1 };
 
-    const load = subject({
+    let load = subject({
       test: {
         setup: () => {
           return a;
@@ -28,9 +28,9 @@ suite('component loader', () => {
   });
 
   test('should accept a virtual component', async () => {
-    const a = { a: 1 };
+    let a = { a: 1 };
 
-    const load = subject({
+    let load = subject({
       test: {
         requires: ['dep'],
         setup: deps => {
@@ -47,9 +47,9 @@ suite('component loader', () => {
   });
 
   test('should accept a virtual component as array', async () => {
-    const a = { a: 1 };
+    let a = { a: 1 };
 
-    const load = subject({
+    let load = subject({
       test: {
         requires: ['dep'],
         setup: deps => {
@@ -66,7 +66,7 @@ suite('component loader', () => {
   });
 
   test('should allow setting defaults for virtual components', async () => {
-    const load = subject({
+    let load = subject({
       test: {
         requires: ['dep'],
         setup: deps => {
@@ -82,7 +82,7 @@ suite('component loader', () => {
   });
 
   test('should allow overwrites', async () => {
-    const load = subject({
+    let load = subject({
       test: {
         requires: [],
         setup: () => {
@@ -113,7 +113,7 @@ suite('component loader', () => {
   });
 
   test('different loaders should have independent components', async () => {
-    const components = {
+    let components = {
       test: {
         setup: () => {
           return { a: 1 };
@@ -121,17 +121,17 @@ suite('component loader', () => {
       },
     };
 
-    const loadA = subject(components);
-    const loadB = subject(components);
+    let loadA = subject(components);
+    let loadB = subject(components);
 
-    const valA = await loadA('test');
-    const valB = await loadB('test');
+    let valA = await loadA('test');
+    let valB = await loadB('test');
 
     assume(valA).does.not.equal(valB);
   });
 
   test('should reinitialize components', async () => {
-    const load = subject({
+    let load = subject({
       test: {
         setup: () => {
           return { a: 1 };
@@ -143,10 +143,10 @@ suite('component loader', () => {
   });
 
   test('should load a simple dependency', async () => {
-    const a = { a: 1 };
+    let a = { a: 1 };
     let called = false;
 
-    const load = subject({
+    let load = subject({
       dep: {
         setup: () => {
           called = true;
@@ -168,7 +168,7 @@ suite('component loader', () => {
   });
 
   test('should fail loading a nonexistent component', async () => {
-    const load = subject({
+    let load = subject({
       base: {
         requires: [],
         setup: () => {},
@@ -187,7 +187,7 @@ suite('component loader', () => {
   });
 
   test('should fail when a sync setup function fails', async () => {
-    const load = subject({
+    let load = subject({
       fail: {
         requires: [],
         setup: () => {
@@ -208,7 +208,7 @@ suite('component loader', () => {
   });
 
   test('should fail when a setup function returns a rejected promise', async () => {
-    const load = subject({
+    let load = subject({
       fail: {
         requires: [],
         setup: () => Promise.reject(new Error('uhoh!')),
@@ -227,7 +227,7 @@ suite('component loader', () => {
   });
 
   test('should fail when an async setup function fails', async () => {
-    const load = subject({
+    let load = subject({
       fail: {
         requires: [],
         setup: async () => {
@@ -277,10 +277,10 @@ suite('component loader', () => {
   });
 
   test('should load different types of static dependencies', async () => {
-    const a = { a: 1 };
-    const b = { b: 2 };
-    const c = { c: 2 };
-    const load = subject({
+    let a = { a: 1 };
+    let b = { b: 2 };
+    let c = { c: 2 };
+    let load = subject({
       string: { setup: () => 'a-string' },
       object: { setup: () => a },
       number: { setup: () => 123.456 },
@@ -302,7 +302,7 @@ suite('component loader', () => {
   });
 
   test('should work with a complex dependency graph', async () => {
-    const load = subject({
+    let load = subject({
       dep1: {
         requires: ['dep2', 'dep3'],
         setup: () => true,
@@ -352,7 +352,7 @@ suite('component loader', () => {
 
   // We want to splatter bad component definitions against our component
   // validator
-  const badDef = [
+  let badDef = [
     ['def that is a string', 'this ought to fail'],
     ['def with non-func setup property', { setup: 'hi' }],
     ['def with missing setup property', {}],
@@ -365,8 +365,8 @@ suite('component loader', () => {
       requires: ['a', 1, 'b'],
     }],
   ];
-  for (const x of badDef) {
-    test(`should fail on a ${x[0]}`, () => {
+  for (let x of badDef) {
+    test('should fail on a ' + x[0], () => {
       try {
         subject({ a: x[1] });
         throw new Error();
@@ -380,9 +380,9 @@ suite('component loader', () => {
   }
 
   test('should handle sync vs async properly', async () => {
-    const rv = { a: 1 };
-    const orderCalled = [];
-    const load = subject({
+    let rv = { a: 1 };
+    let orderCalled = [];
+    let load = subject({
       dep1: {
         requires: ['dep2'],
         setup: d => {
@@ -434,18 +434,18 @@ suite('component loader', () => {
   });
 
   test("should fail when specified component didn't load", async () => {
-    const load = subject({
+    let load = subject({
       fail: {
         requires: [],
         setup: () => Promise.reject(new Error('uhoh!')),
       },
     });
 
-    assert.throws(() => { load.crashOnError(true); }, 'false');
+    assert.throws(function() { load.crashOnError(true); }, 'false');
   });
 
   test('should pass own name to setup', async () => {
-    const load = subject({
+    let load = subject({
       testName: { setup: (_, ownName) => ownName },
     });
 
