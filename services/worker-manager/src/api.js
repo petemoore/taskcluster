@@ -1,6 +1,6 @@
 import { APIBuilder, paginateResults } from '@taskcluster/lib-api';
 import slug from 'slugid';
-import assert from 'node:assert';
+import assert from 'assert';
 import { ApiError, Provider } from './providers/provider.js';
 import { UNIQUE_VIOLATION } from '@taskcluster/lib-postgres';
 import { WorkerPool, WorkerPoolError, Worker, WorkerPoolStats } from './data.js';
@@ -24,7 +24,7 @@ export const AUDIT_ENTRY_TYPE = Object.freeze({
  *  publisher: import('@taskcluster/lib-pulse').PulsePublisher; // TODO add generic type
  * }>}
  */
-const builder = new APIBuilder({
+let builder = new APIBuilder({
   title: 'Worker Manager Service',
   description: [
     'This service manages workers, including provisioning for dynamic worker pools.',
@@ -63,7 +63,7 @@ const declareWithTrailingColon = (options, handler) => {
   const colonOptions = {
     ...options,
     route: options.route.replace("/workers/:workerPoolId/", "/workers/:workerPoolId:/"),
-    name: `${options.name}WithColon`,
+    name: options.name + 'WithColon',
     noPublish: true,
   };
   builder.declare(colonOptions, handler);
@@ -110,8 +110,8 @@ builder.declare({
     'Retrieve a list of providers that are available for worker pools.',
   ].join('\n'),
 }, function(req, res) {
-  const start = req.query.continuationToken ? parseInt(req.query.continuationToken, 10) : 0;
-  const limit = req.query.limit ? parseInt(req.query.limit, 10) : 100;
+  const start = req.query.continuationToken ? parseInt(req.query.continuationToken) : 0;
+  const limit = req.query.limit ? parseInt(req.query.limit) : 100;
 
   const providers = Object.entries(this.cfg.providers).map(([providerId, { providerType }]) => ({
     providerId,
@@ -801,8 +801,8 @@ declareWithTrailingColon({
   res.reply(worker.serializable({ removeQueueData: true }));
 });
 
-const cleanCreatePayload = payload => {
-  if (payload.providerInfo?.staticSecret) {
+let cleanCreatePayload = payload => {
+  if (payload.providerInfo && payload.providerInfo.staticSecret) {
     payload.providerInfo.staticSecret = '(OMITTED)';
   }
   return payload;
@@ -1071,7 +1071,7 @@ builder.declare({
   });
 });
 
-const cleanPayload = payload => {
+let cleanPayload = payload => {
   payload = '(OMITTED)';
   return payload;
 };
@@ -1319,7 +1319,7 @@ builder.declare({
 
   const result = {
     workers: workers.map(worker => {
-      const entry = {
+      let entry = {
         workerGroup: worker.workerGroup,
         workerId: worker.workerId,
         firstClaim: worker.firstClaim?.toJSON(),
@@ -1399,7 +1399,7 @@ builder.declare({
     'This endpoint is used to check on backing services this service',
     'depends on.',
   ].join('\n'),
-}, (_req, res) => {
+}, function(_req, res) {
   // TODO: add implementation
   res.reply({});
 });

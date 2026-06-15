@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { withApollo, graphql } from 'react-apollo';
 import PlusIcon from 'mdi-react/PlusIcon';
+import escapeStringRegexp from 'escape-string-regexp';
 import dotProp from 'dot-prop-immutable';
 import { withStyles } from '@material-ui/core/styles';
 import Spinner from '../../../components/Spinner';
@@ -77,7 +78,14 @@ export default class WorkerManagerWorkerPoolsView extends Component {
       workerPoolsConnection: {
         limit: VIEW_WORKER_POOLS_PAGE_SIZE,
       },
-      searchTerm: workerPoolSearch || null,
+      filter: workerPoolSearch
+        ? {
+            workerPoolId: {
+              $regex: escapeStringRegexp(workerPoolSearch),
+              $options: 'i',
+            },
+          }
+        : null,
     });
     this.setState({ workerPoolSearch });
   };
@@ -114,7 +122,14 @@ export default class WorkerManagerWorkerPoolsView extends Component {
           cursor,
           previousCursor,
         },
-        searchTerm: this.state.workerPoolSearch || null,
+        filter: this.state.workerPoolSearch
+          ? {
+              workerPoolId: {
+                $regex: escapeStringRegexp(this.state.workerPoolSearch),
+                $options: 'i',
+              },
+            }
+          : null,
       },
       updateQuery(previousResult, { fetchMoreResult }) {
         const { edges, pageInfo } =

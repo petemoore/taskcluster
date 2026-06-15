@@ -1,15 +1,15 @@
 import DataLoader from 'dataloader';
-import substringFilter from '../utils/searchFilter.js';
+import sift from '../utils/sift.js';
 import ConnectionLoader from '../ConnectionLoader.js';
 
 export default ({ secrets }, isAuthed, rootUrl, monitor, strategies, req, cfg, requestId) => {
-  const secretsList = new ConnectionLoader(async ({ searchTerm, options }) => {
+  const secretsList = new ConnectionLoader(async ({ filter, options }) => {
     const raw = await secrets.list(options);
     const secretsList = raw.secrets.map(name => ({ name }));
 
     return {
       ...raw,
-      items: substringFilter(searchTerm, 'name', secretsList),
+      items: sift(filter, secretsList),
     };
   });
   const secret = new DataLoader(names =>

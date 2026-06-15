@@ -10,9 +10,9 @@ import config from '@taskcluster/lib-config';
 import { Backends } from './backends/index.js';
 import { Middleware } from './middleware/index.js';
 import expireObjects from './expire.js';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath } from 'url';
 
-const load = loader({
+let load = loader({
   cfg: {
     requires: ['profile'],
     setup: ({ profile }) => config({

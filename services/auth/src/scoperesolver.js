@@ -1,8 +1,8 @@
 import _ from 'lodash';
-import util from 'node:util';
-import assert from 'node:assert';
+import util from 'util';
+import assert from 'assert';
 import taskcluster from '@taskcluster/client';
-import events from 'node:events';
+import events from 'events';
 import LRU from 'quick-lru';
 import debugFactory from 'debug';
 const debug = debugFactory('auth:ScopeResolver');
@@ -146,8 +146,7 @@ class ScopeResolver extends events.EventEmitter {
    * functions are executed in serial.
    */
   _syncReload(reloader) {
-    this._reloadDone = this._reloadDone.catch(() => {}).then(reloader);
-    return this._reloadDone;
+    return this._reloadDone = this._reloadDone.catch(() => {}).then(reloader);
   }
 
   reloadClient(clientId) {
@@ -158,7 +157,7 @@ class ScopeResolver extends events.EventEmitter {
       // If a client was loaded, add it back
       if (client) {
         // For reasoning on structure, see reload()
-        const minLastUsed = taskcluster.fromNow(this._maxLastUsedDelay);
+        let minLastUsed = taskcluster.fromNow(this._maxLastUsedDelay);
         this._clients.push({
           clientId: client.client_id,
           accessToken: this.db.decrypt({ value: client.encrypted_access_token }),
@@ -174,7 +173,7 @@ class ScopeResolver extends events.EventEmitter {
 
   reloadRoles() {
     return this._syncReload(async () => {
-      const roles = await this.db.fns.get_roles();
+      let roles = await this.db.fns.get_roles();
       this._rebuildResolver(roles, this._clients);
     });
   }
@@ -184,7 +183,7 @@ class ScopeResolver extends events.EventEmitter {
       debug('Loading clients and roles');
 
       // Load clients and roles in parallel
-      const clients = [];
+      let clients = [];
       let roles = [];
       await Promise.all([
         (async () => {
@@ -200,7 +199,7 @@ class ScopeResolver extends events.EventEmitter {
               offset += 1000;
             }
 
-            const minLastUsed = taskcluster.fromNow(this._maxLastUsedDelay);
+            let minLastUsed = taskcluster.fromNow(this._maxLastUsedDelay);
             for (const client of rows) {
               clients.push({
                 clientId: client.client_id,
@@ -238,7 +237,7 @@ class ScopeResolver extends events.EventEmitter {
 
     // Construct client cache
     this._clientCache = {};
-    for (const client of this._clients) {
+    for (let client of this._clients) {
       client.scopes = null;
       client.expandedScopes = null;
       this._clientCache[client.clientId] = client;
@@ -306,13 +305,13 @@ class ScopeResolver extends events.EventEmitter {
   async loadClient(clientId) {
     let client = this._clientCache[clientId];
     if (!client) {
-      throw new Error(`Client with clientId '${clientId}' not found`);
+      throw new Error('Client with clientId \'' + clientId + '\' not found');
     }
     if (client.disabled) {
-      throw new Error(`Client with clientId '${clientId}' is disabled`);
+      throw new Error('Client with clientId \'' + clientId + '\' is disabled');
     }
     if (client.expires < new Date()) {
-      throw new Error(`Client with clientId: '${clientId}' has expired`);
+      throw new Error('Client with clientId: \'' + clientId + '\' has expired');
     }
 
     if (client.updateLastUsed) {
@@ -322,7 +321,7 @@ class ScopeResolver extends events.EventEmitter {
 
     // Lazily expand client scopes
     if (client.scopes === null) {
-      const scopes = this.resolve(client.unexpandedScopes);
+      let scopes = this.resolve(client.unexpandedScopes);
       client.scopes = scopes; // for createSignatureValidator compatibility
       client.expandedScopes = scopes;
     }
