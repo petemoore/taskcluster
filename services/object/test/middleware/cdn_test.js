@@ -1,11 +1,11 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import helper from '../helper/index.js';
 import testing from '@taskcluster/lib-testing';
 import request from 'superagent';
-import crypto from 'node:crypto';
+import crypto from 'crypto';
 import taskcluster from '@taskcluster/client';
 
-helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
+helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
   helper.withDb(mock, skipping);
   helper.resetTables(mock, skipping);
   helper.withBackends(mock, skipping);
@@ -33,7 +33,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     await helper.apiClient.finishUpload(name, { projectId: 'x', uploadId });
   };
 
-  test('intercepts matching simple downloads', async () => {
+  test('intercepts matching simple downloads', async function() {
     await makeObject('public/foo/bar');
     const downloadUrl = helper.apiClient.externalBuildSignedUrl(helper.apiClient.download, 'public/foo/bar');
     const res = await request.get(downloadUrl).redirects(0).ok(res => res.status < 400);
@@ -41,7 +41,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     assert.equal(res.headers.location, "https://cdn.example.com/public/foo/bar");
   });
 
-  test('ignores non-matching simple downloads', async () => {
+  test('ignores non-matching simple downloads', async function() {
     await makeObject('private/foo/bar');
     const downloadUrl = helper.apiClient.externalBuildSignedUrl(helper.apiClient.download, 'private/foo/bar');
     const res = await request.get(downloadUrl).redirects(0).ok(res => res.status < 400);

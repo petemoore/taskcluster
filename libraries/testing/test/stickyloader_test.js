@@ -1,8 +1,8 @@
 import _ from 'lodash';
-import assert from 'node:assert';
+import assert from 'assert';
 import { stickyLoader, suiteName } from '../src/index.js';
 
-suite(suiteName(), () => {
+suite(suiteName(), function() {
   let loads, sticky;
 
   const loader = (component, overwrites) => {
@@ -13,12 +13,12 @@ suite(suiteName(), () => {
     return Promise.resolve({ component });
   };
 
-  setup(() => {
+  setup(function() {
     loads = [];
     sticky = stickyLoader(loader);
   });
 
-  test('returns same component twice', async () => {
+  test('returns same component twice', async function() {
     const first = await sticky('abc');
     const second = await sticky('abc');
     const third = await sticky('def');
@@ -27,7 +27,7 @@ suite(suiteName(), () => {
     assert(second !== third);
   });
 
-  test('includes result in overwrites', async () => {
+  test('includes result in overwrites', async function() {
     await sticky('abc');
     await sticky('def');
     assert.deepEqual(loads, [{
@@ -39,7 +39,7 @@ suite(suiteName(), () => {
     }]);
   });
 
-  test('inject adds to overwrites', async () => {
+  test('inject adds to overwrites', async function() {
     await sticky.inject('inj', { inj: true });
     await sticky('inj');
     assert.deepEqual(loads, [{
@@ -48,7 +48,7 @@ suite(suiteName(), () => {
     }]);
   });
 
-  test('cfg fails if cfg is not loaded', async () => {
+  test('cfg fails if cfg is not loaded', async function() {
     try {
       sticky.cfg('app.secret', 'donttell');
     } catch (e) {
@@ -58,13 +58,13 @@ suite(suiteName(), () => {
     assert(false, 'expected error');
   });
 
-  test('cfg', async () => {
+  test('cfg', async function() {
     sticky.inject('cfg', {});
     sticky.cfg('a.b.c', 'd');
     assert(_.isEqual(await sticky('cfg'), { a: { b: { c: 'd' } } }));
   });
 
-  test('save/restore', async () => {
+  test('save/restore', async function() {
     const first = await sticky('abc');
     sticky.save();
     const second = await sticky('def');
@@ -75,7 +75,7 @@ suite(suiteName(), () => {
     assert((await sticky('abc')).updated, 'in-place modification to abc persists');
   });
 
-  test('save/restore with inject', async () => {
+  test('save/restore with inject', async function() {
     sticky.inject('abc', 'AAA');
     sticky.save();
     sticky.inject('abc', 'BBB');
@@ -84,7 +84,7 @@ suite(suiteName(), () => {
     assert((await sticky('abc')) === 'AAA', 'should get the original injected value');
   });
 
-  test('save/restore with remove', async () => {
+  test('save/restore with remove', async function() {
     sticky.inject('abc', 'AAA');
     sticky.save();
     sticky.remove('abc');
@@ -93,7 +93,7 @@ suite(suiteName(), () => {
     assert((await sticky('abc')) === 'AAA', 'should get the original injected value');
   });
 
-  test('save/restore with cfg', async () => {
+  test('save/restore with cfg', async function() {
     sticky.inject('cfg', {});
     sticky.cfg('app.secret', 'donttell');
     assert((await sticky('cfg')).app.secret === 'donttell');

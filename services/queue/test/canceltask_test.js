@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { strict as assert } from 'node:assert';
+import { strict as assert } from 'assert';
 import debugFactory from 'debug';
 const debug = debugFactory('test:cancel');
 import slugid from 'slugid';
@@ -8,7 +8,7 @@ import assume from 'assume';
 import helper from './helper.js';
 import testing from '@taskcluster/lib-testing';
 
-helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
+helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) {
   helper.withDb(mock, skipping);
   helper.withAmazonIPRanges(mock, skipping);
   helper.withPulse(mock, skipping);
@@ -88,7 +88,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
       assume(r2.status.runs[0].reasonResolved).equals('canceled');
     }));
     // raise any exceptions in any of those calls
-    for (const { reason } of res) {
+    for (let { reason } of res) {
       if (reason) {
         throw reason;
       }
@@ -118,7 +118,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
       assume(r2.status.runs[0].reasonResolved).equals('canceled');
     }));
     // raise any exceptions in any of those calls
-    for (const { reason } of res) {
+    for (let { reason } of res) {
       if (reason) {
         throw reason;
       }

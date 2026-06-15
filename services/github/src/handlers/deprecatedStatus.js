@@ -7,12 +7,12 @@ import { makeDebug, taskGroupUI } from './utils.js';
  * GitHub Statuses: https://developer.github.com/v3/repos/statuses/
  **/
 export async function deprecatedStatusHandler(message) {
-  const taskGroupId = message.payload.taskGroupId || message.payload.status.taskGroupId;
+  let taskGroupId = message.payload.taskGroupId || message.payload.status.taskGroupId;
 
   let debug = makeDebug(this.monitor, { taskGroupId });
   debug(`Statuses API. Handling state change for task-group ${taskGroupId}`);
 
-  const [build] = await this.context.db.fns.get_github_build_pr(taskGroupId);
+  let [build] = await this.context.db.fns.get_github_build_pr(taskGroupId);
   if (!build) {
     debug('no status to update..');
     return;
@@ -37,9 +37,9 @@ export async function deprecatedStatusHandler(message) {
       usesChecks = true;
     }
 
-    const params = {};
+    let params = {};
     do {
-      const group = await this.queueClient.listTaskGroup(message.payload.taskGroupId, params);
+      let group = await this.queueClient.listTaskGroup(message.payload.taskGroupId, params);
       params.continuationToken = group.continuationToken;
 
       for (let i = 0; i < group.tasks.length; i++) {
@@ -81,7 +81,7 @@ export async function deprecatedStatusHandler(message) {
   }
 
   // Authenticating as installation.
-  const instGithub = await this.context.github.getInstallationGithub(build.installation_id);
+  let instGithub = await this.context.github.getInstallationGithub(build.installation_id);
 
   debug(`Attempting to update status for ${build.organization}/${build.repository}@${build.sha} (${state})`);
   const target_url = taskGroupUI(this.context.cfg.taskcluster.rootUrl, taskGroupId);
@@ -92,7 +92,7 @@ export async function deprecatedStatusHandler(message) {
       sha: build.sha,
       state,
       target_url,
-      description: `TaskGroup: ${state}`,
+      description: 'TaskGroup: ' + state,
       context: `${this.context.cfg.app.statusContext} (${build.event_type.split('.')[0]})`,
     });
   } catch (e) {

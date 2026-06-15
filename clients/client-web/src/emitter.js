@@ -53,8 +53,6 @@ export default class Emitter {
       return;
     }
 
-    handlers.forEach(handler => {
-      handler(...args);
-    });
+    handlers.forEach(handler => handler(...args));
   }
 }
