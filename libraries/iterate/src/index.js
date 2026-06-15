@@ -1,8 +1,8 @@
 import WatchDog from './watchdog.js';
 import debugFactory from 'debug';
 const debug = debugFactory('iterate');
-import events from 'node:events';
-import { hrtime } from 'node:process';
+import events from 'events';
+import { hrtime } from 'process';
 
 /**
  * The Iterate Class.  See README.md for explanation of constructor
@@ -111,7 +111,7 @@ class Iterate extends events.EventEmitter {
       watchdog.stop();
     }
 
-    const duration = Date.now() - start;
+    const duration = new Date() - start;
     if (this.minIterationTime > 0 && duration < this.minIterationTime) {
       throw new Error('Handler duration was less than minIterationTime');
     }
@@ -146,11 +146,6 @@ class Iterate extends events.EventEmitter {
         duration,
         status: iterError ? 'exception' : 'success',
       }, { level: iterError ? 'err' : 'notice' });
-
-      this.monitor.metric.iterateDuration(duration / 1000, {
-        name: this.name,
-        status: iterError ? 'exception' : 'success',
-      });
 
       if (iterError) {
         this.monitor.reportError(iterError, 'warning', {

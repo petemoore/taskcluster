@@ -16,7 +16,7 @@ import tcdb from '@taskcluster/db';
 import githubAuth from './github-auth.js';
 import { Client, pulseCredentials } from '@taskcluster/lib-pulse';
 import './monitor.js';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath } from 'url';
 
 const load = loader({
   cfg: {
@@ -119,16 +119,6 @@ const load = loader({
     }),
   },
 
-  hooksClient: {
-    requires: ['cfg'],
-    // This is a powerful Hooks client without scopes to use throughout the handlers
-    // Where it is acting on behalf of a repository, use this.hooksClient.use({authorizedScopes: scopes}).triggerHook
-    setup: ({ cfg }) => new taskcluster.Hooks({
-      rootUrl: cfg.taskcluster.rootUrl,
-      credentials: cfg.taskcluster.credentials,
-    }),
-  },
-
   api: {
     requires: [
       'cfg', 'monitor', 'schemaset', 'github', 'publisher', 'db', 'ajv', 'queueClient', 'intree'],
@@ -195,7 +185,6 @@ const load = loader({
       'publisher',
       'db',
       'queueClient',
-      'hooksClient',
     ],
     setup: async ({
       cfg,
@@ -208,7 +197,6 @@ const load = loader({
       publisher,
       db,
       queueClient,
-      hooksClient,
     }) =>
       new Handlers({
         rootUrl: cfg.taskcluster.rootUrl,
@@ -221,7 +209,7 @@ const load = loader({
         deprecatedInitialStatusQueueName: cfg.app.deprecatedInitialStatusQueue,
         resultStatusQueueName: cfg.app.resultStatusQueue,
         rerunQueueName: cfg.app.rerunQueue,
-        context: { cfg, github, schemaset, db, publisher, hooksClient },
+        context: { cfg, github, schemaset, db, publisher },
         pulseClient,
         queueClient,
       }),

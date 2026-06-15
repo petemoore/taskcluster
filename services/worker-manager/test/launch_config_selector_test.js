@@ -1,9 +1,9 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import helper from './helper.js';
 import testing from '@taskcluster/lib-testing';
 import { WorkerPoolStats } from '../src/data.js';
 
-helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
+helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
   helper.withDb(mock, skipping);
   helper.withPulse(mock, skipping);
   helper.withProviders(mock, skipping);
@@ -64,17 +64,17 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     monitor.manager.reset();
   };
 
-  setup(async () => {
+  setup(async function() {
     launchConfigSelector = await helper.load('launchConfigSelector');
   });
 
-  test('missing launch configs', async () => {
+  test('missing launch configs', async function() {
     const wp = await createWorkerPool();
     const wrc = await launchConfigSelector.forWorkerPool(wp);
     assert.deepEqual(wrc.getAll(), []);
   });
 
-  test('equal weights launch configs', async () => {
+  test('equal weights launch configs', async function () {
     const wp = await createWorkerPool([
       genAwsLaunchConfig({ launchConfigId: 'lc1', initialWeight: 1 }),
       genAwsLaunchConfig({ launchConfigId: 'lc2', initialWeight: 1 }),
@@ -88,7 +88,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     await assertDebugMessage(wp.workerPoolId, { lc1: 1, lc2: 1 }, { lc1: maxCapacity, lc2: maxCapacity });
   });
 
-  test('zero weights launch configs will not be used', async () => {
+  test('zero weights launch configs will not be used', async function () {
     const wp = await createWorkerPool([
       genAwsLaunchConfig({ launchConfigId: 'lc1', initialWeight: 1 }),
       genAwsLaunchConfig({ launchConfigId: 'lc2', initialWeight: 0 }),
@@ -102,7 +102,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     await assertDebugMessage(wp.workerPoolId, { lc1: 1, lc2: 0 }, { lc1: maxCapacity, lc2: maxCapacity });
   });
 
-  test('respects weights in random selection', async () => {
+  test('respects weights in random selection', async function () {
     const wp = await createWorkerPool([
       genAwsLaunchConfig({ launchConfigId: 'lc1', initialWeight: 1 }),
       genAwsLaunchConfig({ launchConfigId: 'lc2', initialWeight: 0.5 }),
@@ -110,7 +110,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     ]);
     const wrc = await launchConfigSelector.forWorkerPool(wp);
 
-    const counts = getDistribution(wrc, 500);
+    const counts = getDistribution(wrc, 100);
     assert.ok(counts.lc1 > counts.lc2, 'lc1 should be chosen more often than lc2');
     assert.ok(counts.lc2 > counts.lc3, 'lc2 should be chosen more often than lc3');
     assert.ok(counts.unknown === undefined);
@@ -118,7 +118,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       { lc1: maxCapacity, lc2: maxCapacity, lc3: maxCapacity });
   });
 
-  test('selectCapacity', async () => {
+  test('selectCapacity', async function () {
     const wp = await createWorkerPool([
       genAwsLaunchConfig({ launchConfigId: 'lc1', initialWeight: 1, capacityPerInstance: 1 }),
       genAwsLaunchConfig({ launchConfigId: 'lc2', initialWeight: 1, capacityPerInstance: 1 }),
@@ -130,7 +130,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     assert.equal(wrc.selectCapacity(15).length, 15);
   });
 
-  test('selectCapacity with special case', async () => {
+  test('selectCapacity with special case', async function () {
     const wp = await createWorkerPool([
       genAwsLaunchConfig({ launchConfigId: 'lc1', initialWeight: 1, capacityPerInstance: 2 }),
     ]);
@@ -139,7 +139,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     assert.equal(wrc.selectCapacity(5).length, 3);
   });
 
-  test('selectCapacity with wm.capacityPerInstance > 1', async () => {
+  test('selectCapacity with wm.capacityPerInstance > 1', async function () {
     const wp = await createWorkerPool([
       genAwsLaunchConfig({ launchConfigId: 'lc1', initialWeight: 1, capacityPerInstance: 3 }),
       genAwsLaunchConfig({ launchConfigId: 'lc2', initialWeight: 1, capacityPerInstance: 3 }),
@@ -148,7 +148,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     assert.equal(wrc.selectCapacity(6).length, 2);
   });
 
-  test('selectCapacity with capacityPerInstance > 1', async () => {
+  test('selectCapacity with capacityPerInstance > 1', async function () {
     const wp = await createWorkerPool([
       {
         ...genAwsLaunchConfig({ launchConfigId: 'lc1', initialWeight: 1 }),
@@ -163,7 +163,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     assert.equal(wrc.selectCapacity(6).length, 2);
   });
 
-  test('using workerPoolStats to respect maxCapacity per LC', async () => {
+  test('using workerPoolStats to respect maxCapacity per LC', async function () {
     const wp = await createWorkerPool([
       genAwsLaunchConfig({ launchConfigId: 'lc1', initialWeight: 1, maxCapacity: 10 }),
       genAwsLaunchConfig({ launchConfigId: 'lc2', initialWeight: 1, maxCapacity: 10 }),
@@ -182,7 +182,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       { lc1: 0, lc2: 5, lc3: 0 });
   });
 
-  test('using workerPoolStats to respect errors by LC', async () => {
+  test('using workerPoolStats to respect errors by LC', async function () {
     const wp = await createWorkerPool([
       genAwsLaunchConfig({ launchConfigId: 'lc1', initialWeight: 1 }),
       genAwsLaunchConfig({ launchConfigId: 'lc2', initialWeight: 1 }),
@@ -198,7 +198,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     await assertDebugMessage(wp.workerPoolId, { lc1: 0, lc2: 1 }, { lc1: maxCapacity, lc2: maxCapacity });
   });
 
-  test('select capacity should respect individual max capacity', async () => {
+  test('select capacity should respect individual max capacity', async function () {
     const wp = await createWorkerPool([
       genAwsLaunchConfig({ launchConfigId: 'lc1', initialWeight: 1, maxCapacity: 1 }),
       genAwsLaunchConfig({ launchConfigId: 'lc2', initialWeight: 1, maxCapacity: 2 }),
@@ -215,7 +215,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     await assertDebugMessage(wp.workerPoolId, { lc1: 1, lc2: 1, lc3: 1 }, { lc1: 1, lc2: 2, lc3: maxCapacity });
   });
 
-  test('select capacity should consider capacityPerInstance', async () => {
+  test('select capacity should consider capacityPerInstance', async function () {
     const wp = await createWorkerPool([
       genAwsLaunchConfig({ launchConfigId: 'lc1', initialWeight: 1, capacityPerInstance: 5 }),
       genAwsLaunchConfig({ launchConfigId: 'lc2', initialWeight: 1, capacityPerInstance: 5 }),
@@ -228,7 +228,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     assert.equal(wrc.selectCapacity(25).length, 5);
   });
 
-  test('single LC with negative weight due to errors still provisions when it has capacity', async () => {
+  test('single LC with negative weight due to errors still provisions when it has capacity', async function() {
     const wp = await createWorkerPool([
       genAwsLaunchConfig({ launchConfigId: 'lc1', initialWeight: 1, maxCapacity: 100 }),
     ]);

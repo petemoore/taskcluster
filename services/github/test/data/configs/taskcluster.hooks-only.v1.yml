@@ -1,5 +1,0 @@
-version: 1
-hooks:
-  - name: project-test/decision-hook
-    context:
-      trustDomain: test-domain
