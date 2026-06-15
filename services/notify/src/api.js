@@ -159,7 +159,7 @@ builder.declare({
   ].join('\n'),
 }, async function(req, res) {
   // The address to denylist
-  const address = {
+  let address = {
     notificationType: req.body.notificationType,
     notificationAddress: req.body.notificationAddress,
   };
@@ -182,7 +182,7 @@ builder.declare({
   ].join('\n'),
 }, async function(req, res) {
   // The address to remove from the denylist
-  const address = {
+  let address = {
     notificationType: req.body.notificationType,
     notificationAddress: req.body.notificationAddress,
   };
@@ -247,7 +247,7 @@ builder.declare({
     'This endpoint is used to check on backing services this service',
     'depends on.',
   ].join('\n'),
-}, (_req, res) => {
+}, function(_req, res) {
   // TODO: add implementation
   res.reply({});
 });

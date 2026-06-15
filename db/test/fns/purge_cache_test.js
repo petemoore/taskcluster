@@ -1,10 +1,10 @@
-import { strict as assert } from 'node:assert';
+import { strict as assert } from 'assert';
 import testing from '@taskcluster/lib-testing';
 import tc from '@taskcluster/client';
 const { fromNow } = tc;
 import helper from '../helper.js';
 
-suite(testing.suiteName(), () => {
+suite(testing.suiteName(), function() {
   helper.withDbForProcs({ serviceName: 'purge_cache' });
 
   const samples = [
@@ -12,7 +12,7 @@ suite(testing.suiteName(), () => {
     { worker_pool_id: 'prov-2/wt-2', cache_name: 'cache-2', before: fromNow('0 seconds'), expires: fromNow('2 days') },
   ];
 
-  setup('reset table', async () => {
+  setup('reset table', async function() {
     await helper.withDbClient(async client => {
       await client.query('delete from cache_purges');
       await client.query(
@@ -32,7 +32,7 @@ suite(testing.suiteName(), () => {
       }
     };
 
-    if (Array.isArray(caches)) {
+    if (caches instanceof Array) {
       caches = caches.sort();
       samples = samples.sort();
       caches.forEach((cache, idx) => {
@@ -43,12 +43,12 @@ suite(testing.suiteName(), () => {
     }
   }
 
-  helper.dbTest('all_purge_requests_wpid', async (db) => {
+  helper.dbTest('all_purge_requests_wpid', async function(db) {
     const caches = await db.fns.all_purge_requests_wpid(5, 0);
     compare(caches, samples);
   });
 
-  helper.dbTest('all_purge_requests_wpid in pages', async (db) => {
+  helper.dbTest('all_purge_requests_wpid in pages', async function(db) {
     const size = 1;
     let offset = 0;
     let caches = await db.fns.all_purge_requests_wpid(size, offset);
@@ -62,7 +62,7 @@ suite(testing.suiteName(), () => {
     compare(caches[0], samples[1]);
   });
 
-  helper.dbTest('purge_cache (create)', async (db) => {
+  helper.dbTest('purge_cache (create)', async function(db) {
     const sample = { worker_pool_id: 'prov-3/wt-3', cache_name: 'cache-3', before: fromNow('0 seconds'), expires: fromNow('1 day') };
 
     await db.fns.purge_cache_wpid(
@@ -82,7 +82,7 @@ suite(testing.suiteName(), () => {
     assert(!cache.etag);
   });
 
-  helper.dbTest('purge_cache (upsert)', async (db) => {
+  helper.dbTest('purge_cache (upsert)', async function(db) {
     const sample = { worker_pool_id: 'prov-3/wt-3', cache_name: 'cache-3' };
 
     await db.fns.purge_cache_wpid(sample.worker_pool_id, sample.cache_name, fromNow('10 seconds'), fromNow('1 day'));
@@ -106,7 +106,7 @@ suite(testing.suiteName(), () => {
     assert(cache2.before.getTime());
   });
 
-  helper.dbTest('purge_requests', async (db) => {
+  helper.dbTest('purge_requests', async function(db) {
     const samples = [
       { worker_pool_id: 'prov-3/wt-3', cache_name: 'cache-3', before: fromNow('4 days'), expires: fromNow('1 day') },
       { worker_pool_id: 'prov-3/wt-3', cache_name: 'cache-4', before: fromNow('6 days'), expires: fromNow('1 day') },
@@ -122,12 +122,12 @@ suite(testing.suiteName(), () => {
       );
     }
 
-    const entries = await db.fns.purge_requests_wpid("prov-3/wt-3");
+    let entries = await db.fns.purge_requests_wpid("prov-3/wt-3");
     assert.equal(entries.length, 3);
     compare(entries, samples);
   });
 
-  helper.dbTest('expire_cache_purges', async (db) => {
+  helper.dbTest('expire_cache_purges', async function(db) {
     const samples = [
       { worker_pool_id: 'prov-3/wt-3', cache_name: 'cache-3', before: fromNow('4 days'), expires: fromNow('- 1 day') },
       { worker_pool_id: 'prov-3/wt-3', cache_name: 'cache-4', before: fromNow('6 days'), expires: fromNow('- 2 days') },

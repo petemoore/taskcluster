@@ -38,6 +38,7 @@ import Breadcrumbs from '../../../components/Breadcrumbs';
 import splitTaskQueueId from '../../../utils/splitTaskQueueId';
 import { gqlTaskToApi } from '../../../utils/gqlToApi';
 import {
+  ACTIONS_JSON_KNOWN_KINDS,
   ARTIFACTS_PAGE_SIZE,
   DEPENDENTS_PAGE_SIZE,
   VALID_TASK,
@@ -111,6 +112,16 @@ const getCachesFromTask = task =>
       },
       dependentsConnection: {
         limit: DEPENDENTS_PAGE_SIZE,
+      },
+      taskActionsFilter: {
+        kind: {
+          $in: ACTIONS_JSON_KNOWN_KINDS,
+        },
+        context: {
+          $not: {
+            $size: 0,
+          },
+        },
       },
     },
   }),

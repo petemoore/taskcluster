@@ -1,18 +1,18 @@
 import { ApiError } from '../src/providers/provider.js';
 import _ from 'lodash';
-import assert from 'node:assert';
+import assert from 'assert';
 import helper from './helper.js';
 import { AwsProvider } from '../src/providers/aws.js';
 import testing from '@taskcluster/lib-testing';
-import fs from 'node:fs';
-import path from 'node:path';
+import fs from 'fs';
+import path from 'path';
 import taskcluster from '@taskcluster/client';
 import { WorkerPool, Worker, WorkerPoolStats } from '../src/data.js';
 import { FakeEC2 } from './fakes/index.js';
 
 const __dirname = new URL('.', import.meta.url).pathname;
 
-helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
+helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
   helper.withDb(mock, skipping);
   helper.withPulse(mock, skipping);
   helper.withFakeQueue(mock, skipping);
@@ -63,7 +63,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
   const fake = new FakeEC2();
   fake.forSuite();
 
-  setup(async () => {
+  setup(async function() {
     provider = new AwsProvider({
       providerId,
       notify: await helper.load('notify'),
@@ -91,7 +91,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
   });
 
   const makeWorkerPool = async (overrides = {}) => {
-    const workerPool = WorkerPool.fromApi({
+    let workerPool = WorkerPool.fromApi({
       workerPoolId,
       providerId,
       description: 'none',
@@ -126,9 +126,9 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     assert.equal(tag.Value, Value);
   };
 
-  suite('AWS provider - provision', () => {
+  suite('AWS provider - provision', function() {
     const provisionTest = (name, { config, expectedWorkers }, check) => {
-      test(name, async () => {
+      test(name, async function() {
         const workerPool = await makeWorkerPool({ config });
         const workerPoolStats = new WorkerPoolStats('wpid');
         await provider.provision({ workerPool, workerPoolStats });
@@ -153,7 +153,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
         },
       },
       expectedWorkers: 0,
-    }, async (workers) => {
+    }, async function(workers) {
       assert.equal(workers.length, 0);
     });
 
@@ -168,7 +168,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
         },
       },
       expectedWorkers: 1,
-    }, async (workers) => {
+    }, async function(workers) {
       const now = Date.now();
       workers.forEach(w => {
         assert.strictEqual(w.workerPoolId, workerPoolId, 'Worker was created for a wrong worker pool');
@@ -213,13 +213,13 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       },
       // capacity 34 at 6 per instance should be 6 instances..
       expectedWorkers: 6,
-    }, async (workers) => {
+    }, async function(workers) {
       // spawn two each in three launchConfigs; spawning one each would only get us 5 instances since there
       // are only 5 launchConfigs
       assert.deepEqual(fake.rgn('us-west-2').runInstancesCalls.map(({ MinCount }) => MinCount), [2, 2, 2]);
     });
 
-    for (const ResourceType of ['instance', 'volume', 'launch-template']) {
+    for (let ResourceType of ['instance', 'volume', 'launch-template']) {
       provisionTest(`${ResourceType} tags in launch spec - should merge them`, {
         config: {
           launchConfigs: [
@@ -238,7 +238,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
           scalingRatio: 1,
         },
         expectedWorkers: 1,
-      }, async (workers) => {
+      }, async function(workers) {
         assert.equal(fake.rgn('us-west-2').runInstancesCalls.length, 1);
         assertHasTag(fake.rgn('us-west-2').runInstancesCalls[0], ResourceType, 'mytag', 'testy');
         assertHasTag(fake.rgn('us-west-2').runInstancesCalls[0], 'instance', 'CreatedBy', 'taskcluster-wm-aws');
@@ -270,7 +270,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
         scalingRatio: 1,
       },
       expectedWorkers: 1,
-    }, async (workers) => {
+    }, async function(workers) {
       const decoded = JSON.parse(Buffer.from(
         fake.rgn('us-west-2').runInstancesCalls[0].UserData,
         'base64',
@@ -288,9 +288,9 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     });
   });
 
-  suite('[UNIT] AWS provider - registerWorker', () => {
+  suite('[UNIT] AWS provider - registerWorker', function() {
 
-    test('registerWorker - verifyInstanceIdentityDocument - document is not string', async () => {
+    test('registerWorker - verifyInstanceIdentityDocument - document is not string', async function() {
       const workerPool = await makeWorkerPool();
       const workerIdentityProof = {
         "document": { 'instanceId': 'abc' },
@@ -304,7 +304,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       helper.assertNoPulseMessage('worker-running');
     });
 
-    test('registerWorker - verifyInstanceIdentityDocument - bad document', async () => {
+    test('registerWorker - verifyInstanceIdentityDocument - bad document', async function() {
       const workerPool = await makeWorkerPool();
       const workerIdentityProof = {
         "document": fs.readFileSync(path.resolve(__dirname, 'fixtures/aws_iid_DOCUMENT_bad')).toString(),
@@ -319,7 +319,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       helper.assertNoPulseMessage('worker-running');
     });
 
-    test('registerWorker - verifyInstanceIdentityDocument - signature was produced with a wrong key', async () => {
+    test('registerWorker - verifyInstanceIdentityDocument - signature was produced with a wrong key', async function() {
       const workerPool = await makeWorkerPool();
       const workerIdentityProof = {
         "document": fs.readFileSync(path.resolve(__dirname, 'fixtures/aws_iid_DOCUMENT')).toString(),
@@ -333,7 +333,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       helper.assertNoPulseMessage('worker-running');
     });
 
-    test('registerWorker - verifyInstanceIdentityDocument - signature is wrong', async () => {
+    test('registerWorker - verifyInstanceIdentityDocument - signature is wrong', async function() {
       const workerPool = await makeWorkerPool();
       const workerIdentityProof = {
         "document": fs.readFileSync(path.resolve(__dirname, 'fixtures/aws_iid_DOCUMENT')).toString(),
@@ -347,7 +347,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       helper.assertNoPulseMessage('worker-running');
     });
 
-    test('registerWorker - verifyWorkerInstance - document is legit but differs from what we know about the instance', async () => {
+    test('registerWorker - verifyWorkerInstance - document is legit but differs from what we know about the instance', async function() {
       const workerPool = await makeWorkerPool();
       const differentWorkerInDB = {
         ...defaultWorker,
@@ -376,7 +376,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       helper.assertNoPulseMessage('worker-running');
     });
 
-    test('registerWorker - no signature', async () => {
+    test('registerWorker - no signature', async function() {
       const workerPool = await makeWorkerPool();
       const workerIdentityProof = {
         "document": fs.readFileSync(path.resolve(__dirname, 'fixtures/aws_iid_DOCUMENT')).toString(),
@@ -389,7 +389,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       helper.assertNoPulseMessage('worker-running');
     });
 
-    test('registerWorker - worker is already running', async () => {
+    test('registerWorker - worker is already running', async function() {
       const workerPool = await makeWorkerPool();
       const runningWorker = {
         ...workerInDB,
@@ -409,7 +409,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       helper.assertNoPulseMessage('worker-running');
     });
 
-    test('registerWorker - success', async () => {
+    test('registerWorker - success', async function() {
       const workerPool = await makeWorkerPool();
       const runningWorker = await Worker.fromApi({
         workerId: 'i-02312cd4f06c990ca',
@@ -435,14 +435,14 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       };
 
       const resp = await provider.registerWorker({ worker: runningWorker, workerPool, workerIdentityProof });
-      assert(resp.expires - Date.now() + 10000 > 96 * 3600 * 1000);
-      assert(resp.expires - Date.now() - 10000 < 96 * 3600 * 1000);
+      assert(resp.expires - new Date() + 10000 > 96 * 3600 * 1000);
+      assert(resp.expires - new Date() - 10000 < 96 * 3600 * 1000);
       assert.equal(resp.workerConfig.someConfig, 'someConfigValue');
       helper.assertPulseMessage('worker-running', m => m.payload.workerId === runningWorker.workerId);
       helper.assertPulseMessage('worker-running', m => m.payload.launchConfigId === runningWorker.launchConfigId);
     });
 
-    test('registerWorker - success (different reregister)', async () => {
+    test('registerWorker - success (different reregister)', async function() {
       const workerPool = await makeWorkerPool();
       const runningWorker = await Worker.fromApi({
         workerId: 'i-02312cd4f06c990ca',
@@ -469,17 +469,17 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       };
 
       const resp = await provider.registerWorker({ worker: runningWorker, workerPool, workerIdentityProof });
-      assert(resp.expires - Date.now() + 10000 > 10 * 3600 * 1000);
-      assert(resp.expires - Date.now() - 10000 < 10 * 3600 * 1000);
+      assert(resp.expires - new Date() + 10000 > 10 * 3600 * 1000);
+      assert(resp.expires - new Date() - 10000 < 10 * 3600 * 1000);
       assert.equal(resp.workerConfig.someKey, 'someValue');
       helper.assertPulseMessage('worker-running', m => m.payload.workerId === runningWorker.workerId);
       helper.assertPulseMessage('worker-running', m => m.payload.launchConfigId === runningWorker.launchConfigId);
     });
   });
 
-  suite('AWS provider - checkWorker', () => {
+  suite('AWS provider - checkWorker', function() {
 
-    test('stopped instances - should be marked as STOPPED in DB, should not add to seen', async () => {
+    test('stopped instances - should be marked as STOPPED in DB, should not add to seen', async function() {
       fake.rgn('us-west-2').instanceStatuses['i-123'] = 'stopped';
       const worker = await Worker.fromApi({
         ...workerInDB,
@@ -492,14 +492,13 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
 
       const workers = await helper.getWorkers();
       assert.notStrictEqual(workers.length, 0);
-      workers.forEach(w => {
-        assert.strictEqual(w.state, Worker.states.STOPPED);
-      });
+      workers.forEach(w =>
+        assert.strictEqual(w.state, Worker.states.STOPPED));
       assert.strictEqual(provider.seen[worker.workerPoolId], 0);
       helper.assertPulseMessage('worker-stopped', m => m.payload.workerId === worker.workerId);
     });
 
-    test('pending/running,/shutting-down/stopping instances - should not reject', async () => {
+    test('pending/running,/shutting-down/stopping instances - should not reject', async function() {
       fake.rgn('us-west-2').instanceStatuses['i-123'] = 'running';
       const worker = await Worker.fromApi({
         ...workerInDB,
@@ -512,14 +511,13 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
 
       const workers = await helper.getWorkers();
       assert.notStrictEqual(workers.length, 0);
-      workers.forEach(w => {
-        assert.strictEqual(w.state, Worker.states.REQUESTED);
-      });
+      workers.forEach(w =>
+        assert.strictEqual(w.state, Worker.states.REQUESTED));
       assert.strictEqual(provider.seen[worker.workerPoolId], 1);
       helper.assertNoPulseMessage('worker-stopped');
     });
 
-    test('some strange status - should reject', async () => {
+    test('some strange status - should reject', async function() {
       fake.rgn('us-west-2').instanceStatuses['i-123'] = 'banana';
       const worker = Worker.fromApi({
         ...workerInDB,
@@ -532,7 +530,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       assert.strictEqual(provider.seen[worker.workerPoolId], 0);
     });
 
-    test('no such instance error should be handled', async () => {
+    test('no such instance error should be handled', async function() {
       fake.rgn('us-west-2').instanceStatuses['i-amgone'] = 'srsly';
       const worker = Worker.fromApi({
         ...workerInDB,
@@ -546,14 +544,13 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       // should be marked as stopped because it was missing
       const workers = await helper.getWorkers();
       assert.notStrictEqual(workers.length, 0);
-      workers.forEach(w => {
-        assert.strictEqual(w.state, Worker.states.STOPPED);
-      });
+      workers.forEach(w =>
+        assert.strictEqual(w.state, Worker.states.STOPPED));
       helper.assertPulseMessage('worker-stopped', m => m.payload.workerId === worker.workerId);
       helper.assertPulseMessage('worker-stopped', m => m.payload.launchConfigId === worker.launchConfigId);
     });
 
-    test('instance terminated by hand - should be marked as STOPPED in DB; should not reject', async () => {
+    test('instance terminated by hand - should be marked as STOPPED in DB; should not reject', async function() {
       fake.rgn('us-west-2').instanceStatuses['i-123'] = 'terminated';
       const worker = Worker.fromApi({
         ...workerInDB,
@@ -566,14 +563,13 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
 
       const workers = await helper.getWorkers();
       assert.notStrictEqual(workers.length, 0);
-      workers.forEach(w => {
-        assert.strictEqual(w.state, Worker.states.STOPPED);
-      });
+      workers.forEach(w =>
+        assert.strictEqual(w.state, Worker.states.STOPPED));
       assert.strictEqual(provider.seen[worker.workerPoolId], 0);
       helper.assertPulseMessage('worker-stopped', m => m.payload.workerId === worker.workerId);
     });
 
-    test('remove unregistered workers', async () => {
+    test('remove unregistered workers', async function() {
       fake.rgn('us-west-2').instanceStatuses['i-123'] = 'running';
       const worker = Worker.fromApi({
         ...workerInDB,
@@ -591,7 +587,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       helper.assertPulseMessage('worker-removed', m => m.payload.workerId === worker.workerId);
     });
 
-    test('don\'t remove unregistered workers that are new', async () => {
+    test('don\'t remove unregistered workers that are new', async function() {
       fake.rgn('us-west-2').instanceStatuses['i-123'] = 'running';
       const worker = Worker.fromApi({
         ...workerInDB,
@@ -609,7 +605,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       helper.assertNoPulseMessage('worker-removed');
     });
 
-    test('do not remove registered workers with stale terminateAfter', async () => {
+    test('do not remove registered workers with stale terminateAfter', async function () {
       fake.rgn('us-west-2').instanceStatuses['i-123'] = 'running';
       const worker = Worker.fromApi({
         ...workerInDB,
@@ -631,7 +627,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       helper.assertNoPulseMessage('worker-removed');
     });
 
-    test('remove very old workers', async () => {
+    test('remove very old workers', async function() {
       fake.rgn('us-west-2').instanceStatuses['i-123'] = 'running';
       const worker = Worker.fromApi({
         ...workerInDB,
@@ -649,7 +645,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
         m.payload.reason === 'terminateAfter time exceeded');
     });
 
-    test('don\'t remove current workers', async () => {
+    test('don\'t remove current workers', async function() {
       fake.rgn('us-west-2').instanceStatuses['i-123'] = 'running';
       const worker = Worker.fromApi({
         ...workerInDB,
@@ -666,7 +662,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       helper.assertNoPulseMessage('worker-removed');
     });
 
-    test('remove zombie workers with no queue activity', async () => {
+    test('remove zombie workers with no queue activity', async function () {
       fake.rgn('us-west-2').instanceStatuses['i-123'] = 'running';
       const worker = Worker.fromApi({
         ...workerInDB,
@@ -687,7 +683,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       assert.deepEqual(fake.rgn('us-west-2').terminatedInstances, ['i-123']);
       helper.assertPulseMessage('worker-removed', m => m.payload.workerId === worker.workerId);
     });
-    test('remove zombie workers that were not active recently', async () => {
+    test('remove zombie workers that were not active recently', async function () {
       fake.rgn('us-west-2').instanceStatuses['i-123'] = 'running';
       const worker = Worker.fromApi({
         ...workerInDB,
@@ -709,7 +705,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       helper.assertPulseMessage('worker-removed', m => m.payload.workerId === worker.workerId);
       helper.assertPulseMessage('worker-removed', m => m.payload.launchConfigId === worker.launchConfigId);
     });
-    test('don\'t remove zombie workers that were active recently', async () => {
+    test('don\'t remove zombie workers that were active recently', async function () {
       fake.rgn('us-west-2').instanceStatuses['i-123'] = 'running';
       const worker = Worker.fromApi({
         ...workerInDB,
@@ -732,9 +728,9 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     });
   });
 
-  suite('AWS provider - removeWorker', () => {
+  suite('AWS provider - removeWorker', function() {
 
-    test('successfully terminated instance', async () => {
+    test('successfully terminated instance', async function() {
       const worker = Worker.fromApi({
         ...workerInDB,
         workerId: 'i-123',

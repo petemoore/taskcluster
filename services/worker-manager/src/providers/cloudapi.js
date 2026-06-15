@@ -84,7 +84,7 @@ export class CloudAPI {
     try {
       return await queue.add(func, { priority: tries });
     } catch (err) {
-      const { backoff, level, reason } = this.errorHandler({ err, tries });
+      let { backoff, level, reason } = this.errorHandler({ err, tries });
       success = false;
       statusCode = err.statusCode || err.code || 500;
 
