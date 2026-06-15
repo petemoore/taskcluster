@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import debugFactory from 'debug';
 const debug = debugFactory('test:completed');
-import assert from 'node:assert';
+import assert from 'assert';
 import slugid from 'slugid';
 import taskcluster from '@taskcluster/client';
 import assume from 'assume';
@@ -9,7 +9,7 @@ import helper from './helper.js';
 import testing from '@taskcluster/lib-testing';
 import { LEVELS } from '@taskcluster/lib-monitor';
 
-helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
+helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) {
   helper.withDb(mock, skipping);
   helper.withAmazonIPRanges(mock, skipping);
   helper.withPulse(mock, skipping);
@@ -40,7 +40,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
   };
 
   let monitor;
-  suiteSetup(async () => {
+  suiteSetup(async function() {
     monitor = await helper.load('monitor');
   });
 
@@ -61,7 +61,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
 
     debug('### Claiming task');
     // First runId is always 0, so we should be able to claim it here
-    const r1 = await helper.queue.claimTask(taskId, 0, {
+    let r1 = await helper.queue.claimTask(taskId, 0, {
       workerGroup: 'my-worker-group-extended-extended',
       workerId: 'my-worker-extended-extended',
     });
@@ -91,7 +91,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     helper.clearPulseMessages();
 
     debug('### Reporting task completed (using temp creds)');
-    const queue = new helper.Queue({ rootUrl: helper.rootUrl, credentials: r1.credentials });
+    let queue = new helper.Queue({ rootUrl: helper.rootUrl, credentials: r1.credentials });
     await queue.reportCompleted(taskId, 0);
     helper.assertPulseMessage('task-completed', m => m.payload.status.runs[0].state === 'completed');
     helper.clearPulseMessages();
@@ -105,7 +105,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
 
     debug('### Claiming task');
     // First runId is always 0, so we should be able to claim it here
-    const r1 = await helper.queue.claimTask(taskId, 0, {
+    let r1 = await helper.queue.claimTask(taskId, 0, {
       workerGroup: 'my-worker-group-extended-extended',
       workerId: 'my-worker-extended-extended',
     });
@@ -136,7 +136,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     helper.clearPulseMessages();
 
     debug('### Reporting task failed (using temp creds)');
-    const queue = new helper.Queue({ rootUrl: helper.rootUrl, credentials: r1.credentials });
+    let queue = new helper.Queue({ rootUrl: helper.rootUrl, credentials: r1.credentials });
     await queue.reportFailed(taskId, 0);
     helper.assertPulseMessage('task-failed', m => m.payload.status.runs[0].state === 'failed');
     helper.clearPulseMessages();
@@ -150,7 +150,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
 
     debug('### Claiming task');
     // First runId is always 0, so we should be able to claim it here
-    const r1 = await helper.queue.claimTask(taskId, 0, {
+    let r1 = await helper.queue.claimTask(taskId, 0, {
       workerGroup: 'my-worker-group-extended-extended',
       workerId: 'my-worker-extended-extended',
     });
@@ -158,7 +158,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     debug('### Reporting task exception');
     helper.scopes(
       `queue:resolve-task:${taskId}/0`,
-      `queue:status:${taskId}`,
+      'queue:status:' + taskId,
     );
     await helper.queue.reportException(taskId, 0, {
       reason: 'malformed-payload',
@@ -194,7 +194,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     assume(s2.runs[0].reasonResolved).equals('malformed-payload');
 
     debug('### Reporting task exception (using temp creds)');
-    const queue = new helper.Queue({ rootUrl: helper.rootUrl, credentials: r1.credentials });
+    let queue = new helper.Queue({ rootUrl: helper.rootUrl, credentials: r1.credentials });
     await queue.reportException(taskId, 0, {
       reason: 'malformed-payload',
     });
@@ -211,7 +211,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
 
     debug('### Claiming task');
     // First runId is always 0, so we should be able to claim it here
-    const r1 = await helper.queue.claimTask(taskId, 0, {
+    let r1 = await helper.queue.claimTask(taskId, 0, {
       workerGroup: 'my-worker-group-extended-extended',
       workerId: 'my-worker-extended-extended',
     });
@@ -219,7 +219,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     debug('### Reporting task exception');
     helper.scopes(
       `queue:resolve-task:${taskId}/0`,
-      `queue:status:${taskId}`,
+      'queue:status:' + taskId,
     );
     await helper.queue.reportException(taskId, 0, {
       reason: 'resource-unavailable',
@@ -246,7 +246,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     assume(s2.runs[0].reasonResolved).equals('resource-unavailable');
 
     debug('### Reporting task exception (using temp creds)');
-    const queue = new helper.Queue({ rootUrl: helper.rootUrl, credentials: r1.credentials });
+    let queue = new helper.Queue({ rootUrl: helper.rootUrl, credentials: r1.credentials });
     await queue.reportException(taskId, 0, {
       reason: 'resource-unavailable',
     });
@@ -264,7 +264,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
 
     debug('### Claiming task');
     // First runId is always 0, so we should be able to claim it here
-    const r1 = await helper.queue.claimTask(taskId, 0, {
+    let r1 = await helper.queue.claimTask(taskId, 0, {
       workerGroup: 'my-worker-group-extended-extended',
       workerId: 'my-worker-extended-extended',
     });
@@ -272,7 +272,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     debug('### Reporting task exception');
     helper.scopes(
       `queue:resolve-task:${taskId}/0`,
-      `queue:status:${taskId}`,
+      'queue:status:' + taskId,
     );
     await helper.queue.reportException(taskId, 0, {
       reason: 'internal-error',
@@ -299,7 +299,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     assume(s2.runs[0].reasonResolved).equals('internal-error');
 
     debug('### Reporting task exception (using temp creds)');
-    const queue = new helper.Queue({ rootUrl: helper.rootUrl, credentials: r1.credentials });
+    let queue = new helper.Queue({ rootUrl: helper.rootUrl, credentials: r1.credentials });
     await queue.reportException(taskId, 0, {
       reason: 'internal-error',
     });
@@ -425,9 +425,9 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     helper.scopes(
       'assume:worker-id:my-worker-group-extended-extended/my-worker-extended-extended',
     );
-    await helper.queue.reportCompleted(taskId, 0).then(() => {
+    await helper.queue.reportCompleted(taskId, 0).then(function() {
       throw new Error('Expected authentication error');
-    }, (err) => {
+    }, function(err) {
       if (err.code !== 'InsufficientScopes') {
         throw err;
       }
@@ -498,7 +498,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
       m.payload.status.runs.length === 2));
   });
 
-  test('regression: pulse taskPending failure during reportException retry does not orphan the retry run', async () => {
+  test('regression: pulse taskPending failure during reportException retry does not orphan the retry run', async function() {
     const taskId = slugid.v4();
 
     debug('### Creating task');

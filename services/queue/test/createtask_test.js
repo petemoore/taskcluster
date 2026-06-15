@@ -1,6 +1,6 @@
 import debugFactory from 'debug';
 const debug = debugFactory('test:create');
-import assert from 'node:assert';
+import assert from 'assert';
 import slugid from 'slugid';
 import _ from 'lodash';
 import taskcluster from '@taskcluster/client';
@@ -10,7 +10,7 @@ import testing from '@taskcluster/lib-testing';
 import { LEVELS } from '@taskcluster/lib-monitor';
 import { splitTaskQueueId } from '../src/utils.js';
 
-helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
+helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) {
   helper.withDb(mock, skipping);
   helper.withAmazonIPRanges(mock, skipping);
   helper.withS3(mock, skipping);
@@ -53,7 +53,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
   };
 
   let monitor;
-  suiteSetup(async () => {
+  suiteSetup(async function() {
     monitor = await helper.load('monitor');
   });
 
@@ -65,7 +65,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
       'queue:scheduler-id:my-scheduler-extended-extended',
       'queue:create-task:project:my/project/id',
       'queue:route:*',
-      `queue:status:${taskId}`,
+      'queue:status:' + taskId,
     );
 
     debug('### Create task');
@@ -111,7 +111,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
       'queue:scheduler-id:my-scheduler-extended-extended',
       'queue:create-task:project:none',
       'queue:route:*',
-      `queue:status:${taskId}`,
+      'queue:status:' + taskId,
     );
 
     debug('### Create task');
@@ -318,7 +318,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
       'queue:create-task:lowest:no-provisioner-extended-extended/test-worker-extended-extended',
       'queue:create-task:project:none',
       'queue:scheduler-id:-',
-      `queue:status:${taskId}`,
+      'queue:status:' + taskId,
     );
 
     debug('### Creating task');
@@ -342,7 +342,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
         'queue:create-task:lowest:no-provisioner-extended-extended/test-worker-extended-extended',
         'queue:create-task:project:none',
         'queue:scheduler-id:-',
-        `queue:status:${taskId}`,
+        'queue:status:' + taskId,
       );
 
       debug('### Creating task');

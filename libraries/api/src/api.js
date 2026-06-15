@@ -1,6 +1,5 @@
-import compression from 'compression';
 import express from 'express';
-import assert from 'node:assert';
+import assert from 'assert';
 import libUrls from 'taskcluster-lib-urls';
 import taskcluster from '@taskcluster/client';
 import { buildReportErrorMethod } from './middleware/errors.js';
@@ -49,7 +48,7 @@ export default class API {
     // validate context
     this.builder.context?.forEach((property) => {
       assert(resolvedOptions.context[property] !== undefined,
-        `Context must have declared property: '${property}'`);
+        'Context must have declared property: \'' + property + '\'');
     });
 
     Object.keys(resolvedOptions.context).forEach(property => {
@@ -84,8 +83,6 @@ export default class API {
 
     // Create router
     const router = express.Router({ caseSensitive: true });
-
-    router.use(compression());
 
     // Allow CORS requests to the API
     if (allowedCORSOrigin) {

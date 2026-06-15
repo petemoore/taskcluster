@@ -1,13 +1,13 @@
 import debugFactory from 'debug';
 const debug = debugFactory('test:claim-work');
-import assert from 'node:assert';
+import assert from 'assert';
 import slugid from 'slugid';
 import taskcluster from '@taskcluster/client';
 import helper from './helper.js';
 import testing from '@taskcluster/lib-testing';
 import { LEVELS } from '@taskcluster/lib-monitor';
 
-helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
+helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) {
   helper.withDb(mock, skipping);
   helper.withAmazonIPRanges(mock, skipping);
   helper.withPollingServices(mock, skipping);
@@ -37,7 +37,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
   };
 
   let monitor;
-  suiteSetup(async () => {
+  suiteSetup(async function() {
     monitor = await helper.load('monitor');
   });
 
@@ -51,8 +51,8 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
   };
 
   test('createTask , claimWork, claim expires, retried', async () => {
-    const taskId = slugid.v4();
-    const task = makeTask(1);
+    let taskId = slugid.v4();
+    let task = makeTask(1);
 
     await helper.startPollingService('claim-resolver');
 
@@ -64,7 +64,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     monitor.manager.reset(); // clear the first task-pending message
 
     debug('### Claim task');
-    const r1 = await helper.queue.claimWork(taskQueueId, {
+    let r1 = await helper.queue.claimWork(taskQueueId, {
       workerGroup: 'my-worker-group-extended-extended',
       workerId: 'my-worker-extended-extended',
       tasks: 2,
@@ -88,8 +88,8 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
   });
 
   test('createTask , claimWork, claim expires, resolve exception', async () => {
-    const taskId = slugid.v4();
-    const task = makeTask(0);
+    let taskId = slugid.v4();
+    let task = makeTask(0);
 
     await helper.startPollingService('claim-resolver');
 
@@ -101,7 +101,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     monitor.manager.reset(); // clear the first task-pending message
 
     debug('### Claim task');
-    const r1 = await helper.queue.claimWork(taskQueueId, {
+    let r1 = await helper.queue.claimWork(taskQueueId, {
       workerGroup: 'my-worker-group-extended-extended',
       workerId: 'my-worker-extended-extended',
       tasks: 2,
