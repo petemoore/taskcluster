@@ -10,7 +10,7 @@ import (
 	"unicode/utf16"
 	"unsafe"
 
-	"github.com/taskcluster/taskcluster/v100/workers/generic-worker/win32"
+	"github.com/taskcluster/taskcluster/v99/workers/generic-worker/win32"
 	"golang.org/x/sys/windows"
 )
 
@@ -30,6 +30,10 @@ func CanUseConPty() bool {
 		procInitializeProcThreadAttributeList.Find() == nil &&
 		procUpdateProcThreadAttribute.Find() == nil
 }
+
+const (
+	PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE uintptr = 0x20016
+)
 
 type COORD struct {
 	width, height int16
@@ -118,7 +122,7 @@ func getStartupInfoExForConPty(hpc HPCON) (*_StartupInfoEx, error) {
 	ret, _, err = procUpdateProcThreadAttribute.Call(
 		uintptr(unsafe.Pointer(&siEx.attributeList[0])),
 		0,
-		windows.PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE,
+		PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE,
 		uintptr(hpc),
 		unsafe.Sizeof(hpc),
 		0,

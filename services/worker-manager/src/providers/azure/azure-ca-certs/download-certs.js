@@ -1,5 +1,5 @@
-import { execSync } from 'node:child_process';
-import fs from 'node:fs';
+import { execSync } from 'child_process';
+import fs from 'fs';
 
 const readmePath = './README.md';
 const certsPath = './certificates.json';
@@ -69,7 +69,7 @@ output.forEach(cert => {
 if (readmeContent.includes('<!-- CERTIFICATES -->')) {
   readmeContent = readmeContent.replace(/<!-- CERTIFICATES -->[\s\S]*$/, certificatesTable);
 } else {
-  readmeContent += `\n\n## List of downloaded certificates\n\n${certificatesTable}`;
+  readmeContent += '\n\n## List of downloaded certificates\n\n' + certificatesTable;
 }
 
 fs.writeFileSync(readmePath, readmeContent);

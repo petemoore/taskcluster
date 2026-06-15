@@ -8,7 +8,7 @@ export const load = testing.stickyLoader(loadMain);
 const helper = { load };
 export default helper;
 
-suiteSetup(async () => {
+suiteSetup(async function() {
   load.inject('profile', 'test');
   load.inject('process', 'test');
 });
@@ -29,7 +29,7 @@ helper.withDb = (mock, skipping) => {
 // Some clients for the tests, with differents scopes.  These are turned
 // into temporary credentials based on the main test credentials, so
 // the clientIds listed here are purely internal to the tests.
-const testClients = {
+let testClients = {
   'captain-write': ['secrets:set:captain:*'],
   'captain-read': ['secrets:get:captain:*'],
   'captain-read-write': ['secrets:set:captain:*', 'secrets:get:captain:*', 'secrets:list-secrets'],
@@ -47,7 +47,7 @@ const testClients = {
 helper.withServer = (mock, skipping) => {
   let webServer;
 
-  suiteSetup(async () => {
+  suiteSetup(async function() {
     if (skipping()) {
       return;
     }
@@ -73,7 +73,7 @@ helper.withServer = (mock, skipping) => {
     webServer = await load('server');
   });
 
-  suiteTeardown(async () => {
+  suiteTeardown(async function() {
     if (skipping()) {
       return;
     }

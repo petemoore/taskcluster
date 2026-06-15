@@ -1,5 +1,6 @@
-import fs from 'node:fs';
+import fs from 'fs';
 import glob from 'glob';
+import _ from 'lodash';
 import { REPO_ROOT } from '../../utils/index.js';
 
 export const tasks = [{
@@ -18,9 +19,9 @@ export const tasks = [{
       'dependencies',
       'files',
     ];
-    for (const filename of packageJsons) {
+    for (let filename of packageJsons) {
       const pj = JSON.parse(fs.readFileSync(filename));
-      for (const prop of forbidden) {
+      for (let prop of forbidden) {
         if (pj[prop]) {
           throw new Error(`${filename} contains forbidden property ${prop}`);
         }

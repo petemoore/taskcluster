@@ -1,5 +1,5 @@
 import helper from '../helper/index.js';
-import assert from 'node:assert';
+import assert from 'assert';
 import {
   DeleteObjectsCommand,
   GetObjectCommand,
@@ -12,12 +12,12 @@ import {
 import testing from '@taskcluster/lib-testing';
 import taskcluster from '@taskcluster/client';
 import { AwsBackend, getBucketRegion } from '../../src/backends/aws.js';
-import { promisify } from 'node:util';
-import zlib from 'node:zlib';
+import { promisify } from 'util';
+import zlib from 'zlib';
 
 const gzip = promisify(zlib.gzip);
 
-helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
+helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) {
   if (mock) {
     // tests for this backend require real AWS access, and aren't even defined
     // for the mock case
@@ -30,9 +30,9 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
   let secret, s3;
 
   // unique object name prefix for this test run
-  const prefix = `${taskcluster.slugid()}/`;
+  const prefix = taskcluster.slugid() + '/';
 
-  suiteSetup(async () => {
+  suiteSetup(async function() {
     await helper.load('cfg');
 
     secret = helper.secrets.get('aws');
@@ -53,7 +53,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     s3 = new S3Client(options);
   });
 
-  setup(async () => {
+  setup(async function() {
     // set up a backend with a public bucket, and separately with a private
     // bucket; these are in fact the same bucket, and we'll just check that the
     // URLs have a signature for the non-public version.  S3 verifies
@@ -161,8 +161,8 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     }
   };
 
-  suite('setup', () => {
-    test('invalid tags are rejected', async () => {
+  suite('setup', function() {
+    test('invalid tags are rejected', async function() {
       const backend = new AwsBackend({
         backendId: 'broken',
         db: helper.db,
@@ -187,7 +187,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     mock, skipping, prefix,
     backendId: 'awsPublic',
     makeObject,
-  }, async () => {
+  }, async function() {
     teardown(cleanup);
   });
 
@@ -201,7 +201,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
       assert(!url.match(/X-Amz-Credential=/), `got ${url}`);
       assert(!url.match(/X-Amz-Signature=/), `got ${url}`);
     },
-  }, async () => {
+  }, async function() {
     teardown(cleanup);
   });
 
@@ -217,7 +217,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
       assert(url.match(/X-Amz-Credential=/), `got ${url}`);
       assert(url.match(/X-Amz-Signature=/), `got ${url}`);
     },
-  }, async () => {
+  }, async function() {
     teardown(cleanup);
   });
 
@@ -230,7 +230,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
       assert(url.match(/X-Amz-Credential=/), `got ${url}`);
       assert(url.match(/X-Amz-Signature=/), `got ${url}`);
     },
-  }, async () => {
+  }, async function() {
     teardown(cleanup);
   });
 
@@ -238,7 +238,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     mock, skipping, prefix,
     backendId: 'awsPrivate',
     getObjectContent,
-  }, async () => {
+  }, async function() {
     teardown(cleanup);
   });
 
@@ -246,14 +246,14 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
     mock, skipping, prefix,
     backendId: 'awsPrivate',
     getObjectContent,
-  }, async () => {
+  }, async function() {
     teardown(cleanup);
   });
 
-  suite('expireObject', () => {
+  suite('expireObject', function() {
     teardown(cleanup);
 
-    test('expires an object', async () => {
+    test('expires an object', async function() {
       const name = 'some/object';
       const object = await makeObject({ name, data: Buffer.from('abc') });
 
@@ -270,7 +270,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], (mock, skipping) => {
       err => err.Code === 'NoSuchKey');
     });
 
-    test('succeeds for an object that no longer exists', async () => {
+    test('succeeds for an object that no longer exists', async function() {
       const name = 'some/object';
       const uploadId = taskcluster.slugid();
       await helper.db.fns.create_object_for_upload(

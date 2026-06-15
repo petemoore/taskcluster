@@ -1,11 +1,11 @@
 import taskcluster from '@taskcluster/client';
-import assert from 'node:assert';
+import assert from 'assert';
 import helper from './helper.js';
 import { StaticProvider } from '../src/providers/static.js';
 import testing from '@taskcluster/lib-testing';
 import { WorkerPool, Worker } from '../src/data.js';
 
-helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
+helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
   helper.withDb(mock, skipping);
   helper.withPulse(mock, skipping);
   helper.withFakeQueue(mock, skipping);
@@ -14,8 +14,8 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
 
   let provider;
   let workerPool;
-  const providerId = 'stat';
-  const workerPoolId = 'foo/bar';
+  let providerId = 'stat';
+  let workerPoolId = 'foo/bar';
   const workerGroup = providerId;
   const workerId = 'abc123';
   const defaultWorker = {
@@ -50,7 +50,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     emailOnError: false,
   };
 
-  setup(async () => {
+  setup(async function() {
     provider = new StaticProvider({
       providerId,
       db: helper.db,
@@ -72,7 +72,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     await provider.setup();
   });
 
-  test('updateWorker updates expires, capacity, secret', async () => {
+  test('updateWorker updates expires, capacity, secret', async function() {
     let worker = Worker.fromApi(defaultWorker);
     await worker.create(helper.db);
 
@@ -96,7 +96,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     ]);
   });
 
-  test('removeWorker marks the worker as stopped', async () => {
+  test('removeWorker marks the worker as stopped', async function() {
     const worker = Worker.fromApi(defaultWorker);
     await worker.create(helper.db);
 
@@ -108,7 +108,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     ]);
   });
 
-  suite('registerWorker', () => {
+  suite('registerWorker', function() {
     // create a test worker pool directly in the DB
     const createWorker = overrides => {
       const worker = Worker.fromApi(
@@ -116,7 +116,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       return worker.create(helper.db);
     };
 
-    test('no token', async () => {
+    test('no token', async function() {
       const worker = await createWorker({ state: 'running' });
       const workerIdentityProof = {};
       await assert.rejects(() =>
@@ -124,7 +124,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       /missing staticSecret/);
     });
 
-    test('not running', async () => {
+    test('not running', async function() {
       const worker = await createWorker({ state: 'stopped' });
       const workerIdentityProof = { staticSecret: 'good' };
       await assert.rejects(() =>
@@ -132,7 +132,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       /worker is not running/);
     });
 
-    test('invalid token', async () => {
+    test('invalid token', async function() {
       const worker = await createWorker({ state: 'running' });
       const workerIdentityProof = { staticSecret: 'invalid' };
       await assert.rejects(() =>
@@ -140,7 +140,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       /bad staticSecret/);
     });
 
-    test('successful registration', async () => {
+    test('successful registration', async function() {
       const pool = WorkerPool.fromApi({
         ...defaultWorkerPool,
         workerPoolId: 'pool/config',

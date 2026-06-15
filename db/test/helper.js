@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import Debug from 'debug';
 import pg from 'pg';
 const { Pool } = pg;
@@ -31,13 +31,13 @@ export default helper;
  * should implement a `setup` method that sets state for all relevant tables
  * before each test case.
  */
-helper.withDbForVersion = () => {
+helper.withDbForVersion = function() {
   let pool;
   let dbs = {};
 
   const showProgress = Debug('showProgress');
 
-  suiteSetup('setup database', async () => {
+  suiteSetup('setup database', async function() {
     pool = new Pool({ connectionString: dbUrl });
 
     helper.withDbClient = async (cb) => {
@@ -125,12 +125,12 @@ helper.withDbForVersion = () => {
     await resetDb({ testDbUrl: dbUrl });
   });
 
-  suiteTeardown('teardown database', async () => {
+  suiteTeardown('teardown database', async function() {
     if (pool) {
       await pool.end();
     }
     pool = null;
-    for (const db of Object.values(dbs)) {
+    for (let db of Object.values(dbs)) {
       await db.close();
     }
     dbs = {};
@@ -149,9 +149,9 @@ helper.withDbForVersion = () => {
  * should implement a `setup` method that sets state for all relevant tables
  * before each test case.
  */
-helper.withDbForProcs = ({ serviceName }) => {
+helper.withDbForProcs = function({ serviceName }) {
   let db;
-  suiteSetup('setup database', async () => {
+  suiteSetup('setup database', async function() {
     db = await tcdb.setup({
       writeDbUrl: dbUrl,
       readDbUrl: dbUrl,
@@ -179,7 +179,7 @@ helper.withDbForProcs = ({ serviceName }) => {
     });
   });
 
-  suiteTeardown('teardown database', async () => {
+  suiteTeardown('teardown database', async function() {
     if (db) {
       await db.close();
     }
@@ -192,7 +192,9 @@ helper.withDbForProcs = ({ serviceName }) => {
    * test function both with a real and fake db.  This is used for testing functions.
    */
   helper.dbTest = (description, testFn) => {
-    test(description, async () => testFn(db));
+    test(description, async function() {
+      return testFn(db);
+    });
   };
 };
 
@@ -381,8 +383,8 @@ helper.dbVersionTest = ({
     }
   };
 
-  suite(`dbVersionTest for v${version}`, () => {
-    setup(async () => {
+  suite(`dbVersionTest for v${version}`, function() {
+    setup(async function() {
       sawMigrationBatches = false;
       sawDowngradeBatches = false;
       await resetDb({ testDbUrl: dbUrl });
@@ -390,11 +392,11 @@ helper.dbVersionTest = ({
       await helper.withDbClient(createData);
     });
 
-    teardown(async () => {
+    teardown(async function() {
       runOnlineBatches.resetHooks();
     });
 
-    test('successful upgrade, downgrade process', async () => {
+    test('successful upgrade, downgrade process', async function() {
       await helper.withDbClient(async client => {
         await startCheck(client);
         await withCheckpoints('up', {
@@ -420,7 +422,7 @@ helper.dbVersionTest = ({
       return;
     }
 
-    test('upgrade fails mid-online, restarted, downgrade fails mid-online, restarted', async () => {
+    test('upgrade fails mid-online, restarted, downgrade fails mid-online, restarted', async function() {
       await helper.withDbClient(async client => {
         await startCheck(client);
         await withCheckpoints('up', {
@@ -447,7 +449,7 @@ helper.dbVersionTest = ({
       });
     });
 
-    test('restart upgrades and downgrades repeatedly', async () => {
+    test('restart upgrades and downgrades repeatedly', async function() {
       await helper.withDbClient(async client => {
         await startCheck(client);
         await withCheckpoints('up', {
@@ -473,7 +475,7 @@ helper.dbVersionTest = ({
       });
     });
 
-    test('upgrade fails mid-online, downgrade', async () => {
+    test('upgrade fails mid-online, downgrade', async function() {
       await helper.withDbClient(async client => {
         await withCheckpoints('up', {
           midOnline: async () => { throw abort; },

@@ -11,6 +11,5 @@ node_modules
 .netlify/
 src/static/env.js
 coverage
-smoke-screenshots/
-playwright-report/
-test-results/
+test/e2e/cypress/screenshots/
+test/e2e/cypress/videos/
