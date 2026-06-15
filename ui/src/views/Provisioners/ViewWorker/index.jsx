@@ -56,9 +56,10 @@ export default class ViewWorker extends Component {
       terminateDialogTitle: '',
       terminateDialogBody: '',
       terminateDialogConfirmText: '',
-      quarantineUntilInput: props.worker?.quarantineUntil
-        ? parseISO(props.worker.quarantineUntil)
-        : addYears(new Date(), 1000),
+      quarantineUntilInput:
+        props.worker && props.worker.quarantineUntil
+          ? parseISO(props.worker.quarantineUntil)
+          : addYears(new Date(), 1000),
       quarantineInfo: '',
     };
   }
@@ -96,8 +97,12 @@ export default class ViewWorker extends Component {
   };
 
   handleQuarantineDialogSubmit = async () => {
-    const { provisionerId, workerType, workerGroup, workerId } =
-      this.props.match.params;
+    const {
+      provisionerId,
+      workerType,
+      workerGroup,
+      workerId,
+    } = this.props.match.params;
 
     this.setState({ actionLoading: true, dialogError: null });
 
@@ -339,10 +344,12 @@ export default class ViewWorker extends Component {
               title="Quarantine?"
               body={
                 <Fragment>
-                  Quarantining a worker allows the machine to remain alive but
-                  not accept jobs. Note that a quarantine can be lifted by
-                  setting &quot;Quarantine Until&quot; to the present time or
-                  somewhere in the past.
+                  <Fragment>
+                    Quarantining a worker allows the machine to remain alive but
+                    not accept jobs. Note that a quarantine can be lifted by
+                    setting &quot;Quarantine Until&quot; to the present time or
+                    somewhere in the past.
+                  </Fragment>
                   <br />
                   <br />
                   <TextField
@@ -435,10 +442,12 @@ export default class ViewWorker extends Component {
 
     return (
       <Dashboard title="Worker">
-        {loading && <Spinner loading />}
-        <ErrorPanel fixed error={graphqlError} />
-        {worker && this.renderQueueWorker()}
-        {!worker && WorkerManagerWorker && this.renderWorkerManagerWorker()}
+        <Fragment>
+          {loading && <Spinner loading />}
+          <ErrorPanel fixed error={graphqlError} />
+          {worker && this.renderQueueWorker()}
+          {!worker && WorkerManagerWorker && this.renderWorkerManagerWorker()}
+        </Fragment>
       </Dashboard>
     );
   }

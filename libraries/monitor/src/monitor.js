@@ -1,8 +1,8 @@
 import _ from 'lodash';
-import assert from 'node:assert';
+import assert from 'assert';
 import { Logger } from './logger.js';
 import TimeKeeper from './timekeeper.js';
-import { hrtime } from 'node:process';
+import { hrtime } from 'process';
 
 /**
 * @typedef {object} MonitorOptions
@@ -50,7 +50,7 @@ class Monitor {
     this._log = new Logger({
       name: ['taskcluster', this.manager.serviceName, ...this.name].join('.'),
       service: this.manager.serviceName,
-      level: this.manager.levels[name.join('.')] || this.manager.levels.root,
+      level: this.manager.levels[name.join('.')] || this.manager.levels['root'],
       destination: this.manager.destination,
       metadata,
       taskclusterVersion: this.manager.taskclusterVersion,
@@ -294,7 +294,7 @@ class Monitor {
    *
    */
   reportError(err, level = 'err', extra = {}) {
-    if (!(Object.hasOwn(err, 'stack') || Object.hasOwn(err, 'message'))) {
+    if (!(Object.prototype.hasOwnProperty.call(err, 'stack') || Object.prototype.hasOwnProperty.call(err, 'message'))) {
       err = new Error(err);
     }
     if (typeof level !== 'string') {
@@ -318,7 +318,7 @@ class Monitor {
     }
 
     if (this.manager._reporter) {
-      extra.reportId = this.manager._reporter.report(err, level, extra);
+      extra['reportId'] = this.manager._reporter.report(err, level, extra);
     }
     this.log.errorReport({ ...serialized, ...extra }, { level });
   }
@@ -354,11 +354,9 @@ class Monitor {
         assert(level !== 'any' || overrides.level !== undefined, 'Must provide `overrides.level` if registered level is `any`.');
         const providedFields = Object.keys(fields);
         assert(!providedFields.includes('v'), '"v" is a reserved field for logging messages.');
-        requiredFields.forEach(f => {
-          assert(providedFields.includes(f), `Log message "${name}" must include field "${f}".`);
-        });
+        requiredFields.forEach(f => assert(providedFields.includes(f), `Log message "${name}" must include field "${f}".`));
       }
-      const lv = level === 'any' ? overrides.level : level;
+      let lv = level === 'any' ? overrides.level : level;
       this._log[lv](type, { v: version, ...fields });
     };
   }

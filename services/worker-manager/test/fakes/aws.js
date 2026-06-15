@@ -1,5 +1,5 @@
 import { FakeCloud } from './fake.js';
-import { strict as assert } from 'node:assert';
+import { strict as assert } from 'assert';
 import {
   EC2Client,
   DescribeInstanceStatusCommand,
@@ -19,6 +19,9 @@ const TEST_REGIONS = [
  * Fake the EC2 AWS SDK.
  */
 export class FakeEC2 extends FakeCloud {
+  constructor() {
+    super();
+  }
 
   _patch() {
     this._reset();
@@ -60,7 +63,7 @@ export class FakeEC2 extends FakeCloud {
       .callsFake((launchConfig) => {
         this.validate(launchConfig, 'aws-launch-config.yml');
         this.mock.runInstancesCalls.push(launchConfig);
-        const Instances = [];
+        let Instances = [];
 
         for (let i = 0; i < launchConfig.MinCount; i++) {
           const instance = {

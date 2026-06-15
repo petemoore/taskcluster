@@ -1,4 +1,4 @@
-import { hrtime } from 'node:process';
+import { hrtime } from 'process';
 
 /**
  * A TimeKeeper is used for measuring arbitrary times.  This is nice when the
@@ -25,7 +25,7 @@ class TimeKeeper {
    */
   measure(force = false, extra = {}) {
     if (!force && this.submitted) {
-      throw new Error(`Cannot submit measurement twice for ${this.monitor.prefix} ${this.name}`);
+      throw new Error('Cannot submit measurement twice for ' + this.monitor.prefix + ' ' + this.name);
     }
     this.submitted = true;
     const end = hrtime.bigint();

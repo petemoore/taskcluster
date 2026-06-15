@@ -1,5 +1,5 @@
-import assert from 'node:assert';
-import { Readable } from 'node:stream';
+import assert from 'assert';
+import { Readable } from 'stream';
 import { StreamingProfileBuilder, lineIterator } from '../../src/profiler/log-profile.js';
 
 const mockTask = {
@@ -13,10 +13,10 @@ const mockTask = {
   },
 };
 
-suite('profiler/log-profile', () => {
+suite('profiler/log-profile', function() {
 
-  suite('lineIterator', () => {
-    test('yields complete lines from a stream', async () => {
+  suite('lineIterator', function() {
+    test('yields complete lines from a stream', async function() {
       const input = 'line one\nline two\nline three\n';
       const stream = Readable.from([Buffer.from(input)]);
       const lines = [];
@@ -26,7 +26,7 @@ suite('profiler/log-profile', () => {
       assert.deepEqual(lines, ['line one', 'line two', 'line three']);
     });
 
-    test('handles lines split across chunks', async () => {
+    test('handles lines split across chunks', async function() {
       const stream = Readable.from([
         Buffer.from('partial li'),
         Buffer.from('ne one\nline t'),
@@ -39,7 +39,7 @@ suite('profiler/log-profile', () => {
       assert.deepEqual(lines, ['partial line one', 'line two']);
     });
 
-    test('yields final line without trailing newline', async () => {
+    test('yields final line without trailing newline', async function() {
       const stream = Readable.from([Buffer.from('line one\nno newline at end')]);
       const lines = [];
       for await (const line of lineIterator(stream)) {
@@ -48,7 +48,7 @@ suite('profiler/log-profile', () => {
       assert.deepEqual(lines, ['line one', 'no newline at end']);
     });
 
-    test('tracks bytes read via callback', async () => {
+    test('tracks bytes read via callback', async function() {
       const stream = Readable.from([Buffer.from('hello\nworld\n')]);
       let totalBytes = 0;
       for await (const _ of lineIterator(stream, (n) => { totalBytes += n; })) {
@@ -58,8 +58,8 @@ suite('profiler/log-profile', () => {
     });
   });
 
-  suite('StreamingProfileBuilder', () => {
-    test('builds a valid profile from lines', () => {
+  suite('StreamingProfileBuilder', function() {
+    test('builds a valid profile from lines', function() {
       const builder = new StreamingProfileBuilder(mockTask, 'task-123', 'https://tc.example.com');
       builder.addLine('[taskcluster:info 2024-01-01T10:00:00.000Z] Starting task');
       builder.addLine('[setup:warn 2024-01-01T10:00:01.000Z] Installing dependencies');
@@ -74,7 +74,7 @@ suite('profiler/log-profile', () => {
       assert.equal(profile.threads[0].markers.length, 4);
     });
 
-    test('skips empty lines', () => {
+    test('skips empty lines', function() {
       const builder = new StreamingProfileBuilder(mockTask, 'task-123', 'https://tc.example.com');
       builder.addLine('[taskcluster:info 2024-01-01T10:00:00.000Z] Start');
       builder.addLine('');
@@ -86,7 +86,7 @@ suite('profiler/log-profile', () => {
       assert.equal(profile.threads[0].markers.length, 3);
     });
 
-    test('uses component as marker name', () => {
+    test('uses component as marker name', function() {
       const builder = new StreamingProfileBuilder(mockTask, 'task-123', 'https://tc.example.com');
       builder.addLine('[taskcluster:info 2024-01-01T10:00:00.000Z] Hello');
       builder.addLine('[setup:warn 2024-01-01T10:00:01.000Z] Warning');
@@ -99,7 +99,7 @@ suite('profiler/log-profile', () => {
       assert.equal(name2, 'setup');
     });
 
-    test('stores messages as unique-string indices', () => {
+    test('stores messages as unique-string indices', function() {
       const builder = new StreamingProfileBuilder(mockTask, 'task-123', 'https://tc.example.com');
       builder.addLine('[taskcluster:info 2024-01-01T10:00:00.000Z] Hello world');
       const profile = builder.finalize();
@@ -110,7 +110,7 @@ suite('profiler/log-profile', () => {
       assert.equal(thread.stringArray[data.message], 'Hello world');
     });
 
-    test('deduplicates repeated messages in stringArray', () => {
+    test('deduplicates repeated messages in stringArray', function() {
       const builder = new StreamingProfileBuilder(mockTask, 'task-123', 'https://tc.example.com');
       builder.addLine('[taskcluster:info 2024-01-01T10:00:00.000Z] same message');
       builder.addLine('[taskcluster:info 2024-01-01T10:00:01.000Z] same message');
@@ -124,7 +124,7 @@ suite('profiler/log-profile', () => {
       assert.notEqual(thread.markers.data[1].message, thread.markers.data[3].message);
     });
 
-    test('strips duplicate timestamps from messages', () => {
+    test('strips duplicate timestamps from messages', function() {
       const builder = new StreamingProfileBuilder(mockTask, 'task-123', 'https://tc.example.com');
       builder.addLine('[task 2024-01-01T10:00:00.000Z] [2024-01-01T10:00:00.000Z] actual message');
       const profile = builder.finalize();
@@ -134,7 +134,7 @@ suite('profiler/log-profile', () => {
       assert.equal(thread.stringArray[msgIndex], 'actual message');
     });
 
-    test('handles lines without timestamps', () => {
+    test('handles lines without timestamps', function() {
       const builder = new StreamingProfileBuilder(mockTask, 'task-123', 'https://tc.example.com');
       builder.addLine('[taskcluster:info 2024-01-01T10:00:00.000Z] Start');
       builder.addLine('plain text line');
@@ -146,7 +146,7 @@ suite('profiler/log-profile', () => {
       assert.equal(name, 'no timestamp');
     });
 
-    test('maps component to category', () => {
+    test('maps component to category', function() {
       const builder = new StreamingProfileBuilder(mockTask, 'task-123', 'https://tc.example.com');
       builder.addLine('[vcs:info 2024-01-01T10:00:00.000Z] cloning');
       builder.addLine('[fetches:info 2024-01-01T10:00:01.000Z] downloading');
@@ -157,14 +157,14 @@ suite('profiler/log-profile', () => {
       assert.equal(cats[profile.threads[0].markers.category[2]].name, 'fetches');
     });
 
-    test('returns empty if no timestamps found', () => {
+    test('returns empty if no timestamps found', function() {
       const builder = new StreamingProfileBuilder(mockTask, 'task-123', 'https://tc.example.com');
       builder.addLine('no timestamps here');
       const profile = builder.finalize();
       assert.ok(profile.threads[0].markers.data.length === 1);
     });
 
-    test('includes task duration marker with URLs', () => {
+    test('includes task duration marker with URLs', function() {
       const builder = new StreamingProfileBuilder(mockTask, 'task-123', 'https://tc.example.com');
       builder.addLine('[taskcluster:info 2024-01-01T10:00:00.000Z] Start');
       builder.addLine('[taskcluster:info 2024-01-01T10:00:05.000Z] End');
