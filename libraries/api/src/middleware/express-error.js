@@ -64,7 +64,7 @@ export const expressError = ({ errorCodes, entry }) => {
     }
 
     let code = err.code;
-    const details = err.details;
+    let details = err.details;
     let message = err.message;
 
     let status = errorCodes[code];
@@ -102,10 +102,10 @@ export const expressError = ({ errorCodes, entry }) => {
       return value;
     }) + [
       '\n\n---\n',
-      `* method:     ${method}`,
-      `* errorCode:  ${code}`,
-      `* statusCode: ${status}`,
-      `* time:       ${requestInfo.time}`,
+      '* method:     ' + method,
+      '* errorCode:  ' + code,
+      '* statusCode: ' + status,
+      '* time:       ' + requestInfo.time,
     ].join('\n');
 
     res.status(errorCodes[code]).json({ code, message, requestInfo });

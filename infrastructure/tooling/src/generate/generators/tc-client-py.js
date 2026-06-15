@@ -1,4 +1,4 @@
-import path from 'node:path';
+import path from 'path';
 import { writeRepoFile, REPO_ROOT, execCommand } from '../../utils/index.js';
 import mkdirp from 'mkdirp';
 import { rimraf } from 'rimraf';
@@ -10,7 +10,7 @@ const HEADER = `\
 `;
 
 const writePyFile = async (filename, content, omitHeader) => {
-  await writeRepoFile(path.join(filename), `${(omitHeader ? '' : HEADER) + content.trim()}\n`);
+  await writeRepoFile(path.join(filename), (omitHeader ? '' : HEADER) + content.trim() + '\n');
 };
 
 // poor man's python repr(..)
@@ -71,14 +71,14 @@ const generateStaticClient = async (className, reference, filename, genAsync) =>
   }
 
   lines.push('    classOptions = {');
-  for (const opt of ['exchangePrefix']) {
+  for (let opt of ['exchangePrefix']) {
     if (reference[opt]) {
       lines.push(`        "${opt}": "${reference[opt]}",`);
     }
   }
   lines.push('    }');
 
-  for (const opt of ['serviceName', 'apiVersion']) {
+  for (let opt of ['serviceName', 'apiVersion']) {
     if (reference[opt]) {
       lines.push(`    ${opt} = ${repr(reference[opt])}`);
     }
@@ -86,7 +86,7 @@ const generateStaticClient = async (className, reference, filename, genAsync) =>
   lines.push('');
 
   const funcinfo = {};
-  for (const entry of reference.entries) {
+  for (let entry of reference.entries) {
     if (entry.type === 'function') {
       const funcRef = {
         args: entry.args,
@@ -114,7 +114,7 @@ const generateStaticClient = async (className, reference, filename, genAsync) =>
       if (entry.description) {
         let ds = entry.description;
         if (entry.title) {
-          ds = `${entry.title}\n\n${ds}`;
+          ds = entry.title + '\n\n' + ds;
         }
         if (entry.stability) {
           ds = `${ds}\n\nThis method is \`\`${entry.stability}\`\``;
@@ -143,14 +143,14 @@ const generateStaticClient = async (className, reference, filename, genAsync) =>
       if (entry.description) {
         ds = entry.description || '';
         if (entry.title) {
-          ds = `${entry.title}\n\n${ds}`;
+          ds = entry.title + '\n\n' + ds;
         }
         if (entry.stability) {
           ds = `${ds}\n\nThis method is \`\`${entry.stability}\`\``;
         }
 
         ds += '\n\nThis exchange takes the following keys:';
-        for (const key of entry.routingKey) {
+        for (let key of entry.routingKey) {
           ds += `\n\n * ${key.name}: ${key.summary}${key.required ? ' (required)' : ''}`;
         }
       }
@@ -158,13 +158,13 @@ const generateStaticClient = async (className, reference, filename, genAsync) =>
       lines.push(`    def ${entry.name}(self, *args, **kwargs):`);
       lines.push(cleanDocstring(ds, 8));
       lines.push(`        ref = {`);
-      for (const [refK, refV] of Object.entries(exRef).sort()) {
+      for (let [refK, refV] of Object.entries(exRef).sort()) {
         if (refK === 'routingKey') {
           lines.push('            \'routingKey\': [');
-          for (const routingKey of refV) {
+          for (let routingKey of refV) {
             lines.push('                {');
-            for (const routingK of ['constant', 'multipleWords', 'name']) {
-              const routingV = routingKey[routingK];
+            for (let routingK of ['constant', 'multipleWords', 'name']) {
+              let routingV = routingKey[routingK];
               if (routingV !== undefined) {
                 lines.push(`                    '${routingK}': ${repr(routingV)},`);
               }
@@ -183,9 +183,9 @@ const generateStaticClient = async (className, reference, filename, genAsync) =>
   }
 
   lines.push('    funcinfo = {');
-  for (const [funcname, ref] of Object.entries(funcinfo).sort()) {
+  for (let [funcname, ref] of Object.entries(funcinfo).sort()) {
     lines.push(`        "${funcname}": {`);
-    for (const [keyname, keyvalue] of Object.entries(ref).sort()) {
+    for (let [keyname, keyvalue] of Object.entries(ref).sort()) {
       lines.push(`            '${keyname}': ${repr(keyvalue)},`);
     }
     lines.push('        },');
@@ -211,7 +211,7 @@ export const tasks = [{
   requires: ['apis'],
   provides: ['target-taskcluster-client-py'],
   run: async (requirements, utils) => {
-    const apis = requirements.apis;
+    const apis = requirements['apis'];
     const moduleDir = path.join(REPO_ROOT, 'clients', 'client-py', 'taskcluster', 'generated');
 
     // clean up the clients directory to eliminate any "leftovers"
@@ -226,7 +226,7 @@ export const tasks = [{
 
     const clientImporter = [];
 
-    for (const [className, { reference }] of Object.entries(apis)) {
+    for (let [className, { reference }] of Object.entries(apis)) {
       const moduleName = className.toLowerCase();
 
       utils.status({ message: `${className}` });

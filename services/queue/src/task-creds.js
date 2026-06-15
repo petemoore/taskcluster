@@ -3,8 +3,8 @@ import taskcluster from '@taskcluster/client';
 /**
  * Creates temporary credentials for a task run.
  */
-const taskCredentials = (taskId, runId, workerGroup, workerId, takenUntil, scopes, permaCreds) => {
-  const clientId = [
+let taskCredentials = function(taskId, runId, workerGroup, workerId, takenUntil, scopes, permaCreds) {
+  let clientId = [
     'task-client',
     taskId,
     `${runId}`,
@@ -19,9 +19,9 @@ const taskCredentials = (taskId, runId, workerGroup, workerId, takenUntil, scope
     start: new Date(),
     expiry: takenUntil,
     scopes: [
-      `queue:reclaim-task:${taskId}/${runId}`,
-      `queue:resolve-task:${taskId}/${runId}`,
-      `queue:create-artifact:${taskId}/${runId}`,
+      'queue:reclaim-task:' + taskId + '/' + runId,
+      'queue:resolve-task:' + taskId + '/' + runId,
+      'queue:create-artifact:' + taskId + '/' + runId,
     ].concat(scopes),
     credentials: permaCreds,
   });

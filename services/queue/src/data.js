@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import _ from 'lodash';
 import { paginateResults } from '@taskcluster/lib-api';
 import { UNIQUE_VIOLATION } from '@taskcluster/lib-postgres';
@@ -71,11 +71,11 @@ export class Task {
   // Get multiple tasks from the DB, or empty list
   static async getMultiple(db, { taskIds }, { query } = {}) {
     assert(_.isArray(taskIds), 'taskIds must be an Array');
-    for (const taskId of taskIds) {
+    for (let taskId of taskIds) {
       assert(_.isString(taskId), 'taskId must be a String');
     }
     const fetchResults = async (continuation) => {
-      const q = query;
+      let q = query;
 
       if (continuation) {
         q.continuationToken = continuation;
@@ -89,7 +89,7 @@ export class Task {
           offset,
         ),
       });
-      const tasks = rows.map(Task.fromDb);
+      let tasks = rows.map(Task.fromDb);
       return { tasks, continuationToken };
     };
 
@@ -97,19 +97,15 @@ export class Task {
     return fetchResults(query ? query.continuationToken : {});
   }
 
-  // Call db.create_task_atomic with the content of this instance, atomically
-  // inserting the task row and its queue_task_deadlines tracking row.  This
+  // Call db.create_task_projid with the content of this instance.  This
   // implements the usual idempotency checks and returns an error with code
   // UNIQUE_VIOLATION when those checks fail.
-  //
-  // `deadlineDelaySeconds` controls the deadline resolver's visibility offset
-  // (typically QueueService.deadlineDelay / 1000).
-  async create(db, deadlineDelaySeconds) {
+  async create(db) {
     // for array values, we need to stringify manually because node-pg
     // otherwise does not correctly serialize the array values
     const arr = v => JSON.stringify(v);
     try {
-      await db.fns.create_task_atomic(
+      await db.fns.create_task_projid(
         this.taskId,
         this.taskQueueId,
         this.schedulerId,
@@ -128,7 +124,6 @@ export class Task {
         this.metadata,
         arr(this.tags),
         this.extra,
-        deadlineDelaySeconds,
       );
     } catch (err) {
       if (err.code !== UNIQUE_VIOLATION) {

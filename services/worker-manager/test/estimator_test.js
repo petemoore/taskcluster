@@ -1,19 +1,19 @@
-import assert from 'node:assert';
+import assert from 'assert';
 import helper from './helper.js';
 import testing from '@taskcluster/lib-testing';
 
-helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
+helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
   helper.withFakeQueue(mock, skipping);
   helper.withFakeNotify(mock, skipping);
 
   let estimator, monitor;
 
-  setup(async () => {
+  setup(async function() {
     estimator = await helper.load('estimator');
     monitor = await helper.load('monitor');
   });
 
-  test('empty estimation', async () => {
+  test('empty estimation', async function() {
     const workerInfo = {
       existingCapacity: 0,
       requestedCapacity: 0,
@@ -33,7 +33,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     assert(monitor.manager.messages.some(({ Type, Severity }) => Type === 'simple-estimate' && Severity === 5));
   });
 
-  test('single estimation', async () => {
+  test('single estimation', async function() {
     const workerInfo = {
       existingCapacity: 0,
       requestedCapacity: 0,
@@ -52,7 +52,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     assert(monitor.manager.messages.some(({ Type, Severity }) => Type === 'simple-estimate' && Severity === 5));
   });
 
-  test('satisfied estimation', async () => {
+  test('satisfied estimation', async function() {
     const workerInfo = {
       existingCapacity: 0,
       requestedCapacity: 1,
@@ -71,7 +71,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     assert(monitor.manager.messages.some(({ Type, Severity }) => Type === 'simple-estimate' && Severity === 5));
   });
 
-  test('scaling ratio 1:1 scale-up', async () => {
+  test('scaling ratio 1:1 scale-up', async function() {
     const workerInfo = {
       existingCapacity: 0,
       requestedCapacity: 0,
@@ -92,7 +92,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     assert(monitor.manager.messages.some(({ Type, Severity }) => Type === 'simple-estimate' && Severity === 5));
   });
 
-  test('scaling ratio 1:1 scale-up with lesser max capacity', async () => {
+  test('scaling ratio 1:1 scale-up with lesser max capacity', async function() {
     const workerInfo = {
       existingCapacity: 0,
       requestedCapacity: 0,
@@ -113,7 +113,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     assert(monitor.manager.messages.some(({ Type, Severity }) => Type === 'simple-estimate' && Severity === 5));
   });
 
-  test('scaling ratio 1:2 scale-up', async () => {
+  test('scaling ratio 1:2 scale-up', async function() {
     const workerInfo = {
       existingCapacity: 0,
       requestedCapacity: 0,
@@ -134,7 +134,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     assert(monitor.manager.messages.some(({ Type, Severity }) => Type === 'simple-estimate' && Severity === 5));
   });
 
-  test('scaling ratio 1:2 scale-up with existing capacity', async () => {
+  test('scaling ratio 1:2 scale-up with existing capacity', async function() {
     const workerInfo = {
       existingCapacity: 25,
       requestedCapacity: 0,
@@ -156,7 +156,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     assert(monitor.manager.messages.some(({ Type, Severity }) => Type === 'simple-estimate' && Severity === 5));
   });
 
-  test('over-satisfied estimation', async () => {
+  test('over-satisfied estimation', async function() {
     const workerInfo = {
       existingCapacity: 50,
       requestedCapacity: 0,
@@ -182,7 +182,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     monitor.manager.reset();
   });
 
-  test('over-satisfied estimation (false positive is not raised)', async () => {
+  test('over-satisfied estimation (false positive is not raised)', async function() {
     const workerInfo = {
       existingCapacity: 5,
       requestedCapacity: 0,
@@ -202,7 +202,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     monitor.manager.reset();
   });
 
-  test('empty estimation', async () => {
+  test('empty estimation', async function () {
     const workerInfo = {
       existingCapacity: 0,
       requestedCapacity: 0,
@@ -222,7 +222,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     assert(monitor.manager.messages.some(({ Type, Severity }) => Type === 'simple-estimate' && Severity === 5));
   });
 
-  test('stopping capacity non zero', async () => {
+  test('stopping capacity non zero', async function () {
     const workerInfo = {
       existingCapacity: 10,
       requestedCapacity: 10,
@@ -241,7 +241,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     assert.strictEqual(monitor.manager.messages.length, 1);
     assert(monitor.manager.messages.some(({ Type, Severity }) => Type === 'simple-estimate' && Severity === 5));
   });
-  test('stopping capacity exceeds max capacity', async () => {
+  test('stopping capacity exceeds max capacity', async function () {
     const workerInfo = {
       existingCapacity: 10,
       requestedCapacity: 10,
@@ -260,7 +260,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     assert.strictEqual(monitor.manager.messages.length, 1);
     assert(monitor.manager.messages.some(({ Type, Severity }) => Type === 'simple-estimate' && Severity === 5));
   });
-  test('stopping + requested capacity exceeds pending', async () => {
+  test('stopping + requested capacity exceeds pending', async function () {
     const workerInfo = {
       existingCapacity: 0,
       requestedCapacity: 10,
@@ -281,7 +281,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     assert.strictEqual(monitor.manager.messages.length, 1);
     assert(monitor.manager.messages.some(({ Type, Severity }) => Type === 'simple-estimate' && Severity === 5));
   });
-  test('idle capacity', async () => {
+  test('idle capacity', async function () {
     const workerInfo = {
       existingCapacity: 10,
     };
@@ -316,8 +316,8 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     }
   });
 
-  suite('desiredCapacity', () => {
-    test('returns minCapacity when no pending tasks', async () => {
+  suite('desiredCapacity', function() {
+    test('returns minCapacity when no pending tasks', async function() {
       helper.queue.setPending('foo/bar', 0);
       helper.queue.setClaimed('foo/bar', 0);
       const result = await estimator.desiredCapacity({
@@ -330,7 +330,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       assert.strictEqual(result, 5);
     });
 
-    test('respects maxCapacity ceiling', async () => {
+    test('respects maxCapacity ceiling', async function() {
       helper.queue.setPending('foo/bar', 200);
       helper.queue.setClaimed('foo/bar', 0);
       const result = await estimator.desiredCapacity({
@@ -343,7 +343,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       assert.strictEqual(result, 50);
     });
 
-    test('accounts for existing capacity and pending tasks', async () => {
+    test('accounts for existing capacity and pending tasks', async function() {
       helper.queue.setPending('foo/bar', 20);
       helper.queue.setClaimed('foo/bar', 5);
       const result = await estimator.desiredCapacity({
@@ -359,7 +359,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       assert.strictEqual(result, 25);
     });
 
-    test('includes stopping capacity in total', async () => {
+    test('includes stopping capacity in total', async function() {
       helper.queue.setPending('foo/bar', 10);
       helper.queue.setClaimed('foo/bar', 0);
       const result = await estimator.desiredCapacity({
@@ -376,7 +376,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       assert.strictEqual(result, 20);
     });
 
-    test('applies scaling ratio', async () => {
+    test('applies scaling ratio', async function() {
       helper.queue.setPending('foo/bar', 100);
       helper.queue.setClaimed('foo/bar', 0);
       const result = await estimator.desiredCapacity({
@@ -391,8 +391,8 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
     });
   });
 
-  suite('targetCapacity', () => {
-    test('returns minCapacity when no tasks', async () => {
+  suite('targetCapacity', function() {
+    test('returns minCapacity when no tasks', async function() {
       helper.queue.setPending('foo/bar', 0);
       helper.queue.setClaimed('foo/bar', 0);
       const result = await estimator.targetCapacity({
@@ -401,7 +401,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       assert.strictEqual(result, 3);
     });
 
-    test('counts both pending and claimed tasks as demand', async () => {
+    test('counts both pending and claimed tasks as demand', async function() {
       helper.queue.setPending('foo/bar', 2);
       helper.queue.setClaimed('foo/bar', 3);
       const result = await estimator.targetCapacity({
@@ -411,7 +411,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       assert.strictEqual(result, 5);
     });
 
-    test('respects maxCapacity ceiling', async () => {
+    test('respects maxCapacity ceiling', async function() {
       helper.queue.setPending('foo/bar', 50);
       helper.queue.setClaimed('foo/bar', 50);
       const result = await estimator.targetCapacity({
@@ -420,7 +420,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       assert.strictEqual(result, 10);
     });
 
-    test('applies scaling ratio', async () => {
+    test('applies scaling ratio', async function() {
       helper.queue.setPending('foo/bar', 10);
       helper.queue.setClaimed('foo/bar', 0);
       const result = await estimator.targetCapacity({
@@ -430,7 +430,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
       assert.strictEqual(result, 5);
     });
 
-    test('minCapacity wins over zero demand', async () => {
+    test('minCapacity wins over zero demand', async function() {
       helper.queue.setPending('foo/bar', 0);
       helper.queue.setClaimed('foo/bar', 0);
       const result = await estimator.targetCapacity({

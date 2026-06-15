@@ -1,4 +1,4 @@
-import os from 'node:os';
+import os from 'os';
 import { TaskGraph, Lock, ConsoleRenderer, LogRenderer } from 'console-taskgraph';
 import generateReleaseTasks from './tasks.js';
 
@@ -19,7 +19,7 @@ export class Release {
   }
 
   async run(staging) {
-    const tasks = this.generateTasks();
+    let tasks = this.generateTasks();
 
     const taskgraph = new TaskGraph(tasks, {
       locks: {
