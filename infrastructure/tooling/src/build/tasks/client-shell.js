@@ -1,4 +1,4 @@
-import path from 'node:path';
+import path from 'path';
 import { ensureTask, execCommand, REPO_ROOT } from '../../utils/index.js';
 
 export default ({ tasks, cmdOptions, credentials, baseDir, logsDir }) => {
@@ -8,7 +8,7 @@ export default ({ tasks, cmdOptions, credentials, baseDir, logsDir }) => {
     provides: ['client-shell-artifacts'],
     run: async (requirements, utils) => {
       const artifactsDir = requirements['clean-artifacts-dir'];
-      const goreleaserCmd = [
+      let goreleaserCmd = [
         'go',
         'tool',
         'goreleaser',

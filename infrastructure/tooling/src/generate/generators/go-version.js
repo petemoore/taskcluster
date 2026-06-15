@@ -1,5 +1,5 @@
-import util from 'node:util';
-import { execFile } from 'node:child_process';
+import util from 'util';
+import { execFile } from 'child_process';
 import { readRepoFile, modifyRepoFile } from '../../utils/index.js';
 const exec = util.promisify(execFile);
 
@@ -26,8 +26,7 @@ export const tasks = [{
         throw new Error(`Cannot find \`go\`.  ${errmsg}`);
       }
     }
-    const versionPrefix = version?.match(/^go[0-9]+\.[0-9]+\.[0-9]+/)?.[0];
-    if (versionPrefix !== goVersion) {
+    if (version !== goVersion) {
       throw new Error(`Found ${version}.  ${errmsg}`);
     }
 
@@ -67,17 +66,16 @@ export const tasks = [{
         /MIN_GO_MINOR_VERSION=[0-9]+/,
         `MIN_GO_MINOR_VERSION=${goVersionMinor}`));
 
-    for (const file of [
+    [
       'generic-worker.Dockerfile',
       'taskcluster/docker/ci/Dockerfile',
-      'workers/generic-worker/Dockerfile.test',
-    ]) {
+    ].forEach(async file => {
       utils.status({ message: file });
       await modifyRepoFile(file,
         contents => contents.replace(
           /FROM golang:[0-9]+\.[0-9]+\.[0-9]+/,
           `FROM golang:${goVersionMajor}.${goVersionMinor}.${goVersionBugfix}`,
         ));
-    }
+    });
   },
 }];
