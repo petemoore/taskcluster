@@ -1,5 +1,5 @@
 import lodash from 'lodash';
-import { strict as assert } from 'node:assert';
+import { strict as assert } from 'assert';
 
 const { isPlainObject } = lodash;
 

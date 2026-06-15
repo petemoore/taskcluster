@@ -7,9 +7,9 @@ import {
   TerminateInstancesCommand,
 } from '@aws-sdk/client-ec2';
 import taskcluster from '@taskcluster/client';
-import crypto from 'node:crypto';
-import fs from 'node:fs';
-import path from 'node:path';
+import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 import _ from 'lodash';
 import { CloudAPI } from './cloudapi.js';
 import { WorkerPool, Worker } from '../data.js';
@@ -39,7 +39,7 @@ export class AwsProvider extends Provider {
 
     const { Regions: regions } = await ec2.send(new DescribeRegionsCommand({}));
 
-    const requestTypes = {};
+    let requestTypes = {};
     this.ec2s = {};
     regions.forEach(r => {
       this.ec2s[r.RegionName] = new EC2Client({
@@ -64,7 +64,7 @@ export class AwsProvider extends Provider {
       providerId: this.providerId,
       errorHandler: ({ err, tries }) => {
         if (err.code === 'RequestLimitExceeded') {
-          return { backoff: this.providerConfig._backoffDelay * 2 ** tries, reason: 'RequestLimitExceeded', level: 'warning' };
+          return { backoff: this.providerConfig._backoffDelay * Math.pow(2, tries), reason: 'RequestLimitExceeded', level: 'warning' };
         }
         throw err;
       },
@@ -114,18 +114,15 @@ export class AwsProvider extends Provider {
     const toSpawnPerConfig = Math.ceil(toSpawn / shuffledConfigs.length);
 
     let toSpawnCounter = toSpawn;
-    for await (const lc of shuffledConfigs) {
+    for await (let lc of shuffledConfigs) {
       const config = lc.configuration;
-      if (toSpawnCounter <= 0) {
-        break;
-      }
-
+      if (toSpawnCounter <= 0) break; // eslint-disable-line
       // Make sure we don't get "The same resource type may not be specified
       // more than once in tag specifications" errors
       const TagSpecifications = config.launchConfig.TagSpecifications || [];
       let instanceTags = [];
       let volumeTags = [];
-      const otherTagSpecs = [];
+      let otherTagSpecs = [];
       TagSpecifications.forEach(ts => {
         if (ts.ResourceType === 'instance') {
           instanceTags = instanceTags.concat(ts.Tags);
@@ -440,15 +437,13 @@ export class AwsProvider extends Provider {
 
     this.cloudApi?.logAndResetMetrics();
 
-    Object.entries(this.seenByWorkerGroup).forEach(([workerPoolId, seenByGroup]) => {
-      Object.entries(seenByGroup).forEach(([workerGroup, seen]) => {
+    Object.entries(this.seenByWorkerGroup).forEach(([workerPoolId, seenByGroup]) =>
+      Object.entries(seenByGroup).forEach(([workerGroup, seen]) =>
         this.monitor.metric.scanSeen(seen, {
           providerId: this.providerId,
           workerPoolId,
           workerGroup,
-        });
-      });
-    });
+        })));
   }
 
   /**

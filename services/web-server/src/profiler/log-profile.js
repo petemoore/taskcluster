@@ -23,7 +23,7 @@ export async function* lineIterator(stream, onBytes) {
     if (onBytes) {onBytes(chunk.byteLength);}
 
     // Combine ONLY the leftover bit from the previous chunk
-    const combined = leftover.length > 0
+    let combined = leftover.length > 0
       ? Buffer.concat([leftover, chunk])
       : chunk;
 
@@ -89,7 +89,7 @@ export class StreamingProfileBuilder {
     if (!line.trim()) { return; }
 
     const match = line.match(LOG_PATTERN);
-    if (match?.groups) {
+    if (match && match.groups) {
       const time = new Date(match.groups.time);
       const component = match.groups.component;
       const message = match.groups.message.replace(TIMESTAMP_CLEANUP, '');
