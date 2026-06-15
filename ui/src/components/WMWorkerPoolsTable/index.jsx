@@ -10,7 +10,7 @@ import IconButton from '@material-ui/core/IconButton';
 import Hidden from '@material-ui/core/Hidden';
 import LinkIcon from 'mdi-react/LinkIcon';
 import DeleteIcon from 'mdi-react/DeleteIcon';
-import WorkerIcon from 'mdi-react/WorkerIcon';
+import AccountHardHatIcon from 'mdi-react/AccountHardHatIcon';
 import MessageAlertIcon from 'mdi-react/MessageAlertIcon';
 import { withRouter } from 'react-router-dom';
 import { memoize } from '../../utils/memoize';
@@ -287,7 +287,7 @@ export default class WorkerManagerWorkerPoolsTable extends Component {
               variant="outlined"
               disabled={actionLoading}
               size="small">
-              <WorkerIcon className={classes.linksIcon} size={iconSize} />
+              <AccountHardHatIcon className={classes.linksIcon} size={iconSize} />
               Workers
             </Button>
           </Link>
