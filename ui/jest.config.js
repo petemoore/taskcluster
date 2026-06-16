@@ -16,7 +16,7 @@ module.exports = {
   verbose: false,
   transform: {
     "\\.(mjs|jsx|js)$": "<rootDir>/__jest__/transformer.js",
-    "^.+\\.(js|jsx)$": "babel-jest",
+    "^.+\\.(js|jsx)$": "<rootDir>/__jest__/transformer.js",
     "\\.graphql$": "jest-transform-graphql",
   },
   testMatch: [
