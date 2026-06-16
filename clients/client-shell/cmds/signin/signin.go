@@ -119,27 +119,29 @@ func cmdSignin(cmd *cobra.Command, _ []string) error {
 	name, _ := cmd.Flags().GetString("name")
 	scopes, _ := cmd.Flags().GetStringArray("scope")
 	expires, _ := cmd.Flags().GetString("expires")
-	var loginURL string
+	var loginURLBuilder strings.Builder
 
 	if config.RootURL() == "https://taskcluster.net" {
-		loginURL += libUrls.UI(config.RootURL(), "/auth/clients/new")
+		loginURLBuilder.WriteString(libUrls.UI(config.RootURL(), "/auth/clients/new"))
 	} else {
-		loginURL += libUrls.UI(config.RootURL(), "/auth/clients/create")
+		loginURLBuilder.WriteString(libUrls.UI(config.RootURL(), "/auth/clients/create"))
 	}
 
 	for i := range scopes {
 		if i == 0 {
-			loginURL += "?"
+			loginURLBuilder.WriteString("?")
 		} else {
-			loginURL += "&"
+			loginURLBuilder.WriteString("&")
 		}
-		loginURL += "scope=" + url.QueryEscape(scopes[i])
+		loginURLBuilder.WriteString("scope=" + url.QueryEscape(scopes[i]))
 	}
 
-	loginURL += "&name=" + url.QueryEscape(name) + "-" + slugid.Nice()[0:6]
-	loginURL += "&expires=" + url.QueryEscape(expires)
-	loginURL += "&callback_url=" + url.QueryEscape(callbackURL)
-	loginURL += "&description=" + description
+	loginURLBuilder.WriteString("&name=" + url.QueryEscape(name) + "-" + slugid.Nice()[0:6])
+	loginURLBuilder.WriteString("&expires=" + url.QueryEscape(expires))
+	loginURLBuilder.WriteString("&callback_url=" + url.QueryEscape(callbackURL))
+	loginURLBuilder.WriteString("&description=" + description)
+
+	loginURL := loginURLBuilder.String()
 
 	// Display URL to open
 	log.Infoln("Listening for a callback on: " + callbackURL)

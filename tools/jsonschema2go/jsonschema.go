@@ -308,7 +308,7 @@ func (jsonSubSchema *JsonSubSchema) typeDefinition(disableNested bool, enableDef
 	// paragraph if we discover after inspecting all possible metadata, that
 	// something has been specified. If there is no metadata, no need to create
 	// a new paragraph.
-	var metadata string
+	var metadata strings.Builder
 	if def := jsonSubSchema.Default; def != nil {
 		var value string
 		switch (*def).(type) {
@@ -324,45 +324,45 @@ func (jsonSubSchema *JsonSubSchema) typeDefinition(disableNested bool, enableDef
 			value = string(v)
 		}
 		indentedDefault := text.Indent(value+"\n", "//             ")
-		metadata += "// Default:    " + indentedDefault[15:]
+		metadata.WriteString("// Default:    " + indentedDefault[15:])
 	}
 	if regex := jsonSubSchema.Pattern; regex != nil {
-		metadata += "// Syntax:     " + *regex + "\n"
+		metadata.WriteString("// Syntax:     " + *regex + "\n")
 	}
 	if minItems := jsonSubSchema.MinLength; minItems != nil {
-		metadata += "// Min length: " + strconv.Itoa(*minItems) + "\n"
+		metadata.WriteString("// Min length: " + strconv.Itoa(*minItems) + "\n")
 	}
 	if maxItems := jsonSubSchema.MaxLength; maxItems != nil {
-		metadata += "// Max length: " + strconv.Itoa(*maxItems) + "\n"
+		metadata.WriteString("// Max length: " + strconv.Itoa(*maxItems) + "\n")
 	}
 	if minimum := jsonSubSchema.Minimum; minimum != nil {
-		metadata += "// Mininum:    " + strconv.Itoa(*minimum) + "\n"
+		metadata.WriteString("// Mininum:    " + strconv.Itoa(*minimum) + "\n")
 	}
 	if maximum := jsonSubSchema.Maximum; maximum != nil {
-		metadata += "// Maximum:    " + strconv.Itoa(*maximum) + "\n"
+		metadata.WriteString("// Maximum:    " + strconv.Itoa(*maximum) + "\n")
 	}
 	if allOf := jsonSubSchema.AllOf; allOf != nil {
-		metadata += "// All of:\n"
+		metadata.WriteString("// All of:\n")
 		for _, o := range allOf.Items {
-			metadata += "//   * " + o.getTypeName() + "\n"
+			metadata.WriteString("//   * " + o.getTypeName() + "\n")
 		}
 	}
 	if anyOf := jsonSubSchema.AnyOf; anyOf != nil {
-		metadata += "// Any of:\n"
+		metadata.WriteString("// Any of:\n")
 		for _, o := range anyOf.Items {
-			metadata += "//   * " + o.getTypeName() + "\n"
+			metadata.WriteString("//   * " + o.getTypeName() + "\n")
 		}
 	}
 	if oneOf := jsonSubSchema.OneOf; oneOf != nil {
-		metadata += "// One of:\n"
+		metadata.WriteString("// One of:\n")
 		for _, o := range oneOf.Items {
-			metadata += "//   * " + o.getTypeName() + "\n"
+			metadata.WriteString("//   * " + o.getTypeName() + "\n")
 		}
 	}
 	// Here we check if metadata was specified, and only create new
 	// paragraph (`//\n`) if something was.
-	if len(metadata) > 0 {
-		comment += "//\n" + metadata
+	if metadata.Len() > 0 {
+		comment += "//\n" + metadata.String()
 	}
 	typ = "json.RawMessage"
 	typeCategory = "raw"
@@ -1021,16 +1021,16 @@ func (job *Job) Execute() (*Result, error) {
 package ` + job.Package + `
 
 `
-	extraPackagesContent := ""
+	var extraPackagesContent strings.Builder
 	for j, k := range extraPackages {
 		if k {
-			extraPackagesContent += text.Indent(""+j+"\n", "\t")
+			extraPackagesContent.WriteString(text.Indent(""+j+"\n", "\t"))
 		}
 	}
 
-	if extraPackagesContent != "" {
+	if extraPackagesContent.Len() != 0 {
 		content += `import (
-` + extraPackagesContent + `)
+` + extraPackagesContent.String() + `)
 
 `
 	}

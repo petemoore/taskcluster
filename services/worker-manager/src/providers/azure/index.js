@@ -896,6 +896,16 @@ export class AzureProvider extends Provider {
     return new Date();
   }
 
+  // Date used when checking the validity period of the signing certificate
+  // chain. This is kept separate from _now() (which governs signed-message
+  // expiry) so that tests can pin it to the validity window of the checked-in
+  // Azure signature fixtures without affecting message-expiry checks. In
+  // production this is the current time, so certificate expiry is always
+  // enforced normally.
+  _certValidityCheckDate() {
+    return new Date();
+  }
+
   async registerWorker({ worker, workerPool, workerIdentityProof }) {
     const { document } = workerIdentityProof;
     const monitor = this.workerMonitor({ worker });
@@ -1080,6 +1090,7 @@ export class AzureProvider extends Provider {
       forge.pki.verifyCertificateChain(
         cloneCaStore(this.caStore),
         [crt],
+        { validityCheckDate: this._certValidityCheckDate() },
       );
     } catch (err) {
       this.monitor.log.registrationErrorWarning({

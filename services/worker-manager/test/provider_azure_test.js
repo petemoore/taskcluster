@@ -194,6 +194,17 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
     // So that checked-in certs are still valid
     provider._now = () => taskcluster.fromNow('-10 years');
 
+    // The checked-in Azure signature fixtures (test/fixtures/azure_signature_good.json,
+    // see README "Testing") embed a real Azure leaf certificate that is only valid
+    // for a few months (notBefore 2025-10-25, notAfter 2026-04-23). Certificate-chain
+    // validation checks the validity period against the current date, so once
+    // wall-clock time passes the fixture's notAfter the whole suite fails ("Signature
+    // validation error"). Pin the certificate-validity check to a moment inside that
+    // window (the document's createdOn timestamp) so the fixtures verify regardless of
+    // when the tests run. Production still uses the real current time via _now()'s
+    // sibling default, so certificate expiry is enforced normally there.
+    provider._certValidityCheckDate = () => new Date('2025-11-19T12:53:30Z');
+
     await helper.db.fns.delete_worker_pool(workerPoolId);
 
     await provider.setup();
