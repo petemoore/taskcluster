@@ -1,7 +1,12 @@
 import { withRootUrl } from 'taskcluster-lib-urls';
-import { stringify } from 'query-string';
+import queryString from 'query-string';
 import hawk from 'hawk';
 import fetch from './fetch';
+
+// query-string v9 is pure ESM and its package entry point only exposes a
+// default export (a namespace object); the named `stringify` export that
+// existed in v7 is no longer available from the package root.
+const { stringify } = queryString;
 
 export default class Client {
   constructor(options = {}) {
