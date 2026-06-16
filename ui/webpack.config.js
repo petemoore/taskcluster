@@ -1,6 +1,6 @@
+const webpack = require("webpack");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
-const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
 const generateEnvJs = require("./generate-env-js");
 const DEFAULT_PORT = 5080;
@@ -24,27 +24,24 @@ if (process.env.GENERATE_ENV_JS) {
 }
 
 module.exports = (_, { mode }) => ({
-  devtool: mode === "production" ? false : "cheap-module-eval-source-map",
+  devtool: mode === "production" ? false : "eval-cheap-module-source-map",
   target: "web",
   context: __dirname,
   watchOptions: {
-    ignored: (p) => !p.startsWith(__dirname),
+    ignored: /node_modules/,
   },
   externals: { bindings: "bindings" },
   output: {
     path: `${__dirname}/build`,
     publicPath: "/",
-    filename: "assets/[name].[hash:8].js",
+    filename: "assets/[name].[fullhash:8].js",
+    // webpack 5 has a built-in replacement for clean-webpack-plugin
+    clean: true,
   },
   stats: {
     children: false,
     entrypoints: false,
     modules: false,
-  },
-  node: {
-    Buffer: true,
-    fs: "empty",
-    tls: "empty",
   },
   resolve: {
     alias: {
@@ -59,6 +56,25 @@ module.exports = (_, { mode }) => ({
       ".js",
       ".json",
     ],
+    // webpack 5 no longer polyfills Node core modules automatically the way
+    // webpack 4 did. Replicate the previous behaviour: disable the modules
+    // that have no browser equivalent and provide browser polyfills for the
+    // ones the app (and its dependencies) actually use at runtime.
+    fallback: {
+      fs: false,
+      tls: false,
+      net: false,
+      child_process: false,
+      buffer: require.resolve("buffer/"),
+      path: require.resolve("path-browserify"),
+      crypto: require.resolve("crypto-browserify"),
+      stream: require.resolve("stream-browserify"),
+      assert: require.resolve("assert/"),
+      url: require.resolve("url/"),
+      util: require.resolve("util/"),
+      vm: require.resolve("vm-browserify"),
+      process: require.resolve("process/browser"),
+    },
   },
   optimization: {
     minimize: true,
@@ -67,45 +83,58 @@ module.exports = (_, { mode }) => ({
   },
   devServer: {
     port,
+    // webpack-dev-server v4 removed `disableHostCheck`; allow all hosts so
+    // the dev server can be reached via docker/CI hostnames.
+    allowedHosts: "all",
     historyApiFallback: {
       disableDotRule: true,
       rewrites: [{ from: /^\/docs/, to: "/docs.html" }],
     },
-    proxy: {
-      "/login": {
+    // webpack-dev-server v5 expects `proxy` to be an array of route configs,
+    // and http-proxy-middleware v3 moved event handlers under `on`.
+    proxy: [
+      {
+        context: ["/login"],
         target: proxyTarget,
         changeOrigin: true,
       },
-      "/graphql": {
+      {
+        context: ["/graphql"],
         target: proxyTarget,
         changeOrigin: true,
       },
-      "/schemas": {
+      {
+        context: ["/schemas"],
         target: proxyTarget,
         changeOrigin: true,
       },
-      "/references": {
+      {
+        context: ["/references"],
         target: proxyTarget,
         changeOrigin: true,
       },
-      "/subscription": {
+      {
+        context: ["/subscription"],
         ws: true,
         changeOrigin: true,
         target: proxyTarget.replace(/^http(s)?:/, "ws$1:"),
-        onError: function(err, req, res) {
-          console.warn("[WS Proxy Error]", err.code, err.message);
-        },
-        onProxyReqWs: function(proxyReq, req, socket) {
-          socket.on("error", function(err) {
-            console.warn("[WS Socket Error]", err.code, err.message);
-          });
+        on: {
+          error: function(err, req, res) {
+            console.warn("[WS Proxy Error]", err.code, err.message);
+          },
+          proxyReqWs: function(proxyReq, req, socket) {
+            socket.on("error", function(err) {
+              console.warn("[WS Socket Error]", err.code, err.message);
+            });
+          },
         },
       },
-      "/api/web-server": {
+      {
+        context: ["/api/web-server"],
         target: proxyTarget,
         changeOrigin: true,
       },
-    },
+    ],
   },
   module: {
     rules: [
@@ -115,7 +144,18 @@ module.exports = (_, { mode }) => ({
           {
             loader: "html-loader",
             options: {
-              attrs: ["img:src", "link:href"],
+              // html-loader v5 replaced the `attrs` option with `sources`.
+              // Restrict the processed attributes to the same set the old
+              // webpack 4 config used (`attrs: ["img:src", "link:href"]`).
+              // In particular this avoids resolving `<script src>` (e.g. the
+              // runtime-generated /static/env.js), which html-loader v5 would
+              // otherwise try to bundle by default.
+              sources: {
+                list: [
+                  { tag: "img", attribute: "src", type: "src" },
+                  { tag: "link", attribute: "href", type: "src" },
+                ],
+              },
             },
           },
         ],
@@ -357,19 +397,25 @@ module.exports = (_, { mode }) => ({
       ignoreOrder: false,
       chunkFilename: "assets/[name].[hash:8].css",
     }),
-    new CleanWebpackPlugin({
-      dangerouslyAllowCleanPatternsOutsideProject: false,
-      dry: false,
-      verbose: false,
-      cleanStaleWebpackAssets: true,
-      protectWebpackAssets: true,
-      cleanAfterEveryBuildPatterns: [],
-      cleanOnceBeforeBuildPatterns: ["**/*"],
-      currentAssets: [],
-      initialClean: false,
-      outputPath: "",
+    // Provide globals that webpack 5 no longer injects by default
+    // (previously handled by `node: { Buffer: true }`).
+    new webpack.ProvidePlugin({
+      Buffer: ["buffer", "Buffer"],
+      process: "process/browser",
     }),
-    new CopyPlugin([{ context: "src/static", from: "**/*", to: "static" }]),
+    // copy-webpack-plugin v6+ takes its patterns under a `patterns` key.
+    new CopyPlugin({
+      patterns: [
+        {
+          context: "src/static",
+          from: "**/*",
+          to: "static",
+          // src/static only exists when env.js is generated (dev/start);
+          // don't fail the production build when it is absent.
+          noErrorOnMissing: true,
+        },
+      ],
+    }),
   ],
   entry: {
     index: [`${__dirname}/src/index.jsx`],

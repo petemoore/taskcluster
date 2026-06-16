@@ -24,6 +24,12 @@ DEV_PID=$!
 # Wait for the initial webpack build to finish, not just for the port
 # to open — webpack-dev-server starts serving before all chunks are
 # emitted, which races the smoke harness on a cold CI worker.
-timeout 300 bash -c "until grep -q 'Compiled successfully' '$DEV_LOG'; do sleep 2; done"
+#
+# webpack 5 / webpack-dev-server v5 print the compilation status via
+# webpack's stats ("webpack <ver> compiled successfully in N ms", or
+# "compiled with N warnings"), which differs from the old dev-server v3
+# "Compiled successfully." line. Match either phrasing, case-insensitively,
+# so we wait for the build to finish rather than racing it.
+timeout 300 bash -c "until grep -qiE 'compiled (successfully|with)' '$DEV_LOG'; do sleep 2; done"
 
 BASE_URL="http://localhost:${PORT}" yarn smoke
