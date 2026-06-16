@@ -287,7 +287,10 @@ export default class WorkerManagerWorkerPoolsTable extends Component {
               variant="outlined"
               disabled={actionLoading}
               size="small">
-              <AccountHardHatIcon className={classes.linksIcon} size={iconSize} />
+              <AccountHardHatIcon
+                className={classes.linksIcon}
+                size={iconSize}
+              />
               Workers
             </Button>
           </Link>
