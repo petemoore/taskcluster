@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import assert from 'assert';
+import assert from 'node:assert';
 import slugid from 'slugid';
 import taskcluster from '@taskcluster/client';
 import builder from '../src/api.js';
@@ -17,14 +17,14 @@ import {
 import { mockClient } from 'aws-sdk-client-mock';
 import nock from 'nock';
 import testing from '@taskcluster/lib-testing';
-import { globalAgent } from 'http';
+import { globalAgent } from 'node:http';
 
 export const load = testing.stickyLoader(loadMain);
 const __dirname = new URL('.', import.meta.url).pathname;
 
 const helper = { load };
 
-suiteSetup(async function() {
+suiteSetup(async () => {
   load.inject('profile', 'test');
   load.inject('process', 'test');
 });
@@ -57,7 +57,7 @@ helper.rootUrl = 'http://localhost:60401';
  * Set up to use aws-sdk-client-mock for S3 operations when mocking.
  */
 export const withS3 = (mock, skipping) => {
-  suiteSetup('setup withS3', async function() {
+  suiteSetup('setup withS3', async () => {
     if (skipping()) {
       return;
     }
@@ -89,7 +89,7 @@ export const withS3 = (mock, skipping) => {
         })
         .on(DeleteObjectsCommand)
         .callsFake(async ({ Delete }) => {
-          for (let { Key } of Delete.Objects) {
+          for (const { Key } of Delete.Objects) {
             artifacts = artifacts.filter(a => a.Key !== Key);
           }
           return {};
@@ -116,7 +116,7 @@ helper.withS3 = withS3;
  * - DeleteObjects not supported
  */
 export const withGCS = (mock, skipping) => {
-  suiteSetup('setup withGCS', async function() {
+  suiteSetup('setup withGCS', async () => {
     if (skipping()) {
       return;
     }
@@ -183,7 +183,7 @@ helper.withGCS = withGCS;
 export const withAmazonIPRanges = (mock, skipping) => {
   let interceptor;
 
-  suiteSetup(async function() {
+  suiteSetup(async () => {
     if (skipping()) {
       return;
     }
@@ -191,10 +191,10 @@ export const withAmazonIPRanges = (mock, skipping) => {
     interceptor = nock('https://ip-ranges.amazonaws.com')
       .persist()
       .get('/ip-ranges.json')
-      .replyWithFile(200, __dirname + '/fake-ip-ranges.json', { 'Content-Type': 'application/json' });
+      .replyWithFile(200, `${__dirname}/fake-ip-ranges.json`, { 'Content-Type': 'application/json' });
   });
 
-  suiteTeardown(async function() {
+  suiteTeardown(async () => {
     if (interceptor) {
       nock.removeInterceptor(interceptor);
       interceptor = undefined;
@@ -213,7 +213,7 @@ helper.withDb = withDb;
  */
 export const withObjectService = (mock, skipping) => {
   let objects = new Map();
-  suiteSetup(async function() {
+  suiteSetup(async () => {
     const err404 = message => {
       const err = new Error(message);
       err.statusCode = 404;
@@ -266,7 +266,7 @@ export const withObjectService = (mock, skipping) => {
     load.inject('objectService', helper.objectService);
   });
 
-  setup(function() {
+  setup(() => {
     objects = new Map();
   });
 };
@@ -282,7 +282,7 @@ helper.withObjectService = withObjectService;
 export const withServer = (mock, skipping) => {
   let webServer;
 
-  suiteSetup(async function() {
+  suiteSetup(async () => {
     if (skipping()) {
       return;
     }
@@ -314,11 +314,11 @@ export const withServer = (mock, skipping) => {
       };
       // if called as scopes('none'), don't pass credentials at all
       if (scopes && scopes[0] !== 'none') {
-        options['credentials'] = {
+        options.credentials = {
           clientId: 'test-client',
           accessToken: 'none',
         };
-        options['authorizedScopes'] = scopes.length > 0 ? scopes : undefined;
+        options.authorizedScopes = scopes.length > 0 ? scopes : undefined;
       }
       helper.queue = new helper.Queue(options);
     };
@@ -326,7 +326,7 @@ export const withServer = (mock, skipping) => {
     webServer = await helper.load('server');
   });
 
-  setup(async function() {
+  setup(async () => {
     if (skipping()) {
       return;
     }
@@ -334,7 +334,7 @@ export const withServer = (mock, skipping) => {
     helper.scopes();
   });
 
-  suiteTeardown(async function() {
+  suiteTeardown(async () => {
     if (skipping()) {
       return;
     }
@@ -361,7 +361,7 @@ helper.withPulse = withPulse;
 export const withPollingServices = (mock, skipping) => {
   let svc;
 
-  suiteSetup(async function() {
+  suiteSetup(async () => {
     if (skipping()) {
       return;
     }
@@ -383,13 +383,13 @@ export const withPollingServices = (mock, skipping) => {
     };
   });
 
-  teardown(async function() {
+  teardown(async () => {
     if (svc) {
       throw new Error('Must call stopPollingService if you have started a service');
     }
   });
 
-  suiteTeardown(function() {
+  suiteTeardown(() => {
     helper.startPollingService = null;
   });
 };
@@ -428,7 +428,7 @@ export const checkDates = ({ status }) => {
 
   chk(status.deadline, "status.deadline");
   chk(status.expires, "status.expires");
-  for (let run of status.runs) {
+  for (const run of status.runs) {
     chk(run.takenUntil, "run.takenUntil");
     chk(run.scheduled, "run.scheduled");
     chk(run.started, "run.started");
@@ -439,7 +439,7 @@ export const checkDates = ({ status }) => {
 helper.checkDates = checkDates;
 
 export const resetTables = (mock, skipping) => {
-  setup('reset tables', async function() {
+  setup('reset tables', async () => {
     await testing.resetTables({ tableNames: [
       'tasks',
       'task_groups',

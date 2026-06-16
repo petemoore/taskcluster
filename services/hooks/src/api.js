@@ -28,7 +28,7 @@ const builder = new APIBuilder({
   apiVersion: 'v1',
   params: {
     hookGroupId: /^[a-zA-Z0-9-_]{1,1000}$/,
-    hookId: /^[a-zA-Z0-9-_\/]{1,1000}$/,
+    hookId: /^[a-zA-Z0-9-_/]{1,1000}$/,
   },
   context: ['db', 'taskcreator', 'publisher', 'denylist', 'monitor'],
 });
@@ -103,7 +103,7 @@ builder.declare({
   }
 
   // Reply with the hook definition
-  let definition = hookUtils.definition(hook);
+  const definition = hookUtils.definition(hook);
   return res.reply(definition);
 });
 
@@ -220,7 +220,7 @@ builder.declare({
   await req.authorize({ hookGroupId, hookId });
 
   // Validate cron-parser expressions
-  for (let schedElement of hookDef.schedule) {
+  for (const schedElement of hookDef.schedule) {
     try {
       parser.parse(schedElement);
     } catch (err) {
@@ -230,27 +230,27 @@ builder.declare({
   }
 
   // Handle an invalid schema
-  let valid = ajv.validateSchema(hookDef.triggerSchema);
+  const valid = ajv.validateSchema(hookDef.triggerSchema);
   if (!valid) {
 
     const errors = [];
 
     for (let index = 0; index < ajv.errors.length; index++) {
-      errors.push(' * Property ' + ajv.errors[index].dataPath + ' ' + ajv.errors[index].message);
+      errors.push(` * Property ${ajv.errors[index].dataPath} ${ajv.errors[index].message}`);
     }
 
     return res.reportError('InputError', '{{message}}', {
-      message: 'triggerSchema is not a valid JSON schema:\n' + errors.join('\n'),
+      message: `triggerSchema is not a valid JSON schema:\n${errors.join('\n')}`,
     });
   }
 
-  let denied = await isDeniedBinding({
+  const denied = await isDeniedBinding({
     bindings: hookDef.bindings || [],
     denylist: this.denylist,
   });
   if (denied) {
     return res.reportError('InputError', '{{message}}', {
-      message: 'One or more of the exchanges below have been denied access to hooks\n' + JSON.stringify(hookDef.bindings),
+      message: `One or more of the exchanges below have been denied access to hooks\n${JSON.stringify(hookDef.bindings)}`,
     });
   }
 
@@ -297,7 +297,7 @@ builder.declare({
 
     if (!_.isEqual(hookDef, hookUtils.definition(existingHook))) {
       return res.reportError('RequestConflict',
-        'hook `' + hookGroupId + '/' + hookId + '` already exists.',
+        `hook \`${hookGroupId}/${hookId}\` already exists.`,
         {});
     }
   }
@@ -353,23 +353,23 @@ builder.declare({
   }
 
   //Handle an invalid schema
-  let valid = ajv.validateSchema(hookDef.triggerSchema);
+  const valid = ajv.validateSchema(hookDef.triggerSchema);
 
   if (!valid) {
     const errors = [];
 
     for (let index = 0; index < ajv.errors.length; index++) {
-      errors.push(' * Property ' + ajv.errors[index].dataPath + ' ' + ajv.errors[index].message);
+      errors.push(` * Property ${ajv.errors[index].dataPath} ${ajv.errors[index].message}`);
     }
 
     return res.reportError('InputError', '{{message}}', {
-      message: 'triggerSchema is not a valid JSON schema:\n' + errors.join('\n'),
+      message: `triggerSchema is not a valid JSON schema:\n${errors.join('\n')}`,
     });
   }
 
   // Attempt to modify properties of the hook
   const schedule = hookDef.schedule ? hookDef.schedule : [];
-  for (let schedElement of schedule) {
+  for (const schedElement of schedule) {
     try {
       parser.parse(schedElement);
     } catch (err) {
@@ -379,13 +379,13 @@ builder.declare({
   }
   hookDef.bindings = _.defaultTo(hookDef.bindings, hook.bindings);
 
-  let denied = await isDeniedBinding({
+  const denied = await isDeniedBinding({
     bindings: hookDef.bindings,
     denylist: this.denylist,
   });
   if (denied) {
     return res.reportError('InputError', '{{message}}', {
-      message: 'One or more of the exchanges below have been denied access to hooks\n' + JSON.stringify(hookDef.bindings),
+      message: `One or more of the exchanges below have been denied access to hooks\n${JSON.stringify(hookDef.bindings)}`,
     });
   }
 
@@ -418,7 +418,7 @@ builder.declare({
     AUDIT_ENTRY_TYPE.HOOK.UPDATED,
   );
 
-  let definition = hookUtils.definition(hook);
+  const definition = hookUtils.definition(hook);
   await this.publisher.hookUpdated({ hookGroupId, hookId });
 
   return res.reply(definition);
@@ -478,7 +478,7 @@ builder.declare({
   description: [
     'This endpoint will trigger the creation of a task from a hook definition.',
     '',
-    'The HTTP payload must match the hook\s `triggerSchema`.  If it does, it is',
+    'The HTTP payload must match the hook\'s `triggerSchema`.  If it does, it is',
     'provided as the `payload` property of the JSON-e context used to render the',
     'task template.',
     '',
@@ -594,7 +594,7 @@ builder.declare({
   description: [
     'This endpoint triggers a defined hook with a valid token.',
     '',
-    'The HTTP payload must match the hook\s `triggerSchema`.  If it does, it is',
+    'The HTTP payload must match the hook\'s `triggerSchema`.  If it does, it is',
     'provided as the `payload` property of the JSON-e context used to render the',
     'task template.',
     '',
@@ -637,7 +637,7 @@ const triggerHookCommon = async function({ req, res, hook, payload, clientId, fi
   //Using ajv lib to check if the context respect the triggerSchema
   const validate = ajv.compile(hook.triggerSchema);
 
-  let valid = validate(payload);
+  const valid = validate(payload);
   if (!valid) {
     return res.reportError('InputError', '{{message}}', {
       message: ajv.errorsText(validate.errors, { separator: '; ' }),
@@ -671,7 +671,7 @@ const triggerHookCommon = async function({ req, res, hook, payload, clientId, fi
       // for compatibility, provide the taskId at the path it was at before #4437.
       status: { taskId },
     });
-  } else if (error.body && error.body.requestInfo) {
+  } else if (error.body?.requestInfo) {
     // handle errors from createTask specially (since they are usually about scopes)
     if (error.body.requestInfo.method === 'createTask' && error.body.code === 'InsufficientScopes') {
       return res.reportError(
@@ -696,8 +696,8 @@ const triggerHookCommon = async function({ req, res, hook, payload, clientId, fi
 };
 
 const isDeniedBinding = async ({ bindings, denylist }) => {
-  for (let deny of denylist) {
-    for (let binding of bindings) {
+  for (const deny of denylist) {
+    for (const binding of bindings) {
       const denyPattern = new RegExp(`^${deny}`);
       if (denyPattern.test(binding.exchange)) {
         return true;
@@ -768,7 +768,7 @@ builder.declare({
     'This endpoint is used to check on backing services this service',
     'depends on.',
   ].join('\n'),
-}, function(_req, res) {
+}, (_req, res) => {
   // TODO: add implementation
   res.reply({});
 });

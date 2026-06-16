@@ -2,10 +2,10 @@ import helper from './helper.js';
 import assume from 'assume';
 import testing from '@taskcluster/lib-testing';
 import sinon from 'sinon';
-import assert from 'assert';
+import assert from 'node:assert';
 import taskcluster from '@taskcluster/client';
 
-helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
+helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
   helper.withDb(mock, skipping);
   helper.withServer(mock, skipping);
 
@@ -13,14 +13,14 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
     return helper.apiClient.ping();
   });
 
-  test('allPurgeRequests without scopes', async function() {
+  test('allPurgeRequests without scopes', async () => {
     const client = new helper.PurgeCacheClient({ rootUrl: helper.rootUrl });
     await assert.rejects(
       () => client.allPurgeRequests(),
       err => err.code === 'InsufficientScopes');
   });
 
-  test('purgeRequests without scopes', async function() {
+  test('purgeRequests without scopes', async () => {
     const client = new helper.PurgeCacheClient({ rootUrl: helper.rootUrl });
     await assert.rejects(
       () => client.purgeRequests('dummy-provisioner-extended-extended-2/dummy-worker-extended-extended'),
@@ -41,18 +41,18 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
     // Check that the first request is valid
     openRequests = await helper.apiClient.allPurgeRequests();
     assume(openRequests.requests.length).equals(1);
-    let request = openRequests.requests[0];
+    const request = openRequests.requests[0];
     assume(request.cacheName).equals('my-test-cache');
     assume(request.provisionerId).equals('dummy-provisioner-extended-extended');
     assume(request.workerType).equals('dummy-worker-extended-extended');
-    let firstBefore = new Date(request.before);
+    const firstBefore = new Date(request.before);
 
     // Check if we can override and update an existing request
     await helper.apiClient.purgeCache('dummy-provisioner-extended-extended/dummy-worker-extended-extended', {
       cacheName: 'my-test-cache',
     });
     openRequests = await helper.apiClient.allPurgeRequests();
-    let newBefore = new Date(openRequests.requests[0].before);
+    const newBefore = new Date(openRequests.requests[0].before);
     assume(newBefore.valueOf()).is.gt(firstBefore.valueOf());
 
     // Add a second request
@@ -97,7 +97,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
     assume(spec.requests.length).equals(0);
   });
 
-  test('purgeRequest caching', async function() {
+  test('purgeRequest caching', async () => {
     sinon.stub(helper.db.fns, 'purge_requests_wpid').callsFake(async (query) => []);
     try {
       const since = taskcluster.fromNow('-1 hour').toString();
@@ -113,7 +113,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
     }
   });
 
-  test('purgeRequest with a failed postgres query', async function() {
+  test('purgeRequest with a failed postgres query', async () => {
     // client retries could confuse the picture here, so don't do them
     const client = helper.apiClient.use({ retries: 0 });
 

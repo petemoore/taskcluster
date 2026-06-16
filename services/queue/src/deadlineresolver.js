@@ -1,6 +1,6 @@
 import debugFactory from 'debug';
 const debug = debugFactory('app:deadline-resolver');
-import assert from 'assert';
+import assert from 'node:assert';
 import _ from 'lodash';
 import QueueService from './queueservice.js';
 import Iterate from '@taskcluster/lib-iterate';
@@ -65,11 +65,11 @@ class DeadlineResolver {
     this.iterator = new Iterate({
       name: options.ownName,
       maxFailures: 10,
-      waitTime: this.pollingDelay,
+      waitTime: 0,
       monitor: this.monitor,
       maxIterationTime: 601 * 1000,
       handler: async () => {
-        let loops = [];
+        const loops = [];
         for (let i = 0; i < this.parallelism; i++) {
           loops.push(this.poll());
         }
@@ -95,7 +95,7 @@ class DeadlineResolver {
 
   /** Poll for messages and handle them in a loop */
   async poll() {
-    let messages = await this.queueService.pollDeadlineQueue(this.count);
+    const messages = await this.queueService.pollDeadlineQueue(this.count);
     let failed = 0;
 
     await Promise.all(messages.map(async (message) => {
@@ -109,9 +109,9 @@ class DeadlineResolver {
       }
     }));
 
-    // If there were no messages, back off for a bit.
-    if (messages.length === 0) {
-      await sleep(2000);
+    // If we emptied the queue, back off
+    if (messages.length < this.count) {
+      await sleep(this.pollingDelay);
     }
 
     this.monitor.log.queuePoll({
@@ -131,11 +131,18 @@ class DeadlineResolver {
       return remove();
     }
 
-    task.updateStatusWith(await this.db.fns.cancel_task(taskId, 'deadline-exceeded'));
+    const updated = task.updateStatusWith(
+      await this.db.fns.cancel_task(taskId, 'deadline-exceeded'),
+    );
+
+    if (!updated) {
+      debug('No cancellation run created for taskId: %s; task was already resolved', taskId);
+      return remove();
+    }
 
     // Check if the last run was resolved here (or possibly by a previous
     // attempt to process this message)
-    let run = _.last(task.runs);
+    const run = _.last(task.runs);
     if (run.reasonResolved === 'deadline-exceeded' &&
         run.state === 'exception') {
       debug('Resolved taskId: %s, by deadline', taskId);

@@ -1,7 +1,6 @@
-import assert from 'assert';
-import path from 'path';
-import fs from 'fs';
-import _ from 'lodash';
+import assert from 'node:assert';
+import path from 'node:path';
+import fs from 'node:fs';
 import { REPO_ROOT } from '../../utils/index.js';
 
 export const tasks = [{

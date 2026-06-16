@@ -1,4 +1,4 @@
-import assert from 'assert';
+import assert from 'node:assert';
 import slugid from 'slugid';
 import _ from 'lodash';
 import taskcluster from '@taskcluster/client';
@@ -37,7 +37,6 @@ export class GoogleProvider extends Provider {
       intervalDefault: 100 * 1000, // Intervals are enforced every 100 seconds
       intervalCapDefault: 2000, // The calls we make are all limited 20/sec so 20 * 100 are allowed
       timeout: 10 * 60 * 1000, // each cloud call should not take longer than 10 minutes
-      throwOnTimeout: true,
       monitor: this.monitor,
       providerId: this.providerId,
       errorHandler: ({ err, tries }) => {
@@ -45,7 +44,7 @@ export class GoogleProvider extends Provider {
           // google's interval is 100 seconds so let's try once optimistically and a second time to get it for sure
           return { backoff: _backoffDelay * 50, reason: 'rateLimit', level: 'notice' };
         } else if (err.code === 403 || err.code >= 500) { // For 500s, let's take a shorter backoff
-          return { backoff: _backoffDelay * Math.pow(2, tries), reason: 'errors', level: 'warning' };
+          return { backoff: _backoffDelay * 2 ** tries, reason: 'errors', level: 'warning' };
         }
         // If we don't want to do anything special here, just throw and let the
         // calling code figure out what to do
@@ -221,7 +220,7 @@ export class GoogleProvider extends Provider {
         workerPool.workerPoolId, this.providerId, {});
     }
 
-    let toSpawn = await this.estimator.simple({
+    const toSpawn = await this.estimator.simple({
       workerPoolId,
       providerId: this.providerId,
       ...workerPool.config,
@@ -246,7 +245,7 @@ export class GoogleProvider extends Provider {
       // The lost entropy from downcasing, etc should be ok due to the fact that
       // only running instances need not be identical. We do not use this name to identify
       // workers in taskcluster.
-      const poolName = workerPoolId.replace(/[\/_]/g, '-').slice(0, 38);
+      const poolName = workerPoolId.replace(/[/_]/g, '-').slice(0, 38);
       const instanceName = `${poolName}-${slugid.nice().replace(/_/g, '-').toLowerCase()}`;
       // Historically we set workerGroup to cfg.region (e.g. 'us-east1') but
       // cfg.zone (e.g. 'us-east1-d') is more specific, and required for e.g.
@@ -265,7 +264,7 @@ export class GoogleProvider extends Provider {
       const disks = [
         ...(cfg.disks || {}),
       ];
-      for (let disk of disks) {
+      for (const disk of disks) {
         if (disk.type !== 'PERSISTENT') {
           delete disk.labels;
           continue;
@@ -318,7 +317,7 @@ export class GoogleProvider extends Provider {
             },
             metadata: {
               items: [
-                ...((cfg.metadata || {}).items || []),
+                ...(cfg.metadata?.items || []),
                 {
                   key: 'taskcluster',
                   value: JSON.stringify({
@@ -490,12 +489,13 @@ export class GoogleProvider extends Provider {
       }
 
       const seenByGroup = this.seenByWorkerGroup[workerPoolId] || {};
-      Object.entries(seenByGroup).forEach(([workerGroup, groupSeen]) =>
+      Object.entries(seenByGroup).forEach(([workerGroup, groupSeen]) => {
         this.monitor.metric.scanSeen(groupSeen, {
           providerId: this.providerId,
           workerPoolId,
           workerGroup,
-        }));
+        });
+      });
 
       if (this.errors[workerPoolId].length) {
         await Promise.all(this.errors[workerPoolId].map(error => this.reportError({ workerPool, ...error })));

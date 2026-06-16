@@ -1,12 +1,12 @@
-import fs from 'fs';
+import fs from 'node:fs';
 import helper from './helper.js';
-import assert from 'assert';
+import assert from 'node:assert';
 import testing from '@taskcluster/lib-testing';
 import { LEVELS } from '@taskcluster/lib-monitor';
 
 const TC_DEV_INSTALLATION_ID = 28513985;
 
-helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
+helper.secrets.mockSuite(testing.suiteName(), [], (mock, skipping) => {
   helper.withDb(mock, skipping);
   helper.withFakeGithub(mock, skipping);
   helper.withPulse(mock, skipping);
@@ -16,7 +16,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
   let github = null;
   let monitor;
 
-  setup(async function() {
+  setup(async () => {
     github = await helper.load('github');
     github.inst(5808).setUser({ id: 14795478, email: 'someuser@github.com', username: 'TaskclusterRobot' });
     github.inst(5808).setUser({ id: 18102552, email: 'anotheruser@github.com', username: 'owlishDeveloper' });
@@ -26,10 +26,10 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
 
   // Check the status code returned from a request containing some test data
   function statusTest(testName, jsonFile, statusCode, installationId = 5808, check = () => {}) {
-    test(testName, async function() {
-      const filename = './test/data/webhooks/' + jsonFile;
-      let request = JSON.parse(fs.readFileSync(filename));
-      let response = await helper.jsonHttpRequest(filename);
+    test(testName, async () => {
+      const filename = `./test/data/webhooks/${jsonFile}`;
+      const request = JSON.parse(fs.readFileSync(filename));
+      const response = await helper.jsonHttpRequest(filename);
       assert.equal(response.statusCode, statusCode);
       response.connection?.destroy();
       if (statusCode < 300) {
@@ -80,7 +80,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
   statusTest('Issue Comment created', 'webhook.issue_comment.created.json', 200, TC_DEV_INSTALLATION_ID);
   statusTest('Issue Comment deleted', 'webhook.issue_comment.deleted.json', 200, TC_DEV_INSTALLATION_ID);
 
-  test('Pull Request Opened without a known sender user still succeeds', async function() {
+  test('Pull Request Opened without a known sender user still succeeds', async () => {
     const installation = github.inst(5808);
     // drop user to cause 404 error
     installation._github_users = installation._github_users.filter(({ username }) => username !== 'owlishDeveloper');
@@ -131,7 +131,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
     'webhook.push.invalid_ref.json', 400);
 
   // Test that OneOf pattern correctly validates different event types
-  test('OneOf schema validates all supported webhook event types', async function() {
+  test('OneOf schema validates all supported webhook event types', async () => {
     const validEvents = [
       { file: 'webhook.pull_request.open.json', eventType: 'pull_request' },
       { file: 'webhook.push.json', eventType: 'push' },
@@ -142,7 +142,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
     ];
 
     for (const { file, eventType } of validEvents) {
-      const response = await helper.jsonHttpRequest('./test/data/webhooks/' + file);
+      const response = await helper.jsonHttpRequest(`./test/data/webhooks/${file}`);
       // Should pass validation (200 or 204 status)
       assert.ok(response.statusCode < 400,
         `${eventType} event should pass validation, got ${response.statusCode}`);
@@ -151,7 +151,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
   });
 
   // Test that validation properly rejects malformed payloads
-  test('Schema validation rejects malformed payloads for each event type', async function() {
+  test('Schema validation rejects malformed payloads for each event type', async () => {
     const invalidEvents = [
       { file: 'webhook.pull_request.missing_head_repo.json', reason: 'missing required field' },
       { file: 'webhook.pull_request.invalid_sha.json', reason: 'invalid SHA format' },
@@ -160,7 +160,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
     ];
 
     for (const { file, reason } of invalidEvents) {
-      const response = await helper.jsonHttpRequest('./test/data/webhooks/' + file);
+      const response = await helper.jsonHttpRequest(`./test/data/webhooks/${file}`);
       assert.equal(response.statusCode, 400,
         `Should reject payload with ${reason}`);
       response.connection?.destroy();
@@ -168,7 +168,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
   });
 
   // Test refactored schema with common fields extracted
-  test('Common fields are validated at base schema level', async function() {
+  test('Common fields are validated at base schema level', async () => {
     // Test that sender field is validated as a common field
     const validPayloads = [
       'webhook.pull_request.open.json',
@@ -179,7 +179,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
     ];
 
     for (const file of validPayloads) {
-      const filename = './test/data/webhooks/' + file;
+      const filename = `./test/data/webhooks/${file}`;
       const payload = JSON.parse(fs.readFileSync(filename));
 
       // Verify sender field exists in all payloads
@@ -188,7 +188,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
     }
   });
 
-  test('Schema validates common and event-specific fields together', async function() {
+  test('Schema validates common and event-specific fields together', async () => {
     // Test that both common fields (sender, repository, installation)
     // and event-specific fields are validated together
     const testCases = [
@@ -210,7 +210,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
     ];
 
     for (const { file, commonFields, specificFields } of testCases) {
-      const filename = './test/data/webhooks/' + file;
+      const filename = `./test/data/webhooks/${file}`;
       const payload = JSON.parse(fs.readFileSync(filename));
 
       // Verify common fields
@@ -220,13 +220,13 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
 
       // Verify event-specific fields
       for (const field of specificFields) {
-        assert.ok(Object.prototype.hasOwnProperty.call(payload.body, field),
+        assert.ok(Object.hasOwn(payload.body, field),
           `${file} should have event-specific field: ${field}`);
       }
     }
   });
 
-  test('OneOf pattern correctly discriminates between event types', async function() {
+  test('OneOf pattern correctly discriminates between event types', async () => {
     // Test that the oneOf correctly identifies and validates each event type
     const eventTypes = [
       { file: 'webhook.pull_request.open.json', hasAction: true, hasPushFields: false },
@@ -236,7 +236,7 @@ helper.secrets.mockSuite(testing.suiteName(), [], function(mock, skipping) {
     ];
 
     for (const { file, hasAction, hasPushFields } of eventTypes) {
-      const filename = './test/data/webhooks/' + file;
+      const filename = `./test/data/webhooks/${file}`;
       const payload = JSON.parse(fs.readFileSync(filename));
 
       if (hasAction) {

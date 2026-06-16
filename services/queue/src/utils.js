@@ -1,4 +1,4 @@
-import assert from 'assert';
+import assert from 'node:assert';
 
 export const artifactUtils = {
   // Create a single instance, or undefined, from a set of rows containing zero
@@ -74,13 +74,12 @@ export const artifactUtils = {
           } else if (entry.details.bucket === privateBucket.bucket) {
             s3private.push(entry);
           } else {
-            let err = new Error('Expiring artifact with bucket which isn\'t ' +
+            const err = new Error('Expiring artifact with bucket which isn\'t ' +
               'configured for use. Please investigate!');
             err.bucket = entry.details.bucket;
             err.taskId = entry.taskId;
             err.runId = entry.runId;
             monitor.reportError(err);
-            continue;
           }
         }
       }
@@ -90,7 +89,7 @@ export const artifactUtils = {
         if (entries.length) {
           try {
             const response = await bucket.deleteObjects(entries.map(entry => entry.details.prefix), true);
-            if (response.Errors && response.Errors.length) {
+            if (response.Errors?.length) {
               errors.push(response.Errors.map(obj => ({
                 code: obj.Code,
                 message: obj.Message,
@@ -210,7 +209,7 @@ export const joinTaskQueueId = (provisionerId, workerType) => {
  * taskQueueId field to maintain public interface compatibility
  */
 export const addSplitFields = (obj) => {
-  assert(Object.prototype.hasOwnProperty.call(obj, 'taskQueueId'), 'object is missing property `taskQueueId`');
+  assert(Object.hasOwn(obj, 'taskQueueId'), 'object is missing property `taskQueueId`');
   const { provisionerId, workerType } = splitTaskQueueId(obj.taskQueueId);
   obj.provisionerId = provisionerId;
   obj.workerType = workerType;
@@ -221,8 +220,8 @@ export const addSplitFields = (obj) => {
  * equivalent taskQueueId.
  */
 export const useOnlyTaskQueueId = (obj) => {
-  assert(Object.prototype.hasOwnProperty.call(obj, 'provisionerId'), 'object is missing property `provisionerId`');
-  assert(Object.prototype.hasOwnProperty.call(obj, 'workerType'), 'object is missing property `workerType`');
+  assert(Object.hasOwn(obj, 'provisionerId'), 'object is missing property `provisionerId`');
+  assert(Object.hasOwn(obj, 'workerType'), 'object is missing property `workerType`');
   const taskQueueId = joinTaskQueueId(obj.provisionerId, obj.workerType);
   obj.taskQueueId = taskQueueId;
   delete obj.provisionerId;

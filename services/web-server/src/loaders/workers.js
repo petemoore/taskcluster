@@ -1,5 +1,4 @@
 import DataLoader from 'dataloader';
-import sift from '../utils/sift.js';
 import ConnectionLoader from '../ConnectionLoader.js';
 import WorkerCompact from '../entities/WorkerCompact.js';
 
@@ -21,11 +20,10 @@ export default ({ workerManager }, isAuthed, rootUrl, monitor, strategies, req, 
       provisionerId,
       workerType,
       options,
-      filter,
       isQuarantined,
       workerState,
     }) => {
-      let opts = { ...options };
+      const opts = { ...options };
       if (typeof isQuarantined === 'boolean') {
         opts.quarantined = isQuarantined;
       }
@@ -37,7 +35,7 @@ export default ({ workerManager }, isAuthed, rootUrl, monitor, strategies, req, 
         workerType,
         opts,
       );
-      const workers = sift(filter, raw.workers);
+      const workers = raw.workers;
 
       return {
         ...raw,

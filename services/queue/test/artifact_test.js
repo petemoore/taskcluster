@@ -1,6 +1,6 @@
 import debugFactory from 'debug';
 const debug = debugFactory('test:artifacts');
-import assert from 'assert';
+import assert from 'node:assert';
 import slugid from 'slugid';
 import _ from 'lodash';
 import request from 'superagent';
@@ -163,7 +163,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
       await makeArtifact(s3Artifact);
 
       await testing.fakeauth.withAnonymousScopes(['queue:get-artifact:public/s3.json'], async () => {
-        let url = helper.queue.buildUrl(
+        const url = helper.queue.buildUrl(
           helper.queue.getArtifact,
           taskId, 0, 'public/s3.json',
         );
@@ -177,7 +177,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
         assume(res.ok).is.ok();
         assume(res.body).to.be.eql({ message: 'Hello World' });
 
-        let content = await helper.queue.artifact(taskId, 0, 'public/s3.json');
+        const content = await helper.queue.artifact(taskId, 0, 'public/s3.json');
         assert.equal(content.storageType, 's3');
         assert.equal(content.url, location);
       });
@@ -191,7 +191,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
         'queue:get-artifact:public/s3.json',
       );
 
-      let url = helper.queue.buildSignedUrl(
+      const url = helper.queue.buildSignedUrl(
         helper.queue.getArtifact,
         taskId, 0, 'public/s3.json',
       );
@@ -210,7 +210,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
         'queue:get-artifact:public/something-else.json',
       );
 
-      let url = helper.queue.buildSignedUrl(
+      const url = helper.queue.buildSignedUrl(
         helper.queue.getArtifact,
         taskId, 0, 'public/s3.json',
       );
@@ -254,7 +254,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
       await makeArtifact({ ...s3Artifact, putFn: null });
 
       helper.scopes(
-        'queue:list-artifacts:' + taskId + ':0',
+        `queue:list-artifacts:${taskId}:0`,
       );
 
       const r2 = await helper.queue.listArtifacts(taskId, 0);
@@ -266,7 +266,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
       await makeArtifact({ ...s3Artifact, putFn: null });
 
       helper.scopes(
-        'queue:list-artifacts:' + taskId,
+        `queue:list-artifacts:${taskId}`,
       );
 
       const r3 = await helper.queue.listLatestArtifacts(taskId);
@@ -287,8 +287,8 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
 
     test('listArtifacts, listLatestArtifacts (missing run)', async () => {
       debug('### Creating self-dependent task');
-      let taskId = slugid.v4();
-      let task = {
+      const taskId = slugid.v4();
+      const task = {
         ...taskDef,
         dependencies: [taskId],
       };
@@ -330,19 +330,19 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
       await helper.queue.reportCompleted(taskId, 0);
 
       debug('### listArtifacts');
-      let r1 = await helper.queue.listArtifacts(taskId, 0);
+      const r1 = await helper.queue.listArtifacts(taskId, 0);
       assume(r1.artifacts.length).equals(2);
       assume(r1.artifacts[0].contentType).equals('application/json');
       assume(r1.artifacts[1].contentType).equals('application/json');
 
       debug('### listArtifacts, limit = 1');
-      let r2 = await helper.queue.listArtifacts(taskId, 0, { limit: 1 });
+      const r2 = await helper.queue.listArtifacts(taskId, 0, { limit: 1 });
       assume(r2.artifacts.length).equals(1);
       assume(r2.artifacts[0].contentType).equals('application/json');
       assert(r2.continuationToken, 'missing continuationToken');
 
       debug('### listArtifacts, w. continuationToken');
-      let r3 = await helper.queue.listArtifacts(taskId, 0, {
+      const r3 = await helper.queue.listArtifacts(taskId, 0, {
         continuationToken: r2.continuationToken,
       });
       assume(r3.artifacts.length).equals(1);
@@ -351,19 +351,19 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
       assume(r3.artifacts[0].name).not.equals(r2.artifacts[0].name);
 
       debug('### listLatestArtifacts');
-      let r4 = await helper.queue.listLatestArtifacts(taskId);
+      const r4 = await helper.queue.listLatestArtifacts(taskId);
       assume(r4.artifacts.length).equals(2);
       assume(r4.artifacts[0].contentType).equals('application/json');
       assume(r4.artifacts[1].contentType).equals('application/json');
 
       debug('### listLatestArtifacts, limit = 1');
-      let r5 = await helper.queue.listLatestArtifacts(taskId, { limit: 1 });
+      const r5 = await helper.queue.listLatestArtifacts(taskId, { limit: 1 });
       assume(r5.artifacts.length).equals(1);
       assume(r5.artifacts[0].contentType).equals('application/json');
       assert(r5.continuationToken, 'missing continuationToken');
 
       debug('### listLatestArtifacts, w. continuationToken');
-      let r6 = await helper.queue.listLatestArtifacts(taskId, {
+      const r6 = await helper.queue.listLatestArtifacts(taskId, {
         continuationToken: r5.continuationToken,
       });
       assume(r6.artifacts.length).equals(1);
@@ -387,7 +387,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
       await makeArtifact({ ...s3Artifact, putFn: null });
 
       helper.scopes(
-        'queue:list-artifacts:' + taskId + ':0',
+        `queue:list-artifacts:${taskId}:0`,
       );
 
       const res = await helper.queue.artifactInfo(taskId, 0, s3Artifact.name);
@@ -412,7 +412,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
       await makeArtifact({ ...s3Artifact, putFn: null });
 
       helper.scopes(
-        'queue:list-artifacts:' + taskId,
+        `queue:list-artifacts:${taskId}`,
       );
 
       const res = await helper.queue.latestArtifactInfo(taskId, s3Artifact.name);
@@ -431,7 +431,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
       });
 
       helper.scopes(
-        'queue:list-artifacts:' + taskId + ':0',
+        `queue:list-artifacts:${taskId}:0`,
       );
 
       const list = await helper.queue.listArtifacts(taskId, 0);
@@ -447,7 +447,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
       await makeArtifact({ ...s3Artifact, putFn: null });
 
       helper.scopes(
-        'queue:list-artifacts:' + taskId + ':0',
+        `queue:list-artifacts:${taskId}:0`,
       );
 
       const list = await helper.queue.listArtifacts(taskId, 0);
@@ -560,7 +560,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
       assume(res.statusCode).equals(303);
     });
 
-    test('Listing artifacts without scopes', async function() {
+    test('Listing artifacts without scopes', async () => {
       const taskId = slugid.nice();
 
       helper.scopes('none');
@@ -698,7 +698,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
 
       // create more than a "batch" of artifacts, to test pagination, but skip
       // uploading to S3 to save a bit of time..
-      for (let i of _.range(150)) {
+      for (const i of _.range(150)) {
         await makeArtifact({
           ...s3Artifact,
           name: `public/${i}.txt`,
@@ -720,13 +720,13 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
       assume(r3.artifacts.length).equals(0);
     });
 
-    test('finish an artifact for a task that does not exist', async function() {
+    test('finish an artifact for a task that does not exist', async () => {
       await assert.rejects(
         () => helper.queue.finishArtifact(taskId, 0, 'public/foo.json', { uploadId: taskcluster.slugid() }),
         err => err.statusCode === 404);
     });
 
-    test('finish an artifact that does not exist', async function() {
+    test('finish an artifact that does not exist', async () => {
       await makeAndClaimTask();
       await assert.rejects(
         () => helper.queue.finishArtifact(taskId, 0, 'public/foo.json', { uploadId: taskcluster.slugid() }),
@@ -845,7 +845,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
 
       debug('Fetching artifact from unsigned URL %s', url);
       await testing.fakeauth.withAnonymousScopes(['queue:get-artifact:public/*'], async () => {
-        let res = await getWith303Redirect(url);
+        const res = await getWith303Redirect(url);
         assume(res.ok).is.ok();
         assume(res.body).to.be.eql({ message: 'Hello World' });
       });
@@ -902,7 +902,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
       await makeAndClaimTask();
       await makeArtifact(s3Artifact);
       let lastName = 'public/s3.json';
-      for (let i of _.range(30)) {
+      for (const i of _.range(30)) {
         const name = `public/${i}`;
         await makeArtifact({
           name,
@@ -922,7 +922,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
       );
 
       debug('Fetching artifact from unsigned URL %s', url);
-      let res = await getWith303Redirect(url);
+      const res = await getWith303Redirect(url);
       assume(res.ok).is.ok();
       assume(res.body).to.be.eql({ message: 'Hello World' });
     });
@@ -933,7 +933,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
       await makeAndClaimTask();
       await makeArtifact(s3Artifact);
       let lastName = 'public/s3.json';
-      for (let i of _.range(chainLength)) {
+      for (const i of _.range(chainLength)) {
         const name = `public/${i}`;
         await makeArtifact({
           name,
@@ -1003,12 +1003,12 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
       });
 
       await testing.fakeauth.withAnonymousScopes(['queue:get-artifact:*'], async () => {
-        let url = helper.queue.buildUrl(
+        const url = helper.queue.buildUrl(
           helper.queue.getArtifact,
           taskId, 0, 'public/thing.json',
         );
         debug('Fetching artifact from: %s', url);
-        let res = await request.get(url).ok(() => true).redirects(0);
+        const res = await request.get(url).ok(() => true).redirects(0);
         assume(res.status).equals(303);
         assume(res.headers.location).to.eql('https://newurl.example.com');
       });
@@ -1037,7 +1037,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
 
       debug('Fetching artifact from unsigned URL %s', url);
       await testing.fakeauth.withAnonymousScopes(['queue:get-artifact:public/*'], async () => {
-        let res = await getWith303Redirect(url);
+        const res = await getWith303Redirect(url);
         assume(res.ok).is.ok();
       });
     });
@@ -1152,7 +1152,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
 
       debug('### Download Artifact (runId: 0)');
       helper.scopes('queue:get-artifact:public/s3.json');
-      let url = helper.queue.buildSignedUrl(
+      const url = helper.queue.buildSignedUrl(
         helper.queue.getArtifact,
         taskId, 0, 'public/s3.json',
       );
@@ -1167,7 +1167,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
     });
   });
 
-  suite('createArtifactCallsCompatible', function() {
+  suite('createArtifactCallsCompatible', () => {
     const sooner = taskcluster.fromNow('1 day');
     const later = taskcluster.fromNow('2 day');
     const base = {
@@ -1177,18 +1177,18 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
       details: { x: 10 },
     };
 
-    test('same call is compatible', function() {
+    test('same call is compatible', () => {
       assume(createArtifactCallsCompatible(base, base)).is.ok();
     });
 
-    test('extending expires is compatible', function() {
+    test('extending expires is compatible', () => {
       assume(createArtifactCallsCompatible(
         base,
         { ...base, expires: later }))
         .is.ok();
     });
 
-    test('reducing expires is not compatible', function() {
+    test('reducing expires is not compatible', () => {
       assume(createArtifactCallsCompatible(
         { ...base, expires: later },
         { ...base, expires: sooner }))
@@ -1197,7 +1197,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
 
     for (const storageType of ['error', 's3', 'object', 'link']) {
       // NOTE: the list above omits 'reference', as it allows detail changes
-      test(`changing details for storageType ${storageType} is not allowed`, function() {
+      test(`changing details for storageType ${storageType} is not allowed`, () => {
         assume(createArtifactCallsCompatible(
           { ...base, storageType, details: { x: 10 } },
           { ...base, storageType, details: { x: 20 } }))
@@ -1205,7 +1205,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
       });
     }
 
-    test('changing details for storageType reference is allowed', function() {
+    test('changing details for storageType reference is allowed', () => {
       assume(createArtifactCallsCompatible(
         { ...base, storageType: 'reference', details: { x: 10 } },
         { ...base, storageType: 'reference', details: { x: 20 } }))
@@ -1218,7 +1218,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
         if (original === update || (original === 'reference' && update === 'link')) {
           continue;
         }
-        test(`storageType ${original} -> ${update} is not allowed`, function() {
+        test(`storageType ${original} -> ${update} is not allowed`, () => {
           assume(createArtifactCallsCompatible(
             { ...base, storageType: original },
             { ...base, storageType: update }))
@@ -1227,7 +1227,7 @@ helper.secrets.mockSuite(testing.suiteName(), ['aws'], function(mock, skipping) 
       }
     }
 
-    test(`storageType reference -> link is allowed, and content-type is ignored in this case`, function() {
+    test(`storageType reference -> link is allowed, and content-type is ignored in this case`, () => {
       assume(createArtifactCallsCompatible(
         { ...base, storageType: 'reference', details: { url: 'abc' }, contentType: 'old/content-type' },
         { ...base, storageType: 'link', details: { artiact: 'def' }, contentType: 'new/content-type' }))

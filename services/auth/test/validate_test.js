@@ -1,5 +1,5 @@
-import path from 'path';
-import { URL } from 'url';
+import path from 'node:path';
+import { URL } from 'node:url';
 import testing from '@taskcluster/lib-testing';
 
 const __dirname = new URL('.', import.meta.url).pathname;
@@ -70,7 +70,7 @@ const testCases = [
   },
 ];
 
-suite(testing.suiteName(), function() {
+suite(testing.suiteName(), () => {
   // Run test cases using schemas testing utility from @taskcluster/lib-testing
   testing.schemas({
     schemasetOptions: {

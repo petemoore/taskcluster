@@ -1,7 +1,7 @@
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import mkdirp from 'mkdirp';
-import child_process from 'child_process';
+import child_process from 'node:child_process';
 import Observable from 'zen-observable';
 import taskcluster from '@taskcluster/client';
 import { REPO_ROOT } from './repo.js';
@@ -69,7 +69,9 @@ export const cargoPublish = async ({ dir, token, push, logfile, utils }) => {
       }
 
       const loglines = data =>
-        data.toString('utf-8').trimRight().split(/[\r\n]+/).forEach(l => observer.next(l));
+        data.toString('utf-8').trimRight().split(/[\r\n]+/).forEach(l => {
+          observer.next(l);
+        });
       proc.stdout.on('data', loglines);
       proc.stderr.on('data', loglines);
       proc.on('close', code => {

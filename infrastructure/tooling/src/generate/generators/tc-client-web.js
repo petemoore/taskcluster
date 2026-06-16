@@ -1,5 +1,5 @@
 import stringify from 'json-stable-stringify';
-import path from 'path';
+import path from 'node:path';
 import lodash from 'lodash';
 const { omit } = lodash;
 import { compile } from 'ejs';
@@ -12,7 +12,7 @@ export const tasks = [{
   requires: ['apis'],
   provides: ['target-taskcluster-client-web'],
   run: async (requirements, utils) => {
-    const apis = requirements['apis'];
+    const apis = requirements.apis;
 
     // clean up the clients directory to eliminate any "leftovers"
     await rimraf(path.join(REPO_ROOT, 'clients/client-web/src/clients'));
@@ -33,7 +33,7 @@ export const tasks = [{
 
     const template = compile(await readRepoFile('clients/client-web/templates/client.ejs'));
 
-    for (let name of Object.keys(apis)) {
+    for (const name of Object.keys(apis)) {
       const { reference } = apis[name];
 
       utils.status({ message: name });

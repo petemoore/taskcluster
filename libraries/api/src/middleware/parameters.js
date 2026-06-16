@@ -1,4 +1,4 @@
-import assert from 'assert';
+import assert from 'node:assert';
 
 /**
  * Create parameter validation middle-ware instance, given a mapping from
@@ -49,7 +49,7 @@ export const parameterValidator = ({ entry }) => {
     if (errors.length > 0) {
       return res.reportError(
         'InvalidRequestArguments',
-        'Invalid URL patterns:\n' + errors.join('\n'),
+        `Invalid URL patterns:\n${errors.join('\n')}`,
         { errors },
       );
     }

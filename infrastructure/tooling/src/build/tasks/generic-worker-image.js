@@ -9,7 +9,7 @@ import {
   execCommand,
 } from '../../utils/index.js';
 
-import path from 'path';
+import path from 'node:path';
 
 /**
  * This builds generic worker docker image containing all tools required to run generic worker
@@ -72,7 +72,7 @@ export default ({ tasks, baseDir, cmdOptions, credentials, logsDir }) => {
 
       utils.step({ title: `Building Docker Image ${tag}` });
 
-      let versionJson = requirements['docker-flow-version'];
+      const versionJson = requirements['docker-flow-version'];
       let command = [
         'docker',
         'build',
@@ -84,7 +84,7 @@ export default ({ tasks, baseDir, cmdOptions, credentials, logsDir }) => {
         '-f', 'generic-worker.Dockerfile',
         '--progress', 'plain',
         '--tag', tag,
-        '--build-arg', 'DOCKER_FLOW_VERSION=' + versionJson,
+        '--build-arg', `DOCKER_FLOW_VERSION=${versionJson}`,
         '.']);
       await execCommand({
         command,
@@ -109,7 +109,7 @@ export default ({ tasks, baseDir, cmdOptions, credentials, logsDir }) => {
     ],
     run: async (requirements, utils) => {
       const tag = requirements[`generic-worker-docker-image`];
-      const provides = { [`generic-worker-push`]: tag };
+      const provides = { 'generic-worker-push': tag };
 
       if (!cmdOptions.push) {
         return utils.skip({ provides });

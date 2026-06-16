@@ -1,8 +1,8 @@
 import hawk from 'hawk';
 import _ from 'lodash';
-import assert from 'assert';
+import assert from 'node:assert';
 import slugid from 'slugid';
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 import taskcluster from '@taskcluster/client';
 import createSignatureValidator from '../src/signaturevalidator.js';
 import utils from 'taskcluster-lib-scopes';
@@ -11,13 +11,13 @@ import helper from './helper.js';
 
 import { normalizeClientId } from '../src/signaturevalidator.js';
 
-suite(testing.suiteName(), function() {
-  let one_hour = taskcluster.fromNow('1 hour');
-  let two_hours = taskcluster.fromNow('2 hour');
-  let three_hours = taskcluster.fromNow('3 hour');
+suite(testing.suiteName(), () => {
+  const one_hour = taskcluster.fromNow('1 hour');
+  const two_hours = taskcluster.fromNow('2 hour');
+  const three_hours = taskcluster.fromNow('3 hour');
 
   let validator;
-  let clients = {
+  const clients = {
     root: {
       clientId: 'root',
       accessToken: 'root-secret',
@@ -46,7 +46,7 @@ suite(testing.suiteName(), function() {
     return scopes;
   };
 
-  suiteSetup(async function() {
+  suiteSetup(async () => {
     validator = createSignatureValidator({
       clientLoader: async clientId => {
         if (!clients[clientId]) {
@@ -59,10 +59,10 @@ suite(testing.suiteName(), function() {
     });
   });
 
-  let makeTest = function(name, input, expected) {
-    test(name, async function() {
+  const makeTest = (name, input, expected) => {
+    test(name, async () => {
       // defer creation of input until the test runs, if necessary
-      if (typeof input == 'function') {
+      if (typeof input === 'function') {
         input = input();
       }
 
@@ -75,9 +75,9 @@ suite(testing.suiteName(), function() {
       });
 
       if (input.authorization) {
-        let creds = input.authorization.credentials || {};
+        const creds = input.authorization.credentials || {};
         input.authorization.credentials = _.defaults({}, creds, {
-          key: creds.id + '-secret',
+          key: `${creds.id}-secret`,
           algorithm: 'sha256',
         });
 
@@ -89,14 +89,14 @@ suite(testing.suiteName(), function() {
         }
 
         // create the authorization "header"
-        let url = 'https://' + input.host + input.resource;
-        input['authorization'] = hawk.client.header(
+        const url = `https://${input.host}${input.resource}`;
+        input.authorization = hawk.client.header(
           url, input.method, input.authorization).header;
       }
 
       if (input.bewit) {
         input.bewit = _.defaults({}, input.bewit, {
-          key: input.bewit.id + '-secret',
+          key: `${input.bewit.id}-secret`,
           algorithm: 'sha256',
         });
 
@@ -106,7 +106,7 @@ suite(testing.suiteName(), function() {
             .toString('base64');
         }
 
-        let bewit = hawk.client.getBewit('https://' + input.host + input.resource, {
+        const bewit = hawk.client.getBewit(`https://${input.host}${input.resource}`, {
           credentials: {
             id: input.bewit.id,
             key: input.bewit.key,
@@ -115,11 +115,11 @@ suite(testing.suiteName(), function() {
           ttlSec: 15 * 60,
           ext: input.bewit.ext,
         });
-        input.resource += '?bewit=' + bewit;
+        input.resource += `?bewit=${bewit}`;
         delete input.bewit;
       }
 
-      let got = await validator(input);
+      const got = await validator(input);
       assert.deepStrictEqual(expected, got);
 
       // *any* successful request should be returning `anonscope`, no matter
@@ -130,7 +130,7 @@ suite(testing.suiteName(), function() {
     });
   };
 
-  let testWithTemp = function(name, options, inputFn, expected) {
+  const testWithTemp = (name, options, inputFn, expected) => {
     /**
      * Options is on the form
      * {
@@ -145,10 +145,10 @@ suite(testing.suiteName(), function() {
      *   omitIssuerFromSig: if true, omit the `issuer` line from the signature
      * }
      */
-    let makeInput = () => {
-      let id = options.id;
+    const makeInput = () => {
+      const id = options.id;
 
-      let start = new Date();
+      const start = new Date();
       start.setMinutes(start.getMinutes() - 5);
 
       // Set default options
@@ -156,11 +156,11 @@ suite(testing.suiteName(), function() {
         start,
         expiry: two_hours,
         scopes: [],
-        accessToken: id + '-secret',
+        accessToken: `${id}-secret`,
       });
 
       // Construct certificate
-      let cert = {
+      const cert = {
         version: 1,
         scopes: _.cloneDeep(options.scopes),
         start: options.start.getTime(),
@@ -179,24 +179,24 @@ suite(testing.suiteName(), function() {
           .createHmac('sha256', options.signature)
           .digest('base64');
       } else {
-        let sig = crypto.createHmac('sha256', options.accessToken);
-        sig.update('version:' + cert.version + '\n');
+        const sig = crypto.createHmac('sha256', options.accessToken);
+        sig.update(`version:${cert.version}\n`);
         if (options.credentialName && !options.omitClientIdFromSig) {
-          sig.update('clientId:' + options.credentialName + '\n');
+          sig.update(`clientId:${options.credentialName}\n`);
         }
         if (options.issuer && !options.omitIssuerFromSig) {
-          sig.update('issuer:' + options.issuer + '\n');
+          sig.update(`issuer:${options.issuer}\n`);
         }
-        sig.update('seed:' + cert.seed + '\n');
-        sig.update('start:' + cert.start + '\n');
-        sig.update('expiry:' + cert.expiry + '\n');
+        sig.update(`seed:${cert.seed}\n`);
+        sig.update(`start:${cert.start}\n`);
+        sig.update(`expiry:${cert.expiry}\n`);
         sig.update('scopes:\n');
         sig.update(cert.scopes.join('\n'));
         cert.signature = sig.digest('base64');
       }
 
       // Construct temporary key
-      let accessToken = crypto
+      const accessToken = crypto
         .createHmac('sha256', options.accessToken)
         .update(cert.seed)
         .digest('base64')
@@ -213,9 +213,9 @@ suite(testing.suiteName(), function() {
   };
 
   // shorthands
-  let success = function(scopes, options) {
+  const success = (scopes, options) => {
     options = options || {};
-    let exp = {
+    const exp = {
       clientId: options.clientId || 'root',
       status: 'auth-success',
       scheme: 'hawk',
@@ -231,9 +231,7 @@ suite(testing.suiteName(), function() {
     return exp;
   };
 
-  let failed = function(message) {
-    return { status: 'auth-failed', message };
-  };
+  const failed = (message) => ({ status: 'auth-failed', message });
 
   makeTest('simple credentials', {
     authorization: {
@@ -763,7 +761,7 @@ suite(testing.suiteName(), function() {
   }, failed('Unauthorized: Bad mac'));
 
   makeTest('invalid: bogus bewit', {
-    resource: '/?bewit=' + slugid.v4(),
+    resource: `/?bewit=${slugid.v4()}`,
   }, failed('Bad Request: Invalid bewit structure'));
 
   makeTest('invalid: bewit with unknown client', {

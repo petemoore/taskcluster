@@ -1,7 +1,6 @@
-import util from 'util';
-import { exec } from 'child_process';
-const execPromise = util.promisify(exec);
-import _ from 'lodash';
+import util from 'node:util';
+import { execFile } from 'node:child_process';
+const execFileAsync = util.promisify(execFile);
 
 export const tasks = [{
   title: 'Proper spelling and capitalization of Taskcluster',
@@ -16,9 +15,9 @@ export const tasks = [{
       "[tT]askclsuter",
       "[tT]asksluter",
     ];
-    for (let pattern of Taskcluster) {
+    for (const pattern of Taskcluster) {
       try {
-        const res = await execPromise(`git grep '${pattern}' -- './*' ':!.yarn'`);
+        const res = await execFileAsync('git', ['grep', pattern, '--', './*', ':!.yarn']);
         // if the grep succeeded, then something matched
         throw new Error(`misspellings found: ${res.stdout}`);
       } catch (err) {

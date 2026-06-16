@@ -1,7 +1,7 @@
 import Debug from 'debug';
 import sinon from 'sinon';
 import _ from 'lodash';
-import assert from 'assert';
+import assert from 'node:assert';
 
 class FakeGithub {
   constructor(installation_id) {
@@ -22,7 +22,7 @@ class FakeGithub {
     this._commits = {};
 
     const throwError = code => {
-      let err = new Error();
+      const err = new Error();
       err.status = code;
       err.code = code;
       throw err;
@@ -63,7 +63,7 @@ class FakeGithub {
       },
       'repos.createCommitComment': () => {},
       'repos.getCommit': async ({ owner, repo, ref, headers }) => {
-        assert.equal(headers && headers.accept, 'application/vnd.github.3.sha');
+        assert.equal(headers?.accept, 'application/vnd.github.3.sha');
         assert(ref.startsWith('refs/'), 'repos.getCommit requires a full ref path');
         const key = `${owner}/${repo}@${ref}`;
         if (!this._commits[key]) {
@@ -76,7 +76,7 @@ class FakeGithub {
       },
       'repos.checkCollaborator': async ({ owner, repo, username }) => {
         const key = `${owner}/${repo}`;
-        if (this._repo_collaborators[key] && this._repo_collaborators[key].has(username)) {
+        if (this._repo_collaborators[key]?.has(username)) {
           return {};
         } else {
           throwError(404);
@@ -105,7 +105,7 @@ class FakeGithub {
         }
       },
       'users.getByUsername': async ({ username }) => {
-        let user = _.find(this._github_users, { username });
+        const user = _.find(this._github_users, { username });
         if (user) {
           return { data: user };
         } else {
@@ -124,7 +124,7 @@ class FakeGithub {
       'repos.listCommitStatusesForRef': async ({ owner, repo, ref }) => {
         const key = `${owner}/${repo}@${ref}`;
         const info = this._statuses[key];
-        if (info && info.errorStatus) {
+        if (info?.errorStatus) {
           throwError(info.errorStatus);
         }
         if (info) {
@@ -199,7 +199,7 @@ class FakeGithub {
 
     const debug = Debug('FakeGithub');
     _.forEach(stubs, (implementation, name) => {
-      let atoms = name.split(/\./);
+      const atoms = name.split(/\./);
       let obj = this; // eslint-disable-line consistent-this
       while (atoms.length > 1) {
         const atom = atoms.shift();
@@ -325,7 +325,7 @@ class FakeGithubAuth {
 
   // For testing purposes, insert a new install
   createInstall(installation_id, owner, repos) {
-    let installation = new FakeGithub(installation_id);
+    const installation = new FakeGithub(installation_id);
     installation._installedOn = owner;
     installation.setRepositories(...repos);
     this.installations[installation_id] = installation;

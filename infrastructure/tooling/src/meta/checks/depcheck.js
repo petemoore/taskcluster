@@ -1,6 +1,6 @@
-import { Worker, isMainThread, parentPort } from 'worker_threads';
+import { Worker, isMainThread, parentPort } from 'node:worker_threads';
 import _ from 'lodash';
-import { gitLsFiles, readRepoFile } from '../../utils/index.js';
+import { gitLsFiles, readRepoFile, readRepoJSON } from '../../utils/index.js';
 import * as acorn from 'acorn-loose';
 import * as walk from 'acorn-walk';
 import builtinModules from 'builtin-modules';
@@ -22,7 +22,7 @@ if (isMainThread) {
     run: async (requirements, utils) => {
       return new Promise((resolve, reject) => {
         const worker = new Worker(__filename, {});
-        worker.on('message', function ({ err, message }) {
+        worker.on('message', ({ err, message }) => {
           err ? reject(err) : utils.status({ message });
         });
         worker.on('error', reject);
@@ -45,6 +45,11 @@ if (isMainThread) {
     // Local imports are less tricky to get right and if broken will fail in tests so we don't
     // bother doing extra work to assert they exist here
     if (packageName.startsWith('.')) {
+      return;
+    }
+
+    // `node:` prefixed imports are always builtin modules
+    if (packageName.startsWith('node:')) {
       return;
     }
 
@@ -73,18 +78,18 @@ if (isMainThread) {
         if (node.source.type !== 'Literal') {
           return;
         }
-        let packageName = node.source.value;
+        const packageName = node.source.value;
         return checkImport(file, section, packageName, deps, used);
       },
       ImportDeclaration(node) {
         if (node.source.type !== 'Literal') {
           return;
         }
-        let packageName = node.source.value;
+        const packageName = node.source.value;
         return checkImport(file, section, packageName, deps, used);
       },
       CallExpression(node) {
-        if (!node.callee || node.callee.name !== 'require') {
+        if (node.callee?.name !== 'require') {
           return;
         }
 
@@ -93,7 +98,7 @@ if (isMainThread) {
           return;
         }
 
-        let packageName = node.arguments[0].value;
+        const packageName = node.arguments[0].value;
         return checkImport(file, section, packageName, deps, used);
       },
     });
@@ -105,7 +110,7 @@ if (isMainThread) {
 
     // All of our dependencies live at the top level and all dependencies
     // are available in dev so we concat
-    const rootPkg = JSON.parse(await readRepoFile('package.json'));
+    const rootPkg = await readRepoJSON('package.json');
     const deps = Object.keys(rootPkg.dependencies);
     const devDeps = Object.keys(rootPkg.devDependencies).concat(deps);
     const specials = rootPkg.metatests.specialImports;

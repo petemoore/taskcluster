@@ -1,11 +1,10 @@
-import assert from 'assert';
+import assert from 'node:assert';
 import helper from './helper.js';
 import slugid from 'slugid';
-import _ from 'lodash';
 import testing from '@taskcluster/lib-testing';
 import taskcluster from '@taskcluster/client';
 
-helper.secrets.mockSuite('audit', ['gcp'], function(mock, skipping) {
+helper.secrets.mockSuite('audit', ['gcp'], (mock, skipping) => {
   helper.withDb(mock, skipping);
   helper.withCfg(mock, skipping);
   helper.withPulse(mock, skipping);
@@ -20,7 +19,7 @@ helper.secrets.mockSuite('audit', ['gcp'], function(mock, skipping) {
     }
   });
 
-  setup(async function() {
+  setup(async () => {
     await testing.resetTables({ tableNames: [
       'audit_history',
     ] });

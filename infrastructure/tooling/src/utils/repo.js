@@ -1,10 +1,10 @@
-import { promisify } from 'util';
-import path from 'path';
-import fs from 'fs';
+import { promisify } from 'node:util';
+import path from 'node:path';
+import fs from 'node:fs';
 import glob from 'glob';
 import yaml from 'js-yaml';
 import stringify from 'json-stable-stringify';
-import { execFile } from 'child_process';
+import { execFile } from 'node:child_process';
 import pSynchronize from 'p-synchronize';
 const exec = promisify(execFile);
 
@@ -90,7 +90,7 @@ export const modifyRepoJSON = async (filename, modifier) => {
   return modifyRepoFile(filename, async contents => {
     const data = JSON.parse(contents);
     await modifier(data);
-    return JSON.stringify(data, null, 2) + '\n';
+    return `${JSON.stringify(data, null, 2)}\n`;
   });
 };
 

@@ -1,15 +1,15 @@
-import assert from 'assert';
+import assert from 'node:assert';
 import References from '../src/index.js';
 import { makeSerializable } from '../src/serializable.js';
 import { getCommonSchemas } from '../src/common-schemas.js';
 import libUrls from 'taskcluster-lib-urls';
 import testing from '@taskcluster/lib-testing';
 
-suite(testing.suiteName(), function() {
+suite(testing.suiteName(), () => {
   const rootUrl = libUrls.testRootUrl();
 
   const assert_file = (serializable, filename, content) => {
-    for (let file of serializable) {
+    for (const file of serializable) {
       if (file.filename !== filename) {
         continue;
       }
@@ -49,7 +49,7 @@ suite(testing.suiteName(), function() {
     }],
   });
 
-  test('generates an abstract manifest', async function() {
+  test('generates an abstract manifest', async () => {
     const references = await getReferences();
     const serializable = makeSerializable({ references });
     assert_file(serializable, 'references/manifest.json', {
@@ -61,19 +61,19 @@ suite(testing.suiteName(), function() {
     });
   });
 
-  test('generates an absolute manifest', async function() {
+  test('generates an absolute manifest', async () => {
     const references = await getReferences();
     const serializable = makeSerializable({ references: references.asAbsolute(rootUrl) });
     assert_file(serializable, 'references/manifest.json', {
-      $schema: rootUrl + '/schemas/common/manifest-v3.json#',
+      $schema: `${rootUrl}/schemas/common/manifest-v3.json#`,
       references: [
-        rootUrl + '/references/test/v1/api.json',
-        rootUrl + '/references/test2/v2/exchanges.json',
+        `${rootUrl}/references/test/v1/api.json`,
+        `${rootUrl}/references/test2/v2/exchanges.json`,
       ],
     });
   });
 
-  test('generates abstract schema filenames', async function() {
+  test('generates abstract schema filenames', async () => {
     const references = await getReferences();
     const serializable = makeSerializable({ references });
     assert_file(serializable, 'schemas/common/api-reference-v0.json', content => {
@@ -82,16 +82,16 @@ suite(testing.suiteName(), function() {
     });
   });
 
-  test('generates absolute schema filenames', async function() {
+  test('generates absolute schema filenames', async () => {
     const references = await getReferences();
     const serializable = makeSerializable({ references: references.asAbsolute(rootUrl) });
     assert_file(serializable, 'schemas/common/api-reference-v0.json', content => {
-      assert.equal(content.$schema, rootUrl + '/schemas/common/metadata-metaschema.json#');
-      assert.equal(content.$id, rootUrl + '/schemas/common/api-reference-v0.json#');
+      assert.equal(content.$schema, `${rootUrl}/schemas/common/metadata-metaschema.json#`);
+      assert.equal(content.$id, `${rootUrl}/schemas/common/api-reference-v0.json#`);
     });
   });
 
-  test('generates an API reference filename', async function() {
+  test('generates an API reference filename', async () => {
     const references = await getReferences();
     const serializable = makeSerializable({ references });
     assert_file(serializable, 'references/test/v1/api.json', {
@@ -104,7 +104,7 @@ suite(testing.suiteName(), function() {
     });
   });
 
-  test('generates an exchanges reference filename', async function() {
+  test('generates an exchanges reference filename', async () => {
     const references = await getReferences();
     const serializable = makeSerializable({ references });
     assert_file(serializable, 'references/test2/v2/exchanges.json', {
@@ -118,7 +118,7 @@ suite(testing.suiteName(), function() {
     });
   });
 
-  test('References.fromSerializable', function() {
+  test('References.fromSerializable', () => {
     References.fromSerializable({
       serializable: [{
         filename: 'schemas/common/foo.json',

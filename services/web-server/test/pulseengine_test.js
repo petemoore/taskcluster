@@ -1,4 +1,4 @@
-import assert from 'assert';
+import assert from 'node:assert';
 import PulseIterator from '../src/PulseEngine/PulseIterator.js';
 import testing from '@taskcluster/lib-testing';
 
@@ -20,13 +20,13 @@ class FakePulseEngine {
   }
 }
 
-suite(testing.suiteName(), function() {
+suite(testing.suiteName(), () => {
   // pause for "a beat" to let async things filter out; `for await` in particular
   // does not activate immediately
   const beat = () => new Promise(resolve => setTimeout(resolve, 1));
 
-  suite('PulseIterator', function() {
-    test('queues up pushed messages', async function() {
+  suite('PulseIterator', () => {
+    test('queues up pushed messages', async () => {
       const engine = new FakePulseEngine();
       const pi = new PulseIterator(engine, []);
 
@@ -44,7 +44,7 @@ suite(testing.suiteName(), function() {
 
       // now see that those appear in the output
       const received = [];
-      for await (let msg of pi) {
+      for await (const msg of pi) {
         received.push(msg);
         if (received.length === 3) {
           break;
@@ -56,14 +56,14 @@ suite(testing.suiteName(), function() {
       assert.deepEqual(received, ['M1', 'M2', 'M3']);
     });
 
-    test('waits for pushed messages', async function() {
+    test('waits for pushed messages', async () => {
       const engine = new FakePulseEngine();
       const pi = new PulseIterator(engine, []);
 
       // start waiting for output before messages arrive..
       const result = [];
       const finished = (async () => {
-        for await (let msg of pi) {
+        for await (const msg of pi) {
           result.push(msg);
           if (result.length === 3) {
             break;
@@ -91,7 +91,7 @@ suite(testing.suiteName(), function() {
       assert.equal(engine.subscribed, false, "should have been unsubscribed");
     });
 
-    test('throws errors into the iterator', async function() {
+    test('throws errors into the iterator', async () => {
       const engine = new FakePulseEngine();
       const pi = new PulseIterator(engine, []);
 

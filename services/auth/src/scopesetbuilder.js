@@ -90,10 +90,10 @@ class MergeNode extends BaseNode {
     // they are null or we have value that doesn't start with said prefix.
     if (this.value.endsWith('*')) {
       const prefix = this.value.slice(0, -1);
-      while (this.A && this.A.value.startsWith(prefix)) {
+      while (this.A?.value.startsWith(prefix)) {
         this.A = this.A.next();
       }
-      while (this.B && this.B.value.startsWith(prefix)) {
+      while (this.B?.value.startsWith(prefix)) {
         this.B = this.B.next();
       }
     }
@@ -157,8 +157,10 @@ class ScopeSetBuilder {
     // Take scopes from tree until it's empty, ie. tree.next() returns null
     // Notice: that we must call tree.next() before we read the first value.
     const result = [];
-    while (tree = tree.next()) { // eslint-disable-line no-cond-assign
+    tree = tree.next();
+    while (tree) {
       result.push(tree.value);
+      tree = tree.next();
     }
     return result;
   }

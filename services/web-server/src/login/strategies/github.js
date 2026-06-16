@@ -1,4 +1,4 @@
-import assert from 'assert';
+import assert from 'node:assert';
 import passport from 'passport';
 import { Strategy } from 'passport-github';
 import taskcluster from '@taskcluster/client';
@@ -106,7 +106,7 @@ export default class Github {
 
   useStrategy(app, cfg) {
     const { credentials } = cfg.taskcluster;
-    const strategyCfg = cfg.login.strategies['github'];
+    const strategyCfg = cfg.login.strategies.github;
     const loginMiddleware = login(cfg.app.publicUrl);
 
     if (!strategyCfg.clientId || !strategyCfg.clientSecret) {
@@ -115,7 +115,7 @@ export default class Github {
       );
     }
 
-    if (!credentials || !credentials.clientId || !credentials.accessToken) {
+    if (!credentials?.clientId || !credentials.accessToken) {
       throw new Error(
         'Unable to use "github" login strategy without taskcluster clientId and accessToken',
       );

@@ -1,10 +1,10 @@
-import path from 'path';
+import path from 'node:path';
 import { writeRepoFile, REPO_ROOT } from '../../utils/index.js';
 import mkdirp from 'mkdirp';
 import { rimraf } from 'rimraf';
 
 const writeRsFile = async (filename, content) => {
-  await writeRepoFile(path.join(filename), content.trim() + '\n');
+  await writeRepoFile(path.join(filename), `${content.trim()}\n`);
 };
 
 const MOD_TEMPLATE = t => `
@@ -97,7 +97,7 @@ pub fn ${t.name}_signed_url(${define_args(with_ttl(with_self(t.args)))}) -> Resu
 const generateServiceClient = (className, reference) => {
   const methods = [];
 
-  for (let entry of reference.entries) {
+  for (const entry of reference.entries) {
     if (entry.type !== 'function') {
       continue;
     }
@@ -184,12 +184,12 @@ const generateServiceClient = (className, reference) => {
     }
 
     if (entry.description) {
-      let ds = entry.description.trim().split('\n');
+      const ds = entry.description.trim().split('\n');
       if (entry.title) {
         ds.unshift('');
         ds.unshift(entry.title);
       }
-      t.doc = ds.map(l => l ? `/// ${l}` : '///').join('\n') + '\n';
+      t.doc = `${ds.map(l => l ? `/// ${l}` : '///').join('\n')}\n`;
     } else {
       t.doc = '';
     }
@@ -197,17 +197,17 @@ const generateServiceClient = (className, reference) => {
     const indent = s => s
       .trim()
       .split('\n')
-      .map(l => l.length > 0 ? '    ' + l : l)
+      .map(l => l.length > 0 ? `    ${l}` : l)
       .join('\n');
 
-    methods.push('\n\n' + indent(REQ_FUNC_TEMPLATE(t)));
+    methods.push(`\n\n${indent(REQ_FUNC_TEMPLATE(t))}`);
 
     if (entry.method === 'get') {
-      methods.push('\n\n' + indent(URL_FUNC_TEMPLATE(t)));
-      methods.push('\n\n' + indent(SIGNED_URL_FUNC_TEMPLATE(t)));
+      methods.push(`\n\n${indent(URL_FUNC_TEMPLATE(t))}`);
+      methods.push(`\n\n${indent(SIGNED_URL_FUNC_TEMPLATE(t))}`);
     }
 
-    methods.push('\n\n' + indent(DETAILS_FUNC_TEMPLATE(t)));
+    methods.push(`\n\n${indent(DETAILS_FUNC_TEMPLATE(t))}`);
   }
 
   let description = reference.description.split('\n');
@@ -230,7 +230,7 @@ const generateModFile = apis => {
   const mods = [];
   const uses = [];
 
-  for (let [className, { referenceKind }] of Object.entries(apis)) {
+  for (const [className, { referenceKind }] of Object.entries(apis)) {
     if (referenceKind !== 'api') {
       continue;
     }
@@ -246,7 +246,7 @@ export const tasks = [{
   requires: ['apis'],
   provides: ['target-taskcluster-client-rust'],
   run: async (requirements, utils) => {
-    const apis = requirements['apis'];
+    const apis = requirements.apis;
     const moduleDir = path.join(REPO_ROOT, 'clients', 'client-rust', 'client', 'src', 'generated');
 
     // clean up the clients directory to eliminate any "leftovers"
@@ -257,7 +257,7 @@ export const tasks = [{
     utils.status({ message: 'mod.rs' });
     await writeRsFile(path.join(moduleDir, 'mod.rs'), generateModFile(apis));
 
-    for (let [className, { reference, referenceKind }] of Object.entries(apis)) {
+    for (const [className, { reference, referenceKind }] of Object.entries(apis)) {
       if (referenceKind !== 'api') {
         continue;
       }
