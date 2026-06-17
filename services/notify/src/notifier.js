@@ -37,6 +37,15 @@ class Notifier {
       views: { root: path.join(__dirname, 'templates') },
       juice: true,
       juiceResources: {
+        // email-templates v11+ flipped the juice/web-resource-inliner defaults
+        // so stylesheets are no longer inlined by default (<style> tags are kept
+        // in the <head> instead). Our Pug templates use the leemunroe
+        // responsive-html-email framework, which relies on its class-based CSS
+        // being inlined into per-element style= attributes for reliable rendering
+        // in Outlook, Gmail, and other clients that strip or ignore <head>
+        // <style> rules. Restore the pre-v11 behavior explicitly.
+        applyStyleTags: true,
+        removeStyleTags: true,
         webResources: {
           relativeTo: path.join(__dirname, 'templates'),
         },
