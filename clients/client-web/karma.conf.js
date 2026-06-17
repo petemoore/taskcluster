@@ -24,6 +24,27 @@ module.exports = config => {
     },
     webpack: {
       mode: 'development',
+      module: {
+        rules: [
+          {
+            // query-string@9 and its pure-ESM deps ship modern syntax
+            // (optional chaining, nullish coalescing, logical assignment)
+            // that webpack 4's bundled acorn 6 cannot parse. Down-level
+            // them with babel so the test bundle builds. node_modules is
+            // not excluded for these packages so their source is transpiled.
+            test: /\.js$/,
+            include: [
+              /node_modules[\\/](query-string|decode-uri-component|filter-obj|split-on-first)[\\/]/,
+            ],
+            use: {
+              loader: 'babel-loader',
+              options: {
+                presets: ['@babel/preset-env'],
+              },
+            },
+          },
+        ],
+      },
     },
     reporters: ['mocha'],
     browsers: [process.env.CI ? 'FirefoxHeadless' : 'Firefox'],
