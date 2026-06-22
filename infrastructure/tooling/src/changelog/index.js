@@ -238,9 +238,17 @@ export class ChangeLog {
 
 const check_pr = async pr => {
   const octokit = new Octokit();
+  // GITHUB_REPO_URL is injected by taskcluster/src/transforms/__init__.py and
+  // resolves to the head repository URL. Use it to query the right repo/PR
+  // instead of the hardcoded upstream so this check works on forks (where the
+  // PR number does not correspond to a PR in taskcluster/taskcluster).
+  const repoSlug = (process.env.GITHUB_REPO_URL || 'https://github.com/taskcluster/taskcluster')
+    .replace(/^https?:\/\/github\.com\//, '')
+    .replace(/\/$/, '');
+  const [repoOwner, repoName] = repoSlug.split('/');
   const options = octokit.pulls.listFiles.endpoint.merge({
-    owner: 'taskcluster',
-    repo: 'taskcluster',
+    owner: repoOwner,
+    repo: repoName,
     pull_number: pr,
   });
   const files = await octokit.paginate(options, response => response.data.map(({ filename }) => filename));
