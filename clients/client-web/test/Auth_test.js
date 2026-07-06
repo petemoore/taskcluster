@@ -1,15 +1,7 @@
-import { expect, use } from 'chai';
-import chaiAsPromised from 'chai-as-promised';
-import { Auth, createTemporaryCredentials, fromNow, request } from '../src';
-import helper from './helper';
+import { Auth, createTemporaryCredentials, fromNow, request } from '../src/index.js';
+import helper from './helper.js';
 
-use(chaiAsPromised);
-
-describe('Auth', function () {
-  helper.withRootUrl();
-
-  this.timeout(30000);
-
+helper.describe('Auth', () => {
   it('should successfully ping', () => {
     const auth = new Auth({
       rootUrl: helper.rootUrl,
@@ -31,7 +23,7 @@ describe('Auth', function () {
       },
     });
 
-    return expect(auth.buildSignedUrl(auth.client, 'test')).to.eventually.match(
+    return expect(auth.buildSignedUrl(auth.client, 'test')).resolves.toMatch(
       new RegExp(`^${helper.rootUrl}/api/auth/v1/clients/test\\?bewit`)
     );
   });

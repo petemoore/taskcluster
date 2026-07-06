@@ -1,7 +1,7 @@
 {
   "name": "@taskcluster/lib-iterate",
   "private": true,
-  "version": "100.4.0",
+  "version": "101.0.0",
   "description": "A library to share iteration logic",
   "exports": "./src/index.js",
   "type": "module",
@@ -16,7 +16,7 @@
   "author": "John Ford <jhford@mozilla.com>",
   "license": "MPL-2.0",
   "devDependencies": {
-    "@biomejs/biome": "^2.4.15",
+    "@biomejs/biome": "^2.5.1",
     "c8": "^8.0.1",
     "mocha": "^10.8.2"
   }

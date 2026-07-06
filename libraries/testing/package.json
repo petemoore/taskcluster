@@ -1,7 +1,7 @@
 {
   "name": "@taskcluster/lib-testing",
   "private": true,
-  "version": "100.4.0",
+  "version": "101.0.0",
   "author": "Jonas Finnemann Jensen <jopsen@gmail.com>",
   "description": "@taskcluster/lib-testing",
   "license": "MPL-2.0",
@@ -16,7 +16,7 @@
   },
   "exports": "./src/index.js",
   "devDependencies": {
-    "@biomejs/biome": "^2.4.15",
+    "@biomejs/biome": "^2.5.1",
     "c8": "^8.0.1",
     "mocha": "^10.8.2"
   }

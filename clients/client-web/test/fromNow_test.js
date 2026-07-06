@@ -1,5 +1,4 @@
-import { expect } from 'chai';
-import { fromNow } from '../src';
+import { fromNow } from '../src/index.js';
 
 describe('fromNow', () => {
   it('should generate current datetime', () => {

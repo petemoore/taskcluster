@@ -1,5 +1,4 @@
-import { expect } from 'chai';
-import { parseTime } from '../src';
+import { parseTime } from '../src/index.js';
 
 describe('parseTime', () => {
   it('should parse year', () => {

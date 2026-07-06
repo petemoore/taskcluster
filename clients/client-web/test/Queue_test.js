@@ -1,17 +1,10 @@
-import { expect } from 'chai';
-import { Queue } from '../src';
-import helper from './helper';
+import { Queue } from '../src/index.js';
+import helper from './helper.js';
 
-describe('Queue', function () {
-  helper.withRootUrl();
-
-  this.timeout(30000);
-
+helper.describe('Queue', () => {
   let queue;
-  before(() => {
-    if (helper.rootUrl) {
-      queue = new Queue({ rootUrl: helper.rootUrl });
-    }
+  beforeAll(() => {
+    queue = new Queue({ rootUrl: helper.rootUrl });
   });
 
   it('should be loaded', () => {
