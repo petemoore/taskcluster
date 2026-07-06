@@ -2492,7 +2492,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mdx-js/mdx@npm:1.6.22, @mdx-js/mdx@npm:^1.0.20":
+"@mdx-js/mdx@npm:^0.15.5":
+  version: 0.15.7
+  resolution: "@mdx-js/mdx@npm:0.15.7"
+  dependencies:
+    change-case: "npm:^3.0.2"
+    detab: "npm:^2.0.0"
+    mdast-util-to-hast: "npm:^3.0.0"
+    remark-parse: "npm:^5.0.0"
+    remark-squeeze-paragraphs: "npm:^3.0.1"
+    to-style: "npm:^1.3.3"
+    unified: "npm:^6.1.6"
+    unist-util-visit: "npm:^1.3.0"
+  checksum: 10c0/26ae11b7df227fa42ba78067f8ddc8fd5fa56bb30d7a281819106dc2d6d997c5416c79793e52c00df2cfcbd614b0342cbeec70a3d83ddc02ff23b9e183fb9d05
+  languageName: node
+  linkType: hard
+
+"@mdx-js/mdx@npm:^1.0.20":
   version: 1.6.22
   resolution: "@mdx-js/mdx@npm:1.6.22"
   dependencies:
@@ -2519,23 +2535,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mdx-js/mdx@npm:^0.15.5":
-  version: 0.15.7
-  resolution: "@mdx-js/mdx@npm:0.15.7"
-  dependencies:
-    change-case: "npm:^3.0.2"
-    detab: "npm:^2.0.0"
-    mdast-util-to-hast: "npm:^3.0.0"
-    remark-parse: "npm:^5.0.0"
-    remark-squeeze-paragraphs: "npm:^3.0.1"
-    to-style: "npm:^1.3.3"
-    unified: "npm:^6.1.6"
-    unist-util-visit: "npm:^1.3.0"
-  checksum: 10c0/26ae11b7df227fa42ba78067f8ddc8fd5fa56bb30d7a281819106dc2d6d997c5416c79793e52c00df2cfcbd614b0342cbeec70a3d83ddc02ff23b9e183fb9d05
-  languageName: node
-  linkType: hard
-
-"@mdx-js/react@npm:1.6.22, @mdx-js/react@npm:^1.0.20":
+"@mdx-js/react@npm:^1.0.20":
   version: 1.6.22
   resolution: "@mdx-js/react@npm:1.6.22"
   peerDependencies:
@@ -2544,16 +2544,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mdx-js/runtime@npm:^1.0.20":
-  version: 1.6.22
-  resolution: "@mdx-js/runtime@npm:1.6.22"
-  dependencies:
-    "@mdx-js/mdx": "npm:1.6.22"
-    "@mdx-js/react": "npm:1.6.22"
-    buble-jsx-only: "npm:^0.19.8"
-  peerDependencies:
-    react: ^16.13.1
-  checksum: 10c0/53dc9675eb25833452a970af77eb9ff425aa750e4285e60d6684fc7daaa621bdc6c4c1061ac9007532ab1b64297a749595e4f6396e2a66ec70c9deb303086683
+"@mdx-js/runtime@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "@mdx-js/runtime@npm:2.0.0"
+  checksum: 10c0/45cd73c060f879854d8f1ec6e9cbc403a829b4816bc422bfe9bf633bb9f3539839813bd4e311657e3a8e61fd6fb7c29456f0ae763175f0f7bd7085205bc3a382
   languageName: node
   linkType: hard
 
@@ -2704,7 +2698,7 @@ __metadata:
     "@material-ui/lab": "npm:4.0.0-alpha.57"
     "@material-ui/pickers": "npm:3.3.11"
     "@mdx-js/react": "npm:^1.0.20"
-    "@mdx-js/runtime": "npm:^1.0.20"
+    "@mdx-js/runtime": "npm:^2.0.0"
     "@playwright/test": "npm:1.61.1"
     "@sentry/browser": "npm:^10.47.0"
     "@taskcluster/client-web": "npm:^88.0.1"
@@ -3419,15 +3413,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"acorn-dynamic-import@npm:^4.0.0":
-  version: 4.0.0
-  resolution: "acorn-dynamic-import@npm:4.0.0"
-  peerDependencies:
-    acorn: ^6.0.0
-  checksum: 10c0/5450c917d28f39cabf64495928a711f446cb6a4731d45fcd8f160cc3ceb6fee3e1b4a8cb308b5ba4e9a0e450742f67d7295322033ffaa378a355af6cd2232693
-  languageName: node
-  linkType: hard
-
 "acorn-globals@npm:^6.0.0":
   version: 6.0.0
   resolution: "acorn-globals@npm:6.0.0"
@@ -3438,15 +3423,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"acorn-jsx@npm:^5.0.1":
-  version: 5.3.2
-  resolution: "acorn-jsx@npm:5.3.2"
-  peerDependencies:
-    acorn: ^6.0.0 || ^7.0.0 || ^8.0.0
-  checksum: 10c0/4c54868fbef3b8d58927d5e33f0a4de35f59012fe7b12cf9dfbb345fb8f46607709e1c4431be869a23fb63c151033d84c4198fa9f79385cec34fcb1dd53974c1
-  languageName: node
-  linkType: hard
-
 "acorn-walk@npm:^7.1.1":
   version: 7.2.0
   resolution: "acorn-walk@npm:7.2.0"
@@ -3454,7 +3430,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"acorn@npm:^6.1.1, acorn@npm:^6.4.1":
+"acorn@npm:^6.4.1":
   version: 6.4.2
   resolution: "acorn@npm:6.4.2"
   bin:
@@ -4497,23 +4473,6 @@ __metadata:
   dependencies:
     node-int64: "npm:^0.4.0"
   checksum: 10c0/24d8dfb7b6d457d73f32744e678a60cc553e4ec0e9e1a01cf614b44d85c3c87e188d3cc78ef0442ce5032ee6818de20a0162ba1074725c0d08908f62ea979227
-  languageName: node
-  linkType: hard
-
-"buble-jsx-only@npm:^0.19.8":
-  version: 0.19.8
-  resolution: "buble-jsx-only@npm:0.19.8"
-  dependencies:
-    acorn: "npm:^6.1.1"
-    acorn-dynamic-import: "npm:^4.0.0"
-    acorn-jsx: "npm:^5.0.1"
-    chalk: "npm:^2.4.2"
-    magic-string: "npm:^0.25.3"
-    minimist: "npm:^1.2.0"
-    regexpu-core: "npm:^4.5.4"
-  bin:
-    buble: ./bin/buble
-  checksum: 10c0/a1cd933e154de4a28a6f17d2e29edc2c452481f83a343daecaaff4dd1eb1558a9c3878ab7b3eddaf19bf6a1fb7024d8f2fa6849c25a41de24a4ccfbd1c5025d4
   languageName: node
   linkType: hard
 
@@ -9746,15 +9705,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"magic-string@npm:^0.25.3":
-  version: 0.25.7
-  resolution: "magic-string@npm:0.25.7"
-  dependencies:
-    sourcemap-codec: "npm:^1.4.4"
-  checksum: 10c0/d5da35f01d5437d7d6c030fe8185285a78b97144d07944d62187bd985ee2f6dcc8c9a538ded6a3afe186f5d6f2e705b45f9f307b19020aff530447bd32f24375
-  languageName: node
-  linkType: hard
-
 "make-dir@npm:^2.0.0, make-dir@npm:^2.1.0":
   version: 2.1.0
   resolution: "make-dir@npm:2.1.0"
@@ -12190,15 +12140,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"regenerate-unicode-properties@npm:^9.0.0":
-  version: 9.0.0
-  resolution: "regenerate-unicode-properties@npm:9.0.0"
-  dependencies:
-    regenerate: "npm:^1.4.2"
-  checksum: 10c0/dc648891572f1d8326c01b335b126d766fe6684e5e760d4daa6c1d214d162b8c027fe0e6ee0a3e3d8d20bd869567f363f6be60bdfc054a14e7ad7d347891a506
-  languageName: node
-  linkType: hard
-
 "regenerate@npm:^1.4.2":
   version: 1.4.2
   resolution: "regenerate@npm:1.4.2"
@@ -12235,20 +12176,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"regexpu-core@npm:^4.5.4":
-  version: 4.8.0
-  resolution: "regexpu-core@npm:4.8.0"
-  dependencies:
-    regenerate: "npm:^1.4.2"
-    regenerate-unicode-properties: "npm:^9.0.0"
-    regjsgen: "npm:^0.5.2"
-    regjsparser: "npm:^0.7.0"
-    unicode-match-property-ecmascript: "npm:^2.0.0"
-    unicode-match-property-value-ecmascript: "npm:^2.0.0"
-  checksum: 10c0/cea09893ae49956ba11c3a7433295c61bfbaa92792f565fb54c463dfdd5a81a150ba67a22cd4ecded005425cbb78dc0ea34d5ff771f07f9d31931bafb189e367
-  languageName: node
-  linkType: hard
-
 "regexpu-core@npm:^5.3.1":
   version: 5.3.2
   resolution: "regexpu-core@npm:5.3.2"
@@ -12260,24 +12187,6 @@ __metadata:
     unicode-match-property-ecmascript: "npm:^2.0.0"
     unicode-match-property-value-ecmascript: "npm:^2.1.0"
   checksum: 10c0/7945d5ab10c8bbed3ca383d4274687ea825aee4ab93a9c51c6e31e1365edd5ea807f6908f800ba017b66c462944ba68011164e7055207747ab651f8111ef3770
-  languageName: node
-  linkType: hard
-
-"regjsgen@npm:^0.5.2":
-  version: 0.5.2
-  resolution: "regjsgen@npm:0.5.2"
-  checksum: 10c0/66cd5a9427a6db11a18eb544ecadf6866c8eeb3bf66d57185a9788929263b42641068df014d7e4d32a5cfbf114676f9bdd3013629203f03b1538416a1f4050e3
-  languageName: node
-  linkType: hard
-
-"regjsparser@npm:^0.7.0":
-  version: 0.7.0
-  resolution: "regjsparser@npm:0.7.0"
-  dependencies:
-    jsesc: "npm:~0.5.0"
-  bin:
-    regjsparser: bin/parser
-  checksum: 10c0/4b891ff0d2c835717d6e7ad9194da7f5271e410422fe51fa73b1f33978df8f6784e2a079938c9827f62fd13c258ae7e7e69f910799bb003b6a0b5e8854801719
   languageName: node
   linkType: hard
 
@@ -13307,13 +13216,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sourcemap-codec@npm:^1.4.4":
-  version: 1.4.8
-  resolution: "sourcemap-codec@npm:1.4.8"
-  checksum: 10c0/f099279fdaae070ff156df7414bbe39aad69cdd615454947ed3e19136bfdfcb4544952685ee73f56e17038f4578091e12b17b283ed8ac013882916594d95b9e6
-  languageName: node
-  linkType: hard
-
 "sourcemapped-stacktrace@npm:^1.1.6":
   version: 1.1.11
   resolution: "sourcemapped-stacktrace@npm:1.1.11"
@@ -14330,7 +14232,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"unicode-match-property-value-ecmascript@npm:^2.0.0, unicode-match-property-value-ecmascript@npm:^2.1.0":
+"unicode-match-property-value-ecmascript@npm:^2.1.0":
   version: 2.1.0
   resolution: "unicode-match-property-value-ecmascript@npm:2.1.0"
   checksum: 10c0/f5b9499b9e0ffdc6027b744d528f17ec27dd7c15da03254ed06851feec47e0531f20d410910c8a49af4a6a190f4978413794c8d75ce112950b56d583b5d5c7f2
