@@ -1,0 +1,14 @@
+# BLEnder config for petemoore/taskcluster — a personal staging fork of
+# taskcluster/taskcluster, used to validate this config before onboarding the
+# real repo. See .blender/agents.md for repo-specific agent context.
+repo_name: "Taskcluster (petemoore staging fork)"
+node_version: "24"
+install_command: "corepack enable && yarn install --immutable"
+
+# Staging safeguard: start in preview mode so a first sweep reports what BLEnder
+# *would* do without merging or committing. Remove these once the plumbing is
+# verified to let BLEnder act for real.
+automerge:
+  dry_run: true
+fix:
+  dry_run: true
