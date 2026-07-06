@@ -164,7 +164,6 @@ module.exports = (_, { mode }) => ({
                 ],
               ],
               plugins: [
-                "@babel/plugin-syntax-dynamic-import",
                 [
                   "transform-react-remove-prop-types",
                   {
@@ -174,23 +173,23 @@ module.exports = (_, { mode }) => ({
                 [
                   "@babel/plugin-proposal-decorators",
                   {
-                    legacy: true,
+                    version: "legacy",
                   },
                 ],
                 [
-                  "@babel/plugin-proposal-class-properties",
+                  "@babel/plugin-transform-class-properties",
                   {
                     loose: false,
                   },
                 ],
                 [
-                  "@babel/plugin-proposal-optional-chaining",
+                  "@babel/plugin-transform-optional-chaining",
                   {
                     loose: true,
                   },
                 ],
                 [
-                  "@babel/plugin-proposal-nullish-coalescing-operator",
+                  "@babel/plugin-transform-nullish-coalescing-operator",
                   {
                     loose: true,
                   },
