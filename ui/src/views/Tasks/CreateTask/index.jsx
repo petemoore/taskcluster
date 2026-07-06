@@ -4,7 +4,7 @@ import { parse, stringify } from 'qs';
 import { withApollo } from 'react-apollo';
 import storage from 'localforage';
 import merge from 'deepmerge';
-import { load, dump } from 'js-yaml';
+import { load, dump, CORE_SCHEMA } from 'js-yaml';
 import { bool } from 'prop-types';
 import {
   toDate,
@@ -309,7 +309,7 @@ export default class CreateTask extends Component {
       }
     };
 
-    return `${dump(iter(task), { noCompatMode: true, noRefs: true })}`;
+    return `${dump(iter(task), { schema: CORE_SCHEMA, noRefs: true })}`;
   }
 
   render() {
