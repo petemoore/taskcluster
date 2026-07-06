@@ -1371,18 +1371,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@azure/arm-network@npm:^34.0.0":
-  version: 34.0.0
-  resolution: "@azure/arm-network@npm:34.0.0"
+"@azure/arm-network@npm:^36.0.0":
+  version: 36.0.0
+  resolution: "@azure/arm-network@npm:36.0.0"
   dependencies:
     "@azure/abort-controller": "npm:^2.1.2"
     "@azure/core-auth": "npm:^1.9.0"
-    "@azure/core-client": "npm:^1.9.2"
+    "@azure/core-client": "npm:^1.9.3"
     "@azure/core-lro": "npm:^2.5.4"
     "@azure/core-paging": "npm:^1.6.2"
-    "@azure/core-rest-pipeline": "npm:^1.19.0"
+    "@azure/core-rest-pipeline": "npm:^1.19.1"
     tslib: "npm:^2.8.1"
-  checksum: 10c0/16798c541e01c2bdb269ff73b058d5669e5d757844773915433c93b54279651990e41c71a66b44931bb6f813da1e8b4395bb61187c00a1dc0579019894f14ec8
+  checksum: 10c0/953e5228ab1dd5bcd1a31e9a6b3c9abe17612f91916e2cb11c8cd33b7ae38fa84e34fccb3a0be2432723db5592ef296b89867425a2ea5059504f9506a11377f5
   languageName: node
   linkType: hard
 
@@ -12308,7 +12308,7 @@ __metadata:
     "@aws-sdk/middleware-endpoint": "npm:^3.374.0"
     "@aws-sdk/s3-request-presigner": "npm:^3.1075.0"
     "@azure/arm-compute": "npm:^22.4.0"
-    "@azure/arm-network": "npm:^34.0.0"
+    "@azure/arm-network": "npm:^36.0.0"
     "@azure/arm-resources": "npm:^7.0.0"
     "@azure/arm-resourcesdeployments": "npm:1.0.0-beta.1"
     "@azure/identity": "npm:^4.13.1"
