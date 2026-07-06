@@ -7,7 +7,7 @@ import { expressMiddleware } from '@as-integrations/express4';
 import compression from 'compression';
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
 import depthLimit from './validation/guardedDepthLimit.js';
-import { NoFragmentCyclesRule } from 'graphql/validation/rules/NoFragmentCyclesRule.js';
+import { NoFragmentCyclesRule } from 'graphql';
 import { createComplexityLimitRule } from 'graphql-validation-complexity';
 import queryLimit from 'graphql-query-count-limit';
 import loader from '@taskcluster/lib-loader';
