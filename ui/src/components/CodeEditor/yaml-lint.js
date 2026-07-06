@@ -13,6 +13,14 @@ CodeMirror.registerHelper('lint', 'yaml', text => {
   } catch (e) {
     const loc = e.mark;
 
+    // js-yaml v5 throws on empty input ("expected a document, but the input
+    // is empty"), whereas v4 returned undefined. This error has no `mark`, so
+    // guard against dereferencing it and produce no marker — matching v4's
+    // silent behavior for an empty editor (a common, reachable state).
+    if (!loc) {
+      return [];
+    }
+
     return [
       {
         from: CodeMirror.Pos(loc.line, loc.column),

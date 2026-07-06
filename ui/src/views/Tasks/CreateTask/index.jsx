@@ -4,7 +4,7 @@ import { parse, stringify } from 'qs';
 import { withApollo } from 'react-apollo';
 import storage from 'localforage';
 import merge from 'deepmerge';
-import { load, dump } from 'js-yaml';
+import { load, dump, CORE_SCHEMA } from 'js-yaml';
 import { bool } from 'prop-types';
 import {
   toDate,
@@ -309,7 +309,11 @@ export default class CreateTask extends Component {
       }
     };
 
-    return `${dump(iter(task), { noCompatMode: true, noRefs: true })}`;
+    // js-yaml v5 removed the `noCompatMode` dump option. Its purpose was to
+    // stop YAML-1.1-style quoting of scalars like yes/no/on/off/null. The v5
+    // migration guide replaces it with the CORE_SCHEMA (YAML 1.2), which does
+    // not treat those as special scalars, preserving the unquoted output.
+    return `${dump(iter(task), { schema: CORE_SCHEMA, noRefs: true })}`;
   }
 
   render() {
