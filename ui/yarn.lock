@@ -2544,6 +2544,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@mdx-js/react@npm:^3.1.1":
+  version: 3.1.1
+  resolution: "@mdx-js/react@npm:3.1.1"
+  dependencies:
+    "@types/mdx": "npm:^2.0.0"
+  peerDependencies:
+    "@types/react": ">=16"
+    react: ">=16"
+  checksum: 10c0/34ca98bc2a0f969894ea144dc5c8a5294690505458cd24965cd9be854d779c193ad9192bf9143c4c18438fafd1902e100d99067e045c69319288562d497558c6
+  languageName: node
+  linkType: hard
+
 "@mdx-js/runtime@npm:^1.0.20":
   version: 1.6.22
   resolution: "@mdx-js/runtime@npm:1.6.22"
@@ -2703,7 +2715,7 @@ __metadata:
     "@material-ui/icons": "npm:^4.5.1"
     "@material-ui/lab": "npm:4.0.0-alpha.57"
     "@material-ui/pickers": "npm:3.3.11"
-    "@mdx-js/react": "npm:^1.0.20"
+    "@mdx-js/react": "npm:^3.1.1"
     "@mdx-js/runtime": "npm:^1.0.20"
     "@playwright/test": "npm:1.61.1"
     "@sentry/browser": "npm:^10.47.0"
@@ -2974,6 +2986,13 @@ __metadata:
   dependencies:
     "@types/unist": "npm:*"
   checksum: 10c0/375f08b3910505291b2815d9edf55dca63c6c4ec58dd33c866521e68905fd4e8fe83b397e167af2cdd3799b851a7e02817d58610cfb814aee20bf3c52d87be9b
+  languageName: node
+  linkType: hard
+
+"@types/mdx@npm:^2.0.0":
+  version: 2.0.14
+  resolution: "@types/mdx@npm:2.0.14"
+  checksum: 10c0/f1e3873c1e36e2685fb99222bf81a23c55a8e2edf49d0c45cabf2c875b0ae814cd6050cce5770ff1c6881ac747d2ad33731e1de32139b04cf181d8d7e1943ff4
   languageName: node
   linkType: hard
 

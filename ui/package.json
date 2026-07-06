@@ -27,7 +27,7 @@
     "@material-ui/icons": "^4.5.1",
     "@material-ui/lab": "4.0.0-alpha.57",
     "@material-ui/pickers": "3.3.11",
-    "@mdx-js/react": "^1.0.20",
+    "@mdx-js/react": "^3.1.1",
     "@mdx-js/runtime": "^1.0.20",
     "@sentry/browser": "^10.47.0",
     "@taskcluster/client-web": "^88.0.1",
