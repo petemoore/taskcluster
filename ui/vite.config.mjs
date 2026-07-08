@@ -105,7 +105,7 @@ export default defineConfig(({ mode }) => ({
     react({
       babel: {
         plugins: [
-          ['@babel/plugin-proposal-decorators', { legacy: true }],
+          ['@babel/plugin-proposal-decorators', { version: 'legacy' }],
           ['@babel/plugin-proposal-class-properties', { loose: false }],
           ...(mode === 'production'
             ? [['transform-react-remove-prop-types', { removeImport: true }]]
