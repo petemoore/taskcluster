@@ -87,7 +87,7 @@
     "react-ga": "^3.0.0",
     "react-helmet": "^6.0.0",
     "react-lazylog": "^4.5.1",
-    "react-router-dom": "^5.3.4",
+    "react-router-dom": "^7.18.1",
     "react-virtualized": "patch:react-virtualized@npm%3A9.22.5#~/.yarn/patches/react-virtualized-npm-9.22.5-be95b8e1a8.patch",
     "react-window": "^1.8.10",
     "redbox-react": "^1.6.0",
