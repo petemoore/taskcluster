@@ -125,7 +125,7 @@
     "taskcluster-lib-scopes": "^11.0.0",
     "taskcluster-lib-urls": "^13.0.2",
     "topo-sort": "^1.0.0",
-    "type-is": "^1.6.15",
+    "type-is": "^2.1.0",
     "uuid": "^14.0.1",
     "walk": "^2.3.9"
   },
