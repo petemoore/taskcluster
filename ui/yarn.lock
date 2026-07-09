@@ -1505,7 +1505,7 @@ __metadata:
     ramda: "npm:^0.30.1"
     react: "npm:^16.8.6"
     react-apollo: "npm:^3.0.0"
-    react-codemirror2: "npm:^8.0.0"
+    react-codemirror2: "npm:^9.0.1"
     react-copy-to-clipboard: "npm:^5.0.1"
     react-diff-viewer-continued: "npm:^4.2.2"
     react-dom: "npm:^16.8.6"
@@ -6628,13 +6628,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-codemirror2@npm:^8.0.0":
-  version: 8.0.0
-  resolution: "react-codemirror2@npm:8.0.0"
+"react-codemirror2@npm:^9.0.1":
+  version: 9.0.1
+  resolution: "react-codemirror2@npm:9.0.1"
   peerDependencies:
     codemirror: 5.x
-    react: ">=15.5 <=18.x"
-  checksum: 10c0/e1e65fc5a33764e5bda5d547470046f734491912c5755bf44dcc68cb2f70329bc8d263b0acaa8be7b0e9a7e4d988989cde8c398f78adfc204af6a33181cbce31
+    react: ">=15.5 <=19.x"
+  checksum: 10c0/9781cf0cb6a91fda9dd555f8bb27b1e48b62d70bee28c6f2155f0376f35523b3a6d6eb000711ce6b222fea0eb7844d8b613314771cfb45231df3f6c0449f123f
   languageName: node
   linkType: hard
 
