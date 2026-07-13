@@ -5676,7 +5676,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"content-type@npm:^1.0.4, content-type@npm:^1.0.5, content-type@npm:~1.0.4, content-type@npm:~1.0.5":
+"content-type@npm:^1.0.5, content-type@npm:~1.0.4, content-type@npm:~1.0.5":
   version: 1.0.5
   resolution: "content-type@npm:1.0.5"
   checksum: 10c0/b76ebed15c000aee4678c3707e0860cb6abd4e680a598c0a26e17f0bfae723ec9cc2802f0ff1bc6e4d80603719010431d2231018373d4dde10f9ccff9dadf5af
@@ -12358,7 +12358,7 @@ __metadata:
     compression: "npm:^1.8.1"
     console-taskgraph: "npm:^1.7.2"
     content-security-policy: "npm:^0.3.0"
-    content-type: "npm:^1.0.4"
+    content-type: "npm:^2.0.0"
     cors: "npm:^2.8.6"
     cron-parser: "npm:5.6.0"
     cronstrue: "npm:^2.61.0"
