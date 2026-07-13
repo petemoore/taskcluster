@@ -48,7 +48,7 @@
     "graphql": "^16.9.0",
     "highlight.js": "^11.10.0",
     "hterm-umdjs": "^1.4.1",
-    "is-absolute-url": "^4.0.1",
+    "is-absolute-url": "^5.0.0",
     "js-yaml": "^4.3.0",
     "json-e": "^4.7.1",
     "json-schema-defaults": "^0.4.0",
