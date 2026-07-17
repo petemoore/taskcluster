@@ -1496,7 +1496,7 @@ __metadata:
     lodash.clonedeep: "npm:^4.5.0"
     lodash.debounce: "npm:^4.0.8"
     markdown-it: "npm:^14.2.0"
-    markdown-it-highlightjs: "npm:^3.0.0"
+    markdown-it-highlightjs: "npm:^4.3.0"
     markdown-it-link-attributes: "npm:^4.0.1"
     mdi-react: "npm:^6.2.0"
     mitt: "npm:^3.0.1"
@@ -3897,10 +3897,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"highlight.js@npm:^11.10.0, highlight.js@npm:^11.3.1":
+"highlight.js@npm:^11.10.0":
   version: 11.10.0
   resolution: "highlight.js@npm:11.10.0"
   checksum: 10c0/cd8bf7ef06cbd72ddb83580ecabe769f08f062be8bb82d2eb492d31c17f7480d1f8d14a66fc81deee0601645435f19f04c470510563f847242a41ccff0ab873e
+  languageName: node
+  linkType: hard
+
+"highlight.js@npm:^11.9.0":
+  version: 11.11.1
+  resolution: "highlight.js@npm:11.11.1"
+  checksum: 10c0/40f53ac19dac079891fcefd5bd8a21cf2e8931fd47da5bd1dca73b7e4375c1defed0636fc39120c639b9c44119b7d110f7f0c15aa899557a5a1c8910f3c0144c
   languageName: node
   linkType: hard
 
@@ -4743,13 +4750,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lodash.flow@npm:^3.5.0":
-  version: 3.5.0
-  resolution: "lodash.flow@npm:3.5.0"
-  checksum: 10c0/b3202ddbb79e5aab41719806d0d5ae969f64ae6b59e6bdaaecaa96ec68d6ba429e544017fe0e71ecf5b7ee3cea7b45d43c46b7d67ca159d6cca86fca76c61a31
-  languageName: node
-  linkType: hard
-
 "lodash@npm:^4.17.4":
   version: 4.18.1
   resolution: "lodash@npm:4.18.1"
@@ -4885,13 +4885,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"markdown-it-highlightjs@npm:^3.0.0":
-  version: 3.6.0
-  resolution: "markdown-it-highlightjs@npm:3.6.0"
+"markdown-it-highlightjs@npm:^4.3.0":
+  version: 4.3.0
+  resolution: "markdown-it-highlightjs@npm:4.3.0"
   dependencies:
-    highlight.js: "npm:^11.3.1"
-    lodash.flow: "npm:^3.5.0"
-  checksum: 10c0/0c3d585c47f48c9d0ebdab8573a5f1a00520a5952b20b78ef8153e1407018e9c2024a1874a5dc4697c0cf7e4aecb1ca4ab9d2381aeffea4f061129f6dc3e840b
+    highlight.js: "npm:^11.9.0"
+  checksum: 10c0/9c8640998055ab1d8f7ff3cfd9b781b239258c75b8bf59864676b20195def4e5c831cf84ec282b48e1097c1d0cb60875a401f1191161bfd8dc04c55d332e3781
   languageName: node
   linkType: hard
 
