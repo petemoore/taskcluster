@@ -17,10 +17,10 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.3",
+    "@biomejs/biome": "^2.5.5",
     "@vitest/browser": "^4.1.10",
     "@vitest/browser-playwright": "^4.1.10",
-    "playwright": "1.61.1",
+    "playwright": "1.62.0",
     "vite-plugin-node-polyfills": "^0.28.0",
     "vitest": "^4.1.10"
   },
