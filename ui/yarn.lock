@@ -1627,7 +1627,7 @@ __metadata:
     markdown-it-link-attributes: "npm:^4.0.1"
     mdi-react: "npm:^6.2.0"
     mitt: "npm:^3.0.1"
-    param-case: "npm:^3.0.3"
+    param-case: "npm:^4.0.0"
     prism-themes: "npm:^1.0.1"
     prismjs: "npm:^1.30.0"
     prop-types: "npm:^15.6.2"
@@ -5970,6 +5970,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"no-case@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "no-case@npm:4.0.0"
+  checksum: 10c0/619860434dc33e65cec2cb0b57942903bac864dd1efc834f71d04f5e060f5eb2189224c8557aa5ad3dacf5594d26e33882b3fb7f975a9bf3481c7e7867011a2f
+  languageName: node
+  linkType: hard
+
 "node-gyp-build@npm:^4.3.0":
   version: 4.5.0
   resolution: "node-gyp-build@npm:4.5.0"
@@ -6181,13 +6188,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"param-case@npm:^3.0.3":
-  version: 3.0.4
-  resolution: "param-case@npm:3.0.4"
+"param-case@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "param-case@npm:4.0.0"
   dependencies:
-    dot-case: "npm:^3.0.4"
-    tslib: "npm:^2.0.3"
-  checksum: 10c0/ccc053f3019f878eca10e70ec546d92f51a592f762917dafab11c8b532715dcff58356118a6f350976e4ab109e321756f05739643ed0ca94298e82291e6f9e76
+    no-case: "npm:^4.0.0"
+  checksum: 10c0/23cfbdec0c67a8cca70608e85950442ea1d5a98bdc6d09331079970c805dfc1222566052360cff7d32021488bb4e683c04a7ebef12edafca2ebb3d665732552e
   languageName: node
   linkType: hard
 
