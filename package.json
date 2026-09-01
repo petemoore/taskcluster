@@ -14,7 +14,7 @@
     "db"
   ],
   "dependencies": {
-    "@apollo/client": "^3.13.9",
+    "@apollo/client": "^4.2.6",
     "@apollo/server": "^5.5.1",
     "@as-integrations/express4": "^1.1.2",
     "@aws-sdk/client-ec2": "^3.1075.0",
