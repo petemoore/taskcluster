@@ -6,7 +6,10 @@ VOLUME /builds/worker/checkouts
 # don't re-download them every time. Must match the playwright version in
 # ui/package.json and clients/client-web/package.json.
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
-ENV PLAYWRIGHT_VERSION=1.61.1
+# ui/package.json (@playwright/test)
+ENV PLAYWRIGHT_VERSION=1.62.1
+# clients/client-web/package.json (playwright)
+ENV PLAYWRIGHT_CLIENT_WEB_VERSION=1.61.1
 
 # Add worker user
 RUN mkdir -p /builds && \
@@ -19,6 +22,7 @@ RUN mkdir -p /builds && \
     curl \
     git && \
     npx -y @playwright/test@${PLAYWRIGHT_VERSION} install --with-deps chromium firefox && \
+    npx -y @playwright/test@${PLAYWRIGHT_CLIENT_WEB_VERSION} install --with-deps chromium firefox && \
     chmod -R a+rX "${PLAYWRIGHT_BROWSERS_PATH}" && \
     rm -rf /var/lib/apt/lists/*
 
