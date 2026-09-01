@@ -9,7 +9,7 @@ import {
   PutObjectTaggingCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { getEndpointFromInstructions, toEndpointV1 } from '@aws-sdk/middleware-endpoint';
+import { getEndpointFromInstructions } from '@aws-sdk/middleware-endpoint';
 import { reportError } from '@taskcluster/lib-api';
 import taskcluster from '@taskcluster/client';
 import path from 'node:path';
@@ -39,7 +39,7 @@ export class AwsBackend extends Backend {
     };
     // only include endpoint if included, since included for gcp backend but not needed for aws backend
     if ('endpoint' in this.config) {
-      options.endpoint = toEndpointV1(this.config.endpoint);
+      options.endpoint = this.config.endpoint;
       options.forcePathStyle = this.config.s3ForcePathStyle;
     } else {
       this.region = await getBucketRegion({
