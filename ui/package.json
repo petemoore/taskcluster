@@ -108,7 +108,7 @@
     "typescript": "^5.8.3",
     "vite": "^8.1.4",
     "vite-plugin-node-polyfills": "^0.28.0",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   },
   "optionalDependencies": {
     "bufferutil": "^4.1.0",
