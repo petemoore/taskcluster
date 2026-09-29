@@ -174,7 +174,8 @@
     "zurvan": "^0.8.0"
   },
   "resolutions": {
-    "mocha/mkdirp": "^1.0.0"
+    "mocha/mkdirp": "^1.0.0",
+    "ip-address": "10.5.1"
   },
   "scripts": {
     "lint": "biome check",
