@@ -17,10 +17,10 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.3",
+    "@biomejs/biome": "^2.6.3",
     "@vitest/browser": "^4.1.10",
     "@vitest/browser-playwright": "^4.1.10",
-    "playwright": "1.61.1",
+    "playwright": "1.64.1",
     "vite-plugin-node-polyfills": "^0.28.0",
     "vitest": "^4.1.10"
   },
@@ -28,7 +28,7 @@
     "crypto-js": "^4.2.0",
     "hawk": "^9.0.2",
     "query-string": "^9.4.1",
-    "taskcluster-lib-urls": "^13.0.2"
+    "taskcluster-lib-urls": "^13.1.0"
   },
   "publishConfig": {
     "access": "public"
