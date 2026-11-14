@@ -102,7 +102,7 @@
     "netmask": "^2.1.1",
     "newrelic": "^12.25.0",
     "node-fetch": "^3.3.2",
-    "node-forge": "^1.4.0",
+    "node-forge": "^1.4.3",
     "nodemailer": "^9.0.1",
     "oauth2orize": "^1.11.0",
     "p-queue": "^9.2.0",
